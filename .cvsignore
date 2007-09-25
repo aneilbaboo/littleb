@@ -1,0 +1,14 @@
+defsystem-3.x
+lib
+*.fsl
+*.fasl
+*.fas
+*.ufasl
+*.ofasl
+*.~*
+*.~si
+b-prefs.lisp
+bin
+ignore
+init.lisp
+lisa-2.4

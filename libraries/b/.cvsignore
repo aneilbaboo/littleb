@@ -1,0 +1,7 @@
+*.fsl
+*.fasl
+*.fas
+*.~*
+b-prefs.lisp
+bin
+_bin

@@ -1,0 +1,135 @@
+; counting code:
+(loop for v being the hash-value in b::+objects+
+      when (species-p v) ; or (reaction-p v)
+      sum 1)
+
+
+(time (include segment-polarity/modules/prepatterns/square-stripes-yippie :use))
+user time    =    767.843
+system time  =      0.343
+Elapsed time =   0:13:00
+Allocation   = 2146645992 bytes standard / 2803968508 bytes conses
+0 Page faults
+Calls to %EVAL    989395
+
+
+SPECIES:     2045
+REACTIONS:   7419
+
+
+AFTER CHANGING REACTION-TYPE-INFERENCE-RULE 
+   with [reaction-type-requirement ...] first
+(time (include segment-polarity/modules/prepatterns/square-stripes-yippie :use))
+
+user time    =    800.656
+system time  =      0.734
+Elapsed time =   0:13:47
+Allocation   = 2196890776 bytes standard / 2971390455 bytes conses
+0 Page faults
+Calls to %EVAL    8388607
+
+AFTER CHANGING REACTION-TYPE-INFERENCE-RULE back to original
+   with (?species [species-type ..]
+                  [has-sublocation ...]) 
+first
+user time    =    772.687
+system time  =      0.578
+Elapsed time =   0:12:56
+Allocation   = 2125516680 bytes standard / 2740017346 bytes conses
+0 Page faults
+Calls to %EVAL    1321522
+;;;;
+;;;; REMOVED (?.. [reaction-type ....]) binding:
+;;;;
+reaction-inference rule body is now:
+
+  (:and (?species   [species ?species-type ?species-loc])    ; and the species in question exists in the right location,        
+        [has-sublocation ?rxn-loc ?rxn-loc-fld ?species-loc] ; given relationship between a location and sublocation
+        (?loc-req   [location-requirement                    ; and there's a requirement for ?species-type
+                     ?species-type ?rxn-loc-fld])            ; a species-type in this sublocation
+        (?rt-req    [reaction-type-requirement               ; and location-requirement is a lhs requirement for 
+                     ?rxn-type :lhs ?stoich ?loc-req])       ; the reaction-type ?rxn
+        (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
+                    ?rxn-type.location-class)) 
+(time (include segment-polarity/modules/prepatterns/square-stripes-yippie :use))
+user time    =    693.218
+system time  =      0.562
+Elapsed time =   0:11:43
+Allocation   = 2005308504 bytes standard / 2631109657 bytes conses
+0 Page faults
+Calls to %EVAL    1321447
+SPECIES: 2045
+REACTIONS: 7419
+
+;;;
+;;; AFTER REMOVING [LOCATION-REQUIREMENT] & [REACTION-TYPE] bindings from inference rule:
+;;;
+(defrule reaction-type-requirement-satisfied
+  (:and (?species   [species ?species-type ?species-loc])    ; and the species in question exists in the right location,        
+        [has-sublocation ?rxn-loc ?localization ?species-loc] ; given relationship between a location and sublocation
+        (?rt-req    [reaction-type-requirement               
+                     ?rxn-type :lhs                     
+                     ?species-type ?localization ?stoich])
+        (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
+                    ?rxn-type.location-class))
+  =>  ;; one of the reaction-type requirements has been satisfied
+
+(time (include segment-polarity/modules/prepatterns/square-stripes-yippie :use))
+user time    =    634.734
+system time  =      0.640
+Elapsed time =   0:10:50
+Allocation   = 1969955224 bytes standard / 2626966067 bytes conses
+
+SPECIES: 2045
+REACTIONS: 7419
+
+
+
+
+Tried both: before reformulating rule system
+(time (include edu/harvard/med/vcp/segment-polarity/models/dros-stripes-yippie :use))
+(time (include segment-polarity/modules/prepatterns/dros-stripes-yippie :use))
+user time    =   2984.500
+system time  =      1.734
+Elapsed time =   0:52:50
+Allocation   = 3800166608 bytes standard / 7090908605 bytes conses
+0 Page faults
+Calls to %EVAL    8388607
+
+SPECIES: 3455
+REACTIONS: 13344
+
+After reformulating rule system:
+(time (include segment-polarity/modules/prepatterns/dros-stripes-yippie :use))
+Elapsed time =   0:43:57 (approx)
+Allocation   = 932613584 bytes standard / 5038757856 bytes conses
+0 Page faults
+SPECIES: 3455
+REACTIONS: 13344
+
+
+(time (include edu/harvard/med/vcp/segment-polarity/models/dros-stripes-yippie))
+in-repository system (what matt probably is using):
+user time    =   2706.625
+system time  =      1.109
+Elapsed time =   0:45:34
+Allocation   = 3794152944 bytes standard / 7067541734 bytes conses
+0 Page faults
+Calls to %EVAL    1775984
+
+SPECIES: 3455
+REACTIONS: 13344
+
+
+;;;
+;;; AFTER REMOVING [LOCATION-REQUIREMENT] & [REACTION-TYPE] bindings from inference rule:
+;;;
+(time (include edu/harvard/med/vcp/segment-polarity/models/dros-stripes-yippie))
+-> species addition to cells takes ~23 minutes (versus about 35 before)
+user time    =   2101.375
+system time  =      1.296
+Elapsed time =   0:35:53
+Allocation   = 3409667200 bytes standard / 6680165459 bytes conses
+0 Page faults
+Calls to %EVAL    2301258
+
