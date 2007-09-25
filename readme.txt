@@ -2,13 +2,14 @@ This file provides rudementary documentation for getting up and running using th
 
 I Installing the Source Tree:
 
-	1) Checkout little b (make sure that cvs is in your path):
+	1) Checkout little b if you haven't already:
+
 	cvs -z3 -d:pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb co -P b1 
 	=> creates the folder b1/
 
 	2) Checkout LISA and graph-tools inside the b1 folder:
  
-	cd b1
+	cd b1      
 	cvs -z3 -d:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
          => creates the folder lisa/ inside b1/
 	cvs -z3 -d:pserver:anonymous@graph-tools.cvs.sourceforge.net:/cvsroot/graph-tools co -P graph-tools
