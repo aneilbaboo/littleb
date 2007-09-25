@@ -1,4 +1,8 @@
-This file provides rudementary documentation for getting up and running using the little b source code.  This enables you to run little b inside the Lisp environment of your choice.  A development environment containing little b is also available at http://littleb.org.
+Getting up and running with the little b source code
+
+This file explains how to get little b running in a Lisp 
+implementation of your choice.  A development environment 
+containing little b is also available at http://littleb.org.
 
 I Installing the Source Tree:
 
@@ -8,12 +12,21 @@ I Installing the Source Tree:
 	=> creates the folder b1/
 
 	2) Checkout LISA and graph-tools inside the b1 folder:
- 
-	cd b1      
-	cvs -z3 -d:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
-         => creates the folder lisa/ inside b1/
-	cvs -z3 -d:pserver:anonymous@graph-tools.cvs.sourceforge.net:/cvsroot/graph-tools co -P graph-tools
-         => creates the folder graph-tools/ inside b1/
+	
+	   a) Switch to the b1 folder:
+		   cd b1      
+        
+	   b) Either execute the script/batch file found in the b1 folder: 
+                      get-cvs-modules.bat (on windows)
+                      sh get-cvs-modules.bat (on unix)
+
+           The cvs program will need to be in the Shell's path.
+
+           Or, do it manually:
+		cvs -z3 -d:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
+        	 => creates the folder lisa/ inside b1/
+		cvs -z3 -d:pserver:anonymous@graph-tools.cvs.sourceforge.net:/cvsroot/graph-tools co -P graph-tools
+        	 => creates the folder graph-tools/ inside b1/
 
 	When you're done, the b1 folder should look like this:
 
