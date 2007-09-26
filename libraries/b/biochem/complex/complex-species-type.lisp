@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.1 2007/09/25 17:54:04 amallavarapu Exp $
+;;; $Id: complex-species-type.lisp,v 1.2 2007/09/26 05:09:25 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -259,7 +259,7 @@
     (cons          (setf .id (gtools:canonical-graph 
                               (etypecase id
                                 (complex-graph  id)
-                                (cons           (make-complex-graph id))))))))
+                                (cons           (make-complex-graph id nil))))))))
 
 (defield complex-species-type.domains ()
   (remove-if-not #'symbolp (gtools:labelled-graph-labels .id)))
