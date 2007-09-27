@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.2 2007/09/26 05:09:25 amallavarapu Exp $
+;;; $Id: complex-species-type.lisp,v 1.3 2007/09/27 19:18:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -243,7 +243,7 @@
                      (equal (site-label-domain test) (site-label-domain glabel))
                      (value-test (site-label-value test) (site-label-value glabel))))
 
-               (t (error "TEST=~S" test)))))
+               (t (error "Unexpected test graph label:~S" test)))))
     #'complex-graph-label-test-predicate))
 
 ;;;
