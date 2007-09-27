@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.1 2007/09/25 17:54:04 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.2 2007/09/27 23:44:06 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -102,7 +102,6 @@
   (lhs 
    rhs)
   =>
-  {{(apply #'s+ .lhs) ->> (apply #'s+ .rhs)} :# object}
   (multiple-value-bind (graph-patterns rule-pattern rule-body)
       (parse-complex-reaction .lhs .rhs)
     (dolist (g graph-patterns)
@@ -114,6 +113,17 @@
   `[complex-reaction ',lhs ',rhs])
                   
 
+(defmacro complex-reaction (lhs rhs)
+  (let ((lhs-exp '#:lhs-exp)
+        (rhs-exp '#:rhs-exp))
+    `(let* ((*parse-complex-pattern* t)
+            (,lhs-exp ,lhs)
+            (*default-site-binding* (lhs-default-site-binding-function 
+                                     (extract-lhs-graphs ,lhs-exp)))
+            (,rhs-exp ,rhs))
+       [complex-reaction ,lhs-exp ,rhs-exp])))
+     
+     
 
        
 
