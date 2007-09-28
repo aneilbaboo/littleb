@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.2 2007/09/27 23:44:06 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.3 2007/09/28 04:38:49 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -85,10 +85,15 @@
               collect rhs-graphs))))
 
 (defcon complex-pattern (:notrace)
-  (id))
+  (id)
+  (setf .id (etypecase id
+              (complex-graph id)
+              (list          (gtools:canonical-graph (make-complex-graph id t))))))
 
 (defcon complex-pattern-match (:notrace)
-  (selector complex isomorphism))
+  (selector ; the pattern - can't use pattern as slot name because of lisa internal issues
+   complex
+   isomorphism))
 
 (defrule detect-complex-pattern-isomorphism
   (:and [complex-pattern ?pgraph]
@@ -110,9 +115,8 @@
 
 (defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
     (lhs rhs)
-  `[complex-reaction ',lhs ',rhs])
+  `[complex-reaction ,lhs ,rhs])
                   
-
 (defmacro complex-reaction (lhs rhs)
   (let ((lhs-exp '#:lhs-exp)
         (rhs-exp '#:rhs-exp))
@@ -178,17 +182,17 @@
    and returns a list of complexes with named domains:
    (((ksr.',(ksr 0) _ _)) ((mapk.',(mapk 0) _ _))) and
    (((ksr.a !1 _ _)(mapk.b !1 *)) ((mek.c _ :u)))"
-  (let ((ref-table (make-hash-table :test #'equal))
+  (let ((ref-table (make-hash-table :test #'equal)) ;; the ref table is 
         (domain-table (make-hash-table)))
     (labels ((new-domain-binding (d)
                (list d (incf (gethash d domain-table 0))))
-             (record-reference (r)
-               (setf (gethash r ref-table) t))
              (check-domain-reference (d)
-               (let ((f (fld-form-field d)))
-                 (unless (atom f) (error "Invalid reference ~S - expecting an atom." d))
-                 (when (gethash f ref-table) (error "Duplicate reference ~A." f)))
-               d)
+               (let ((r (fld-form-field d)))
+                 (unless (atom r) (error "Invalid reference ~S - expecting an atom." d))
+                 (if (gethash r ref-table) 
+                     (error "Duplicate reference ~A." r)
+                   (setf (gethash r ref-table) t))
+               d))
              (parse-domain (d)
                (cond
                 ((fld-form-p d) (check-domain-reference d))
