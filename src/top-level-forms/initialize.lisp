@@ -25,7 +25,7 @@
 ;;; File: initialize
 ;;; Description: 
 
-;;; $Id: initialize.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: initialize.lisp,v 1.2 2007/09/28 19:56:48 amallavarapu Exp $
 
 (in-package b)
 
@@ -44,6 +44,14 @@
         ;*print-pprint-dispatch* (copy-pprint-dispatch +top-level-pprint-dispatch-table+)
         ))
 
+(defun initialize-syntax ()
+  (initialize-readtable)
+  (initialize-object-expanders))
+
+(defun initialize-object-expanders ()
+  (setf *object-expanders* nil)
+  (add-object-expander 'cclass-expander most-negative-fixnum))
+
 (defun init (&optional (load-init-file-p t))
   "Sets the little b environment to the initial state, clears definitions in temporary packages,
    and loads the initialization file."
@@ -52,8 +60,8 @@
   (when *include-verbose*
     (format *standard-output* "~&Initializing system...~%"))
   
-  (initialize-readtable)
-  
+  (initialize-syntax)
+
   (system-database-initialization)
   
   ;; load init file

@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.2 2007/09/28 19:56:47 amallavarapu Exp $
 ;;;
 
 
@@ -74,7 +74,8 @@
    #:setf-name #:has-name
    #:object-form #:object-form-p #:object-form-object #:object-form-args #:object-form-body
    ;; helper macros and functions
-   #:define-object-expander #:object-form-p
+   #:add-object-expander #:remove-object-expander #:*object-expanders* #:copy-object-expanders
+   #:object-form-p
    #:object-form-object #:object-form-body #:object-form-args
    #:with-fields #:with-relevance #:global-value 
    #:cclassp #:conceptp #:propertyp #:property-bound-p #:field-bound-p

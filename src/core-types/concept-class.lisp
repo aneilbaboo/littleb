@@ -25,7 +25,7 @@
 ;;; File: concept-class
 ;;; Description: Defines the meta-class CONCEPT-CLASS. 
 
-;;; $Id: concept-class.lisp,v 1.1 2007/09/25 17:54:10 amallavarapu Exp $
+;;; $Id: concept-class.lisp,v 1.2 2007/09/28 19:56:47 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -273,7 +273,9 @@
 ;;; 
 (port:define-dspec-alias define-object-expander (name)
   `(defun ,name))
-(define-object-expander cclass-expander most-negative-fixnum (form env)
+
+(add-object-expander 'cclass-expander most-negative-fixnum)
+(defun cclass-expander (form env)
   (labels ((standard-class-p (o)
              (ifit (b-compute-form-type o env)
                  (subtypep it 'standard-class)))

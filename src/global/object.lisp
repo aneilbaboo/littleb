@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.2 2007/09/28 19:56:47 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -111,9 +111,22 @@ accessed with symbols like .field-name."
 (defvar *object-expanders* '()
   "A cons (FN-NAME . PRIORITY)")       
 
-(defmacro define-object-expander (name priority (form &optional environment)
-                                       &body body)
-  "The expander should examine FORM and return NIL or multiple values:
+;;;; (defmacro define-object-expander (name priority (form &optional environment)
+;;;;                                        &body body)
+;;;;  
+;;;;   (let ((priority (or priority 0))
+;;;;         (environment (or environment '#:env)))
+;;;;     `(prog1 (defun ,name (,form ,environment)
+;;;;               (declare (ignorable ,environment))
+;;;;               ,@body)
+;;;;        (setf *object-expanders*
+;;;;              (add-object-expander ',name ,priority
+;;;;                                   (remove ',name *object-expanders* :key #'car))))))
+
+(defun add-object-expander (expander &optional (priority 0))
+ "Adds an expander, to the list of object expanders consulted by the OBJECT expander macro.
+  EXPANDER: A function (symbol or fn object) of two arguments: (FORM ENVIRONMENT)
+     which returns multiple values:
      ID-FORM: a form which evaluates the arguments of FORM, called the IDENTITY
      KEY-CONSTRUCTOR: a function which generates a key from the IDENTITY
      OBJECT-CONSTRUCTOR: a function which creates an object from the IDENTITY
@@ -123,26 +136,20 @@ accessed with symbols like .field-name."
         PRIORITY is a number (or NIL, interpreted as 0) which like set-pprint-dispatch,
      is used to prioritize expanders.  The highest priority & most recently defined
      expander which returns a value is used."
-  (let ((priority (or priority 0))
-        (environment (or environment '#:env)))
-    `(prog1 (defun ,name (,form ,environment)
-              (declare (ignorable ,environment))
-              ,@body)
-       (setf *object-expanders*
-             (add-object-expander ',name ,priority
-                                  (remove ',name *object-expanders* :key #'car))))))
+  (labels ((add-it (expanders)
+             (let ((head (first expanders)))
+               (cond
+                ((or (null head) 
+                     (>= priority (cdr head)))
+                 (list* (cons expander priority) expanders))
+                (t
+                 (list* head (add-it (rest expanders))))))))
+    (setf *object-expanders*
+          (add-it (remove expander *object-expanders* :key #'car)))))
+    
 
-(defun add-object-expander (name priority expanders)
-  (let ((head (first expanders)))
-    (cond
-     ((or (null head) 
-          (>= priority (cdr head)))
-      (list* (cons name priority) expanders))
-     (t
-      (list* head (add-object-expander name priority (rest expanders)))))))
-
-(defun remove-object-expander (name)
-  (setf *object-expanders* (remove name *object-expanders* :key #'first)))
+(defun remove-object-expander (expander)
+  (setf *object-expanders* (remove expander *object-expanders* :key #'first)))
 
 (defmacro internal-kb-access-object (usedb  bindings
                                             key-form

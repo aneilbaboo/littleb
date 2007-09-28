@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.3 2007/09/28 04:38:49 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.4 2007/09/28 19:56:42 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -115,8 +115,8 @@
 
 (defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
     (lhs rhs)
-  `[complex-reaction ,lhs ,rhs])
-                  
+  `(complex-reaction ,lhs ,rhs))
+
 (defmacro complex-reaction (lhs rhs)
   (let ((lhs-exp '#:lhs-exp)
         (rhs-exp '#:rhs-exp))
