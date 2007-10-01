@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.4 2007/09/28 19:56:42 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.5 2007/10/01 18:02:36 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -127,7 +127,17 @@
             (,rhs-exp ,rhs))
        [complex-reaction ,lhs-exp ,rhs-exp])))
      
-     
+(defun graphs-in-expression (x)
+  (etypecase x
+    (complex-graph (list x))
+    (list          (mapcar (lambda (elt) 
+                             (cond
+                              ((localization-p elt) (localization.type elt))
+                              ((complex-graph-p elt) elt)
+                              (t (b-error "Invalid input to complex-reaction ~S" elt))))
+                           x))
+    (sum-expression (graphs-in-expression x.vars))))
+                           
 
        
 
