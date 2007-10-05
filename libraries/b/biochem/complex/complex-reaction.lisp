@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.5 2007/10/01 18:02:36 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.6 2007/10/05 22:53:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -66,37 +66,30 @@
         ;; and return the distinct complexes resulting from this operation:
         (gtools:unconnected-subgraphs rhs-super-graph)))))
 
-(defun compute-reaction-output (lhs rhs lhs-graphs)
-  (multiple-value-bind (lhs-patterns rhs-patterns new-rhs-graph connects disconnects label-changes remove)
-      (parse-complex-reaction2 lhs rhs)
-    (declare (ignorable rhs-patterns))
-    (let* ((lhs-graphs   (mapcar #'make-complex-graph lhs-graphs))
-           (isomorphisms (apply #'mapcar #'vector
-                                (mapcar #'gtools:find-subgraph-isomorphisms 
-                                        lhs-patterns
-                                        lhs-graphs))))
-        (loop for isoset in isomorphisms
-              for rhs-graphs = (compute-rhs-graphs (apply #'vector new-rhs-graph lhs-graphs)
-                                                   isoset
-                                                   connects
-                                                   disconnects 
-                                                   label-changes 
-                                                   remove)
-              collect rhs-graphs))))
+(defcon reference-pattern (:notrace)
+  "Reference patterns are created when reactions are defined; each domain has a reference number indicating its identity in the context of a complex-reaction"
+  (id))
 
-(defcon complex-pattern (:notrace)
+  
+(defmethod print-concept ((o reference-pattern) &optional stream)
+  (let ((graph     o.id))
+    (print-complex-graph graph stream "[" "]")))
+
+(defcon selector-pattern (:notrace)
+  "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
   (id)
   (setf .id (etypecase id
               (complex-graph id)
               (list          (gtools:canonical-graph (make-complex-graph id t))))))
 
 (defcon complex-pattern-match (:notrace)
-  (selector ; the pattern - can't use pattern as slot name because of lisa internal issues
+  (selector ; graph representing the selector pattern
+            ; note: can't use :pattern as field name because of lisa internal issues
    complex
    isomorphism))
 
 (defrule detect-complex-pattern-isomorphism
-  (:and [complex-pattern ?pgraph]
+  (:and [selector-pattern ?pgraph]
         [complex-species-type ?sgraph])
   =>
   (dolist (iso (gtools:find-subgraph-isomorphisms ?pgraph ?sgraph))
@@ -115,51 +108,37 @@
 
 (defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
     (lhs rhs)
-  `(complex-reaction ,lhs ,rhs))
+  (let ((lhsvar '#:lhs)
+        (rhsvar '#:rhs))
+  `(with-complex-reaction-parts ((,lhsvar ,lhs) (,rhsvar ,rhs))
+     (values ,lhsvar ,rhsvar))))
+     [complex-reaction ,lhsvar ,rhsvar])))
 
-(defmacro complex-reaction (lhs rhs)
-  (let ((lhs-exp '#:lhs-exp)
-        (rhs-exp '#:rhs-exp))
-    `(let* ((*parse-complex-pattern* t)
-            (,lhs-exp ,lhs)
+(defmacro with-complex-reaction-parts (((lhs lhs-form)
+                                        (rhs rhs-form))
+                                       &body body)
+  `(in-reference-pattern-mode
+     (let* ((,lhs {,lhs-form})
             (*default-site-binding* (lhs-default-site-binding-function 
-                                     (extract-lhs-graphs ,lhs-exp)))
-            (,rhs-exp ,rhs))
-       [complex-reaction ,lhs-exp ,rhs-exp])))
+                                     (graphs-in-expression ,lhs))))
+       (reset-reference-labels) ; resets counters for automatically generated domain reference labels
+       (let ((,rhs {,rhs-form}))
+         (declare (ignorable ,rhs))
+         ,@body))))
      
 (defun graphs-in-expression (x)
   (etypecase x
-    (complex-graph (list x))
     (list          (mapcar (lambda (elt) 
-                             (cond
-                              ((localization-p elt) (localization.type elt))
-                              ((complex-graph-p elt) elt)
-                              (t (b-error "Invalid input to complex-reaction ~S" elt))))
+                             (typecase elt
+                              (localization elt.type.id)
+                              (reference-pattern elt.id)
+                              (t (b-error "Invalid input to complex-reaction: ~S" elt))))
                            x))
-    (sum-expression (graphs-in-expression x.vars))))
+    (sum-expression (graphs-in-expression x.vars))
+    (t              (graphs-in-expression (list x)))))
                            
 
        
-
-;;;; (defcon reversible-complex-reaction () 
-;;;;   (lhs rhs)
-;;;;   {.rxns := (order rxns)})
-
-;;;; (defun make-reversible-complex-reaction (lhs rhs)
-;;;;   [reversible-complex-reaction (list [complex-reaction lhs rhs]
-;;;;                                      [complex-reaction rhs lhs])])
-
-
-(defun plus-op-p (x)
-  (and (consp x)
-       (eq (first x) '+op)))
-
-(defun mult-op-p (x)
-  (and (consp x)
-       (eq (first x) '*op)))
-
-(defun math-op-p (x)
-  (or (plus-op x) (mult-op x)))
 
 
 (defun unpack-complex-reaction-argument (x)
@@ -361,7 +340,7 @@
                       (loop for sl in lhs-csites
                             do (setf (gethash sl rev-table) cnxn-var))
                       cnxn-var))))))
-            (funcall 'non-pattern-default-site-binding domain site-num))))))))
+            (funcall 'non-pattern-default-site-binding domain site-num binding))))))))
                 
 (defun compute-rhs-new-graph (rhs-graphs lhs-verticies)
   (let ((rhs-super-graph (gtools:merge-graphs rhs-graphs)))
@@ -407,7 +386,7 @@
        (*default-site-binding* (lhs-default-site-binding-function lhs-patterns))
        ((rhs-patterns rhs-cnxns)
         (parse-complex-reaction-single-side-pattern 
-         (pattern-from-complex-reaction-argument rhs))); (subst :default '* rhs))))
+         (pattern-from-complex-reaction-argument rhs)))
        (created-cnxns  (compute-connection-difference rhs-cnxns lhs-cnxns))
        (lost-cnxns     (compute-connection-difference lhs-cnxns rhs-cnxns))
        (lhs-verticies  (graph-list-labels lhs-patterns))
@@ -426,15 +405,9 @@
              (map-named-vertex->graph-index (seq)
                (map (type-of seq) #'named-vertex->graph-index seq))
              (lost-verticies ()
-;;;;                (loop with ht = (make-hash-table)
-;;;;                      for (g . vert) in 
               (map-named-vertex->graph-index
                 (compute-vertex-set-difference (coerce lhs-verticies 'list)
                                                (coerce rhs-verticies 'list)))))
-;;;;                      do (push vert (gethash g ht))
-;;;;                      finally return (loop for verts being the hash-value of ht
-;;;;                                           for g being the hash-key of ht
-;;;;                                           collect (list* g verts)))))
 
       (values 
        (mapcar #'graph-remove-reference-labels lhs-patterns) ;; lhs-patterns
@@ -488,3 +461,48 @@
                                                                       ',disconnections
                                                                       ',relabels
                                                                       ',deletions))]))))
+
+;;;;
+;;;;
+;;;; CODE FOR TESTING AND MISC JUNK CODE:
+;;;;
+;;;;
+
+(defun compute-reaction-output (lhs rhs lhs-graphs)
+  "For testing purposes: Given lhs and rhs pattern graphs, and a set of lhs-graphs, computes the rhs graph"
+  (multiple-value-bind (lhs-patterns rhs-patterns new-rhs-graph connects disconnects label-changes remove)
+      (parse-complex-reaction2 lhs rhs)
+    (declare (ignorable rhs-patterns))
+    (let* ((lhs-graphs   (mapcar #'make-complex-graph lhs-graphs))
+           (isomorphisms (apply #'mapcar #'vector
+                                (mapcar #'gtools:find-subgraph-isomorphisms 
+                                        lhs-patterns
+                                        lhs-graphs))))
+        (loop for isoset in isomorphisms
+              for rhs-graphs = (compute-rhs-graphs (apply #'vector new-rhs-graph lhs-graphs)
+                                                   isoset
+                                                   connects
+                                                   disconnects 
+                                                   label-changes 
+                                                   remove)
+              collect rhs-graphs))))
+
+;;;; (defcon reversible-complex-reaction () 
+;;;;   (lhs rhs)
+;;;;   {.rxns := (order rxns)})
+
+;;;; (defun make-reversible-complex-reaction (lhs rhs)
+;;;;   [reversible-complex-reaction (list [complex-reaction lhs rhs]
+;;;;                                      [complex-reaction rhs lhs])])
+
+
+;;;; (defun plus-op-p (x)
+;;;;   (and (consp x)
+;;;;        (eq (first x) '+op)))
+
+;;;; (defun mult-op-p (x)
+;;;;   (and (consp x)
+;;;;        (eq (first x) '*op)))
+
+;;;; (defun math-op-p (x)
+;;;;   (or (plus-op x) (mult-op x)))
