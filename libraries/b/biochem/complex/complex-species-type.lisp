@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.6 2007/10/05 22:53:30 amallavarapu Exp $
+;;; $Id: complex-species-type.lisp,v 1.7 2007/10/06 13:45:11 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -675,9 +675,16 @@
    (t
     `.dname.,(make-reference-label dname))))
 
+(defun make-az-string (n)
+  (if (< n 26)
+      (string (code-char (+ #.(char-code #\A) n)))
+    (concatenate 'string 
+                 (make-az-string (1- (truncate (/ n 26))))
+                 (make-az-string (rem n 26)))))
+    
 (defun make-reference-label (dname)
-  (labels ((gen-ref-label (&optional (n 1))
-             (let ((newreflab (intern (format nil "!~A" n) :keyword)))
+  (labels ((gen-ref-label (&optional (n 0))
+             (let ((newreflab (intern (make-az-string n) :keyword)))
                (cond
                 ((find newreflab (gethash nil
                                           *reference-labels*))

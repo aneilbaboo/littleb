@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.6 2007/10/05 22:53:30 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.7 2007/10/06 13:45:11 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -32,8 +32,15 @@
 
 (include (b/math @folder/complex-species-type))
 
-(include-declaration :expose-symbols '(<-> ->))
+(include-declaration :expose-symbols '(<<->> ->>))
 
+(defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
+    (lhs rhs)
+  (let ((lhsvar '#:lhs)
+        (rhsvar '#:rhs))
+  `(with-complex-reaction-parts ((,lhsvar ,lhs) (,rhsvar ,rhs))
+;     (values ,lhsvar ,rhsvar))))
+     [complex-reaction ,lhsvar ,rhsvar])))
 
 (defun compute-rhs-graphs (lhs-graphs isomorphisms connects disconnects relabels remove)
   (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))
@@ -101,18 +108,10 @@
    rhs)
   =>
   (multiple-value-bind (graph-patterns rule-pattern rule-body)
-      (parse-complex-reaction .lhs .rhs)
+      (parse-complex-reaction (graphs-in-expression .lhs) (graphs-in-expression .rhs))
     (dolist (g graph-patterns)
-      [complex-pattern g])
+      [selector-pattern g])
     (add-rule rule-pattern rule-body)))
-
-(defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
-    (lhs rhs)
-  (let ((lhsvar '#:lhs)
-        (rhsvar '#:rhs))
-  `(with-complex-reaction-parts ((,lhsvar ,lhs) (,rhsvar ,rhs))
-     (values ,lhsvar ,rhsvar))))
-     [complex-reaction ,lhsvar ,rhsvar])))
 
 (defmacro with-complex-reaction-parts (((lhs lhs-form)
                                         (rhs rhs-form))
@@ -378,11 +377,10 @@
   (apply #'concatenate 'simple-vector (mapcar #'gtools:labelled-graph-labels glist)))
 
 (defun parse-complex-reaction2 (lhs rhs)
-  "On input, lhs and rhs are patterns (as returned from pattern-from-complex-reaction-argument)"
+  "On input, lhs and rhs are a sum-expression of reference-patterns"
   (mutils:let+
       (((lhs-patterns lhs-cnxns) 
-        (parse-complex-reaction-single-side-pattern
-         (pattern-from-complex-reaction-argument lhs)))
+        (parse-complex-reaction-single-side-pattern lhs))
        (*default-site-binding* (lhs-default-site-binding-function lhs-patterns))
        ((rhs-patterns rhs-cnxns)
         (parse-complex-reaction-single-side-pattern 
@@ -419,7 +417,7 @@
                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
                label-changes)
        (lost-verticies)))))
-            
+
 (defun make-complexes (graphs)
   (mapcar (lambda (g)
             [complex-species-type (gtools:canonical-graph g)])
@@ -496,13 +494,57 @@
 ;;;;                                      [complex-reaction rhs lhs])])
 
 
-;;;; (defun plus-op-p (x)
-;;;;   (and (consp x)
-;;;;        (eq (first x) '+op)))
+(defun plus-op-p (x)
+  (and (consp x)
+       (eq (first x) '+op)))
 
-;;;; (defun mult-op-p (x)
-;;;;   (and (consp x)
-;;;;        (eq (first x) '*op)))
+(defun mult-op-p (x)
+  (and (consp x)
+       (eq (first x) '*op)))
 
-;;;; (defun math-op-p (x)
-;;;;   (or (plus-op x) (mult-op x)))
+(defun math-op-p (x)
+  (or (plus-op x) (mult-op x)))
+
+;;;; OLD PARSE-COMPLEX-REACTION2
+;;;; (defun parse-complex-reaction2 (lhs rhs)
+;;;;   "On input, lhs and rhs are patterns (as returned from pattern-from-complex-reaction-argument)"
+;;;;   (mutils:let+
+;;;;       (((lhs-patterns lhs-cnxns) 
+;;;;         (parse-complex-reaction-single-side-pattern lhs))
+;;;;        (*default-site-binding* (lhs-default-site-binding-function lhs-patterns))
+;;;;        ((rhs-patterns rhs-cnxns)
+;;;;         (parse-complex-reaction-single-side-pattern 
+;;;;          (pattern-from-complex-reaction-argument rhs)))
+;;;;        (created-cnxns  (compute-connection-difference rhs-cnxns lhs-cnxns))
+;;;;        (lost-cnxns     (compute-connection-difference lhs-cnxns rhs-cnxns))
+;;;;        (lhs-verticies  (graph-list-labels lhs-patterns))
+;;;;        (rhs-verticies  (graph-list-labels rhs-patterns))
+;;;;        (rhs-new-graph  (compute-rhs-new-graph rhs-patterns lhs-verticies))
+;;;;        (label-changes    (compute-label-changes lhs-verticies rhs-verticies)))
+;;;;     (declare (ignorable rhs-patterns rhs-noffsets))
+;;;;     (labels ((named-vertex->graph-index (label)
+;;;;                ;; converts a named-vertex to a graph index (GNUM . VINDEX)
+;;;;                (or (loop for graph in (list* rhs-new-graph lhs-patterns)
+;;;;                          for gindex = 0 then (1+ gindex)
+;;;;                          for vindex = (position label (gtools:labelled-graph-labels graph) 
+;;;;                                                 :test #'named-vertex=)
+;;;;                          when vindex return (cons gindex vindex))
+;;;;                    (error "BUG: LABEL ~S not FOUND" label)))
+;;;;              (map-named-vertex->graph-index (seq)
+;;;;                (map (type-of seq) #'named-vertex->graph-index seq))
+;;;;              (lost-verticies ()
+;;;;               (map-named-vertex->graph-index
+;;;;                 (compute-vertex-set-difference (coerce lhs-verticies 'list)
+;;;;                                                (coerce rhs-verticies 'list)))))
+
+;;;;       (values 
+;;;;        (mapcar #'graph-remove-reference-labels lhs-patterns) ;; lhs-patterns
+;;;;        (mapcar #'graph-remove-reference-labels rhs-patterns) ;; rhs-patterns
+;;;;        (graph-remove-reference-labels rhs-new-graph) ;; new rhs graph new components
+;;;;        (mapcar #'map-named-vertex->graph-index created-cnxns) ;; created cnxns
+;;;;        (mapcar #'map-named-vertex->graph-index lost-cnxns) ;; lost cnxns
+;;;;        (mapcar (lambda (lchange)                           ;; label changes
+;;;;                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
+;;;;                label-changes)
+;;;;        (lost-verticies)))))
+;;;;             
