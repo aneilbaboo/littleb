@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.7 2007/10/06 13:45:11 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.8 2007/10/07 01:07:44 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -106,12 +106,31 @@
 (defcon complex-reaction ()
   (lhs 
    rhs)
+  (setf .lhs (canonicalize-complex-reaction-argument lhs)
+        .rhs (canonicalize-complex-reaction-argument rhs))
   =>
   (multiple-value-bind (graph-patterns rule-pattern rule-body)
       (parse-complex-reaction (graphs-in-expression .lhs) (graphs-in-expression .rhs))
     (dolist (g graph-patterns)
       [selector-pattern g])
     (add-rule rule-pattern rule-body)))
+
+(defun canonicalize-complex-reaction-argument (x)
+  (labels ((canonicalize-object (x) 
+             (etypecase x 
+               (sum-expression (apply #'s+
+                                      x.(map-terms 
+                                         (lambda (o c) 
+                                           (unless (= 1 c) 
+                                             (b-error "Coefficient invalid in ~A ~S as complex reaction argument"
+                                                      c o))
+                                            (canonicalize-object o)))))
+               (list           (apply #'s+ (mapcar #'canonicalize-object x)))
+               (localization   [localization (canonicalize-object x.reactants) x.sublocation])
+               (domain         (eval `[,x.name]))
+               (complex-species-type [reference-pattern x.id])
+               (reference-pattern x))))
+    {(canonicalize-object x)}))
 
 (defmacro with-complex-reaction-parts (((lhs lhs-form)
                                         (rhs rhs-form))
@@ -137,33 +156,6 @@
     (t              (graphs-in-expression (list x)))))
                            
 
-       
-
-
-(defun unpack-complex-reaction-argument (x)
-  "Returns a list of object forms"
-  (cond
-   ((null x) nil)
-   ((math-form-p x)
-    (unpack-complex-reaction-argument (math-form-expand x)))
-
-   ((mult-op-p x)
-    (let ((num (second x))
-          (obj (third x)))
-      (unless (and (numberp num) (plusp num)
-                   (complex-form-p obj))
-        (error "Expecting NUMBER OBJECT-PATTERN"))
-      (unpack-complex-reaction-argument `(+op ,@(make-list num :initial-element obj)))))
-   ((plus-op-p x)
-    (mapcan #'unpack-complex-reaction-argument (rest x)))
-   ((symbolp x)
-    (unpack-complex-reaction-argument `([[,x]])))
-   ((object-form-p x)
-    (if (object-form-p (object-form-object x))
-        `(,x)
-      `([,x])))
-   ((listp x)
-    (mapcan #'unpack-complex-reaction-argument x))))
 
 (defun pattern-from-complex-reaction-argument (x)
   "Takes an expression like {ksr + mapk} or {[[ksr.a !1 _][mapk.b !1 *]] + [mek.c _]}
@@ -494,16 +486,16 @@
 ;;;;                                      [complex-reaction rhs lhs])])
 
 
-(defun plus-op-p (x)
-  (and (consp x)
-       (eq (first x) '+op)))
+;;;; (defun plus-op-p (x)
+;;;;   (and (consp x)
+;;;;        (eq (first x) '+op)))
 
-(defun mult-op-p (x)
-  (and (consp x)
-       (eq (first x) '*op)))
+;;;; (defun mult-op-p (x)
+;;;;   (and (consp x)
+;;;;        (eq (first x) '*op)))
 
-(defun math-op-p (x)
-  (or (plus-op x) (mult-op x)))
+;;;; (defun math-op-p (x)
+;;;;   (or (plus-op x) (mult-op x)))
 
 ;;;; OLD PARSE-COMPLEX-REACTION2
 ;;;; (defun parse-complex-reaction2 (lhs rhs)
@@ -548,3 +540,33 @@
 ;;;;                label-changes)
 ;;;;        (lost-verticies)))))
 ;;;;             
+
+
+
+;;;;        
+
+
+;;;; (defun unpack-complex-reaction-argument (x)
+;;;;   "Returns a list of object forms"
+;;;;   (cond
+;;;;    ((null x) nil)
+;;;;    ((math-form-p x)
+;;;;     (unpack-complex-reaction-argument (math-form-expand x)))
+
+;;;;    ((mult-op-p x)
+;;;;     (let ((num (second x))
+;;;;           (obj (third x)))
+;;;;       (unless (and (numberp num) (plusp num)
+;;;;                    (complex-form-p obj))
+;;;;         (error "Expecting NUMBER OBJECT-PATTERN"))
+;;;;       (unpack-complex-reaction-argument `(+op ,@(make-list num :initial-element obj)))))
+;;;;    ((plus-op-p x)
+;;;;     (mapcan #'unpack-complex-reaction-argument (rest x)))
+;;;;    ((symbolp x)
+;;;;     (unpack-complex-reaction-argument `([[,x]])))
+;;;;    ((object-form-p x)
+;;;;     (if (object-form-p (object-form-object x))
+;;;;         `(,x)
+;;;;       `([,x])))
+;;;;    ((listp x)
+;;;;     (mapcan #'unpack-complex-reaction-argument x))))

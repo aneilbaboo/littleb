@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.7 2007/10/06 13:45:11 amallavarapu Exp $
+;;; $Id: complex-species-type.lisp,v 1.8 2007/10/07 01:07:44 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -56,12 +56,18 @@
 ;;; DOMAIN concept - main role is to hold sites
 ;;;
 (defcon domain ()
-  (&optional (name := *name*)))
+  (&optional (name := *name*)
+   &property (location-class := compartment)))
 
 (defprop domain.sites ()
   (map 'vector (lambda (sspec)
                  (apply #'make-site-info (if (listp sspec) sspec (list sspec))))
        value))
+
+(defield domain.site (x)
+  (etypecase x
+    (integer (svref .sites x))
+    (symbol  (find x .sites :key #'site-info-symbol))))
 
 (defgeneric domain-sites (d)
   (:method ((d symbol)) (|DOMAIN.SITES| (eval d)))
@@ -86,13 +92,18 @@
             d.documentation)))
 
 (port:define-dspec-form-parser defdomain (name)
-  `(defdomain ,name))
-(defmacro defdomain (symbol &body def)
-  (mutils:let+ (((doc sites) (if (stringp #1=(first (last def))) (values #1# (butlast def))
+  (if (consp name) `(defdomain ,(first name))
+    `(defdomain ,name)))
+(defmacro defdomain (name-lclass &body def)
+  (mutils:let+ (((symbol lclass) (etypecase name-lclass
+                                   (symbol (values name-lclass 'compartment))
+                                   (cons   (values (first name-lclass) (second name-lclass)))))
+                ((doc sites) (if (stringp #1=(first (last def))) (values #1# (butlast def))
                                (values nil def))))
     `(port:dspec (defdomain ,symbol)
        (define ,symbol [[domain] 
-                       :sites ',sites
+                        :location-class ,lclass
+                        :sites ',sites
                        ,@(if doc `(:documentation ,doc))])
        ',symbol)))
 
@@ -112,20 +123,21 @@
 (defun site-info-symbol (s) (first (site-info-labels s)))
 
 (defstruct (connector-site-info (:include site-info))
-  type)
+  type sublocation)
 
 (defstruct (value-site-info (:include site-info))
   type default)
 
 (defun member-type-p (x) (and (consp x) (eq (first x) 'member)))
 
-(defun make-site-info (labels &rest args &key value default connector)
+(defun make-site-info (labels &rest args &key value default connector sublocation)
+  (declare (ignorable args))
   (let* ((labels    (if (listp labels) labels (list labels)))   
          (symbol    (first labels))
          (xlabels   (rest labels)) ; extra labels
          (defsite   (get symbol 'site-info)) ; existing defined site
          (connector (or connector (not (or value default))))
-         (value (or value (not connector)))
+         (value     (or value (and (not connector) (not sublocation))))
          (default    (or default 
                         (and (member-type-p value)
                              (second value)))))
@@ -152,9 +164,9 @@
     
      (value (make-value-site-info :labels labels :type value :default default))
 
-     (connector (make-connector-site-info :labels 
-                                               labels :type connector))
-     (t (error "BUG: this should not execute")))))
+     (t     (make-connector-site-info :labels labels
+                                      :type connector
+                                      :sublocation sublocation)))))
 
 (defun define-site (symbol &rest keys &key value default connector)
     (setf (get symbol 'site-info) (apply #'make-site-info symbol keys)))
