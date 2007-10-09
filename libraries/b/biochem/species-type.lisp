@@ -25,7 +25,7 @@
 ;;; File: species-type
 ;;; Description: Defines the species-type concept. 
 
-;;; $Id: species-type.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
@@ -41,7 +41,13 @@
 
 (defield species-type.required (subloc)
   "Returns an object which represents a requirement for a species in a relative location.  SUBLOC is a keyword which names a field of a location which points to another location."
-  (has-name object.(required subloc) [location-requirement object subloc]))
+  (b-warn "~S.(REQUIRED ~S) is deprecated: use ~0@*{~S @ ~S}" object subloc)
+  {object @ subloc})
+
+;  (has-name object.(required subloc) [location-requirement object subloc]))
+
+(defield species-type.@ (subloc)
+  {object @ subloc})
 
 (defield species-type.in (loc)
   "Returns the species of this type which exists in location LOC, or NIL"

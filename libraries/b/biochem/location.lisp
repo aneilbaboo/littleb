@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -108,6 +108,28 @@
          (or (null rest)
              (apply #'location-class-is-sublocation (find-class fi.type) rest)))))
 
+
+(define-function location-class-sublocations (lclass)
+  (remove-if-not (lambda (fi)
+                   (subtypep (if (mutils:allow-type-p fi.type) 
+                                 (mutils:allow-type-type fi.type)
+                               fi.type)
+                             'location))
+                 lclass._fieldinfos))
+
+(define-function containing-location-class (&rest loc-classes)
+  "Given one or more location-class objects, returns the one which has all of the others as sublocations"
+  (reduce (lambda (x y)
+            (let ((xsubloctypes (mapcar ?.type (location-class-sublocations x)))
+                  (ysubloctypes (mapcar ?.type (location-class-sublocations y))))
+              (cond
+               ((eq x y) x)
+               ((subtypep (class-name y) `(or ,@xsubloctypes)) x)
+               ((subtypep (class-name x) `(or ,@ysubloctypes)) y)
+               (t (b-error "Locations of type ~S and ~S cannot be associated with each other"
+                           x y)))))
+          loc-classes))
+              
 ;;;
 ;;; LOCATION-REQUIREMENT - represents a requirement for a species-type in a sublocation of location
 ;;;

@@ -12,8 +12,8 @@
 
 
 ;;; REACTIONS
-(define g6pi-rxn-fwd {g6pi + g6p -> g6pi + f6p}] ; shorthand for [reaction-type {g6pi + g6p} {g6pi + f6p}])
-(define g6pi-rxn-rev {g6pi + f6p -> g6pi + g6p}] ; shorthand for [reaction-type {g6pi + f6p} {g6pi + g6p}])
+(define g6pi-rxn-fwd {g6pi + g6p -> g6pi + f6p}) ; shorthand for [reaction-type {g6pi + g6p} {g6pi + f6p}])
+(define g6pi-rxn-rev {g6pi + f6p -> g6pi + g6p}) ; shorthand for [reaction-type {g6pi + f6p} {g6pi + g6p}])
 
 
 ;;; ASSUMPTIONS

@@ -55,7 +55,6 @@ E.g.,  (setf-name P F) is syntactic sugar for (let ((Z (has-name P F)))
 (defun make-name (o) 
   (typecase o
     (atom `(quote ,o))
-    (math-form (funcall 'math-name-form o))
     (cons (make-cons-name o))))
 
 (defun make-cons-name (o)
@@ -80,27 +79,7 @@ E.g.,  (setf-name P F) is syntactic sugar for (let ((Z (has-name P F)))
    ((eq op 'apply) (apply #'list* args))
    (t             (list* op args))))
 
-
-(defstruct math-name body)
-(defun math-name-form (o)
-  `(make-math-name
-    ,@(mapcar (lambda (x)
-                (cond
-                 ((operator x) `(quote ,x))
-                 (t            x)))
-              (math-form-code o))))
-
-(defmethod print-math-expression ((o math-name) &optional (stream *standard-output*) outer)
-  (let* ((body (math-name-body o))
-         (high-op (first (sort #'> (remove-if-not #'operator body) :key #'operator-precedence)))
-         (braces-required-p (braces-required-p outer high-op))
-         (*print-context* t))
-  (pprint-logical-block (stream 
-                         (math-form-body o) 
-                         :prefix (if braces-required-p "{" "")
-                         :suffix (if braces-required-p "}" ""))
-    (loop do (pprint-exit-if-list-exhausted)
-             (print-math-expression )))))      
+ 
 
 
 (defmacro has-name (name rhs &environment env)

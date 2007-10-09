@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.8 2007/10/07 01:07:44 amallavarapu Exp $
+;;; $Id: complex-reaction.lisp,v 1.9 2007/10/09 18:26:01 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -75,9 +75,15 @@
 
 (defcon reference-pattern (:notrace)
   "Reference patterns are created when reactions are defined; each domain has a reference number indicating its identity in the context of a complex-reaction"
-  (id))
+  (id)
+  (setf .id (ensure-canonical-complex-graph id t)))
 
-  
+(defun ensure-canonical-complex-graph (cdescr &optional patternp)
+  (gtools:canonical-graph
+   (etypecase cdescr
+     (list (make-complex-graph  cdescr patternp))
+     (complex-graph  cdescr))))
+
 (defmethod print-concept ((o reference-pattern) &optional stream)
   (let ((graph     o.id))
     (print-complex-graph graph stream "[" "]")))
@@ -85,9 +91,7 @@
 (defcon selector-pattern (:notrace)
   "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
   (id)
-  (setf .id (etypecase id
-              (complex-graph id)
-              (list          (gtools:canonical-graph (make-complex-graph id t))))))
+  (setf .id (ensure-canonical-complex-graph id t)))
 
 (defcon complex-pattern-match (:notrace)
   (selector ; graph representing the selector pattern
@@ -107,10 +111,13 @@
   (lhs 
    rhs)
   (setf .lhs (canonicalize-complex-reaction-argument lhs)
-        .rhs (canonicalize-complex-reaction-argument rhs))
+        .rhs (canonicalize-complex-reaction-argument rhs)))
+
+(defrule complex-reaction-exists 
+  [complex-reaction ?lhs ?rhs]
   =>
   (multiple-value-bind (graph-patterns rule-pattern rule-body)
-      (parse-complex-reaction (graphs-in-expression .lhs) (graphs-in-expression .rhs))
+      (parse-complex-reaction ?lhs ?rhs)
     (dolist (g graph-patterns)
       [selector-pattern g])
     (add-rule rule-pattern rule-body)))
@@ -240,19 +247,7 @@
                           (site-label-value ysite)))
         collect ysite))
 
-(defun unreference-graph-vertex-label (x)
-  "Removes the field label from a graph label - 
-   e.g., KSR.A -> KSR and (0 KSR.A) -> (0 KSR)"
-  (cond
-   ((fld-form-p x) (fld-form-object x))
-   ((consp x)      (list* (first x) (fld-form-object (second x))
-                          (cddr x)))
-   (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
 
-(defun unreference-graph-labels (g)
-  (map-into (gtools:labelled-graph-labels g)
-            #'unreference-graph-vertex-label)
-  g)
 
 (defun automatic-connection-var-p (x)
   (and (connection-var-p x)

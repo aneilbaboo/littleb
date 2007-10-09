@@ -25,14 +25,14 @@
 ;;; File: token-reader
 ;;; Description: 
 
-;;; $Id: token-reader.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: token-reader.lisp,v 1.2 2007/10/09 18:26:03 amallavarapu Exp $
 (in-package b)
 
 (defun token-reader (stream char)
   (let* ((tok  (read-token-string (prepend-stream (make-string 1 :initial-element char) stream)
                                   #'dot-or-terminator-p))
          (next (peek-char nil stream nil nil t))
-         (head (with-standard-readtable (read-from-string tok))))
+         (head (with-standard-readtable (carefully-read-from-string-representing-stream tok stream))))
     (labels ((float-from-string (str stream) ;; reads a float from a string
                (read-with-fields (with-standard-readtable 
                                    (read-from-string str)) stream))
@@ -46,6 +46,10 @@
        ((maybe-float?)           (read-float-or-fld-form head tok stream))
        (t                        (read-with-fields head stream))))))
       
+(defun carefully-read-from-string-representing-stream (str stream)
+  (handler-case (read-from-string str)
+    (error (e) (b-reader-error stream "~A" e))))
+
 (defun read-token-string (stream terminator-char-pred)
   (let+ (((token-str colon-pos) (collect-token-chars stream terminator-char-pred)))
     (resolve-token-package token-str colon-pos)))

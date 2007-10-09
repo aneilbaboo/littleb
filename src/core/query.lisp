@@ -44,7 +44,7 @@
 ;;;              (query [x ?a ?b]) == (query (?a ?b) [x ?a ?b]) ; pattern vars in order encountered
 ;;;              
 
-;;; $Id: query.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: query.lisp,v 1.2 2007/10/09 18:26:02 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -94,6 +94,7 @@
       do (lisa:assert-instance obj)
 
       ;; now, check all of the properties of this object...
+      when (conceptp obj)
       do  (loop for prop being the hash-value in (concept-properties obj)
            when (typep prop rtype-expr) ;; if this property matches type...
            do (lisa:assert-instance prop))))) ;; assert it

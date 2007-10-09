@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
@@ -57,10 +57,21 @@
     (print-math-expression rt stream)))
 
 (defcon localization (:notrace)
-  (reactants location-class)
-  =>
-  {{.reactants @ .location-class} :# object})
+  (entity location))
 
+
+(defield localization.is-valid-for (loc-class)
+  (let ((fi   (find .location loc-class._fieldinfos :key ?.symbol)))
+    (and (typep fi 'fieldinfo)
+         (subtypep (if (mutils:allow-type-p fi.type)
+                       (mutils:allow-type-type fi.type) fi.type)
+                   'location))))
+
+(defmethod print-object ((o localization) stream)
+  (print-math-expression o stream t))
+
+(defmethod print-math-expression ((o localization) &optional stream outer-op)
+  (pprint-math-form `{,o.entity @ ,o.location} stream outer-op))
 ;;;; (defmethod print-concept ((l localization) &optional stream)
 ;;;;   (if *debug-printing* (call-next-method)
 ;;;;     (print-math-expression l stream)))
@@ -69,8 +80,8 @@
                                   (stream *standard-output*) (outer-op t))
   (with-print-context rt
     (let ((lhs-printable (if (find-if #'species-type-p rt.lhs.vars) rt.lhs
-                           [localization rt.lhs rt.location-class])))
-      (print-operator '-> (list lhs-printable rt.rhs) stream outer-op))))
+                           {rt.lhs @ rt.location-class})))
+      (pprint-math-form `{,rt.lhs -> ,rt.rhs} stream outer-op))))
 
 (defield reaction-type.lhs-species (loc req)
   (get-reaction-type-species object loc req .reactants))
@@ -121,7 +132,7 @@
                        (let+ (((stype localization) 
                                (etypecase var
                                  (species-type              (values var nil))
-                                 (location-requirement      (values var.type var.localization)))))
+                                 (localization              (values var.entity var.location)))))
                          [reaction-type-requirement rtype side 
                                                     stype localization stoich])))))
    (t  [reaction-type-requirement rtype side nil nil nil]
@@ -153,8 +164,8 @@
              (typecase var
                (species-type         (if (null (subtypep var.location-class loc-class))
                                       (b-error "~S.location-class does not match ~S." var loc-class)))
-               (location-requirement (if (null var.(is-valid-for loc-class))
-                                       (b-error "Invalid reaction-type argument: ~S.  No ~S sublocation in location class ~S." var  var.localization loc-class)))
+               (localization         (if (null var.(is-valid-for loc-class))
+                                         (b-error "Invalid reaction-type argument: ~S.  No ~S sublocation in location class ~S." var  var.location loc-class)))
                (t            (b-error "Expecting a species-type or location-requirement, but received ~S." var)))
              (unless (coef-ok num)
                (b-error "Invalid stoichiometry (~S) in reaction-type sum-expression ~S" num rt-arg))))
@@ -165,9 +176,6 @@
 
 (hide-classes reaction-type-requirement |REACTION-TYPE.LHS-REQUIREMENTS| |REACTION-TYPE.RHS-REQUIREMENTS|)
 
-
-(defmethod print-math-expression ((l localization) &optional (stream *standard-output*) (outer-p t))
-  (print-operator '@ (list l.reactants l.location-class) stream outer-p))
 
 (defoperator -> ((+ 2 (operator-precedence '+)) :xfy)
   (lhs rhs)
@@ -181,7 +189,7 @@
       [reaction-type lhs.reactants rhs lhs.location-class]
     [reaction-type lhs rhs]))
 
-(defoperator @ ((+ 1 (operator-precedence '+)) :xfy) 
+(defoperator @ ((1- (operator-precedence '+)) :xfy) 
   (rct loc-class)
   [localization rct loc-class])
 

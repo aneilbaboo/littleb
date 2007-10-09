@@ -28,13 +28,13 @@
 (include @library/biochem/dimensionalization)
 
 (defcon membrane-apposition (location)
-  ; A relationship between two membranes which states that they are on opposite sides of an interstitial compartment and that they interact with each other through reactions.
+  "A relationship between two membranes which states that they are on opposite sides of an interstitial compartment and that they interact with each other through reactions."
   ((m1 membrane)
    (m2 membrane)
    &property 
-   (c1 := .m1.c2)
-   (c2 := .m2.c2)
-   (ic :#= [compartment])
+   (c1 (allow compartment) := .m1.c2)
+   (c2 (allow compartment) := .m2.c2)
+   (ic (allow compartment) :#= [compartment])
    (inverse))
   =>
  {.size.value := .m1.size.value}

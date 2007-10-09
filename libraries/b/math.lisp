@@ -51,7 +51,7 @@
                   DIMENSION-OF MAGNITUDE-OF)
  :export-symbols  (*op +op /op =op -op ^op <op >op <=op >=op
                   ;; print system
-                  print-math default-math-printer) 
+                  print-math default-math-printer pprint-infix-form pprint-math-form) 
  :use-packages    (mallavar-utility))
 
 (include (@/reader

@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.8 2007/10/07 01:07:44 amallavarapu Exp $
+;;; $Id: complex-species-type.lisp,v 1.9 2007/10/09 18:26:01 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -348,11 +348,32 @@
 ;;;
 (defun make-complex-graph (&optional descr (patternp t))
   "Given a complex description of the form ((domain1 b1 b2 ...) (domain2 b3 b4...) ...),
-   returns a canonical complex graph"
+   returns a canonical complex graph, and returns the location class of the graph"
   (multiple-value-bind (site-labels binding-table) 
       (parse-complex-description descr patternp)
-    (build-complex-graph site-labels binding-table)))
+    (values (build-complex-graph site-labels binding-table)
+            (containing-location-class-for-domain-symbol-refs
+             (if patternp (mapcar #'unreference-graph-vertex-label
+                                  (remove-if-not #'domain-symbol-ref-p site-labels))
+               (remove-if-not #'domain-symbol-p site-labels))))))
 
+(defun containing-location-class-for-domains (domains)
+  (containing-location-class 
+   (mapcar (lambda (d) (eval d).location-class) domains)))
+
+(defun unreference-graph-vertex-label (x)
+  "Removes the field label from a graph label - 
+   e.g., KSR.A -> KSR and (0 KSR.A) -> (0 KSR)"
+  (cond
+   ((fld-form-p x) (fld-form-object x))
+   ((consp x)      (list* (first x) (fld-form-object (second x))
+                          (cddr x)))
+   (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
+
+(defun unreference-graph-labels (g)
+  (map-into (gtools:labelled-graph-labels g)
+            #'unreference-graph-vertex-label)
+  g)
 ;;;
 ;;; BUILD-COMPLEX-GRAPH: internal work-horse which builds the actual GRAPH structure, 
 ;;;                      from data produced by the parser

@@ -111,7 +111,11 @@ If stream is NIL, a string representation of the math object is returned."
    (t   (prin1 o stream))))
 
 (defmethod print-math-expression (o &optional (stream *standard-output*) left-op)
-  (prin1 (b::self-evalify o) stream))
+  (let* ((seform (b::self-evalify o))
+         (obj-name (b::object-name seform))) 
+    (if obj-name ;; check if there's a name 
+        (print-math-expression obj-name stream left-op) ;; may invoke the math-name method
+      (prin1 seform stream)))) ;; default, just call the underlying print-object method
 
 (defmacro pprint-math-block ((stream braces?) &body body)
   (let ((braces-eval (gensym "BRACES?")))
@@ -166,3 +170,51 @@ outer operator, and the second argument is considered the inner operator"
    (t             (prin1 m stream))))
 
 
+;;;
+;;; INFIX PRETTY-PRINTER
+;;;
+(defun pprint-as-infix (oform stream &optional (outer-op t))
+  "Input: OFORM = operator form := (INFIX-OP ARG1 ARG2...)
+   Where each ARG can also be an operator form or any other object.
+   E.g., Pretty prints a prefix-style form:  in infix format.
+         Each of the symbols at the head of each list must be a defined infix
+         operator or NIL.
+         E.g., (+ A B (- C D (NIL E)))
+               {A + B + C - D E}"          
+  (let* ((o       (first oform))
+         (args    (rest oform))
+         (bracesp (braces-required-p outer-op o)))
+    (if bracesp (print-math #\( stream))        
+    (pprint-logical-block (stream args)
+      (ecase (operator-type o)
+        ((nil)
+         (pprint-exit-if-list-exhausted)
+         (loop do (print-math (pprint-pop) stream outer-op)
+                  (pprint-exit-if-list-exhausted)
+                  (princ #\space stream)))
+        ((:xfy :fxy :yfx)
+         (print-math (first args) stream o)
+         (print-math o stream)
+         (print-math (second args) stream o))
+        ((:xf :yf)
+         (print-math (first args) stream o)
+         (print-math o stream))
+        (:frest 
+         (print-math o stream)
+         (print-math args stream))))
+    (if bracesp (print-math #\) stream))))
+
+
+
+(defun math-form-to-prefix-form (expr &optional (prefix-operator #'identity))
+  (if (math-form-p expr)
+      (let ((result (compute-prefix-form (math-form-code expr) prefix-operator)))
+        (list* (first result)
+               (mapcar (lambda (subexpr)
+                         (math-form-to-prefix-form subexpr prefix-operator))
+                       (rest result))))
+    expr))
+
+(defun pprint-math-form (mform stream &optional (outer-op t))
+  "Prints the math form using context sensitive brace printing"
+  (pprint-as-infix (math-form-to-prefix-form mform) stream outer-op))

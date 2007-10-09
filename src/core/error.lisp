@@ -25,7 +25,7 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.2 2007/10/09 18:26:02 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)
@@ -63,6 +63,7 @@
                                   (format nil ,datum ,@args))))
 
 (defun b-warn (str &rest args)
-  (let ((*print-pretty* nil))
+  (let ((*print-pretty* nil)
+        (*print-context* t))
     (apply #'warn str args)))
 

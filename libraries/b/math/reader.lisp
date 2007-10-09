@@ -117,7 +117,7 @@ Where BODY= lambda-list form* or a symbol denoting a function"
    ((= (length expr) 1)   `(as-math-arg ,(first expr)))
     
    ;; otherwise, infix code is computed & evaluated:
-   (t                     (convert-math-form (apply-default-operator expr)))))
+   (t                     (compute-prefix-form (apply-default-operator expr) #'operator))))
 
 
 (defun find-highest-operator-pos (seq)
@@ -138,15 +138,17 @@ Where BODY= lambda-list form* or a symbol denoting a function"
          (operator-precedence o2)) o1)
      (t                             o2))))
 
-(defun convert-math-form (expr) 
+(defun compute-prefix-form (expr &optional (prefix-operator #'identity))
   "Converts the expression to prefix form"
   (if (< (length expr) 2) (first expr)
     (let ((high-op-pos  (find-highest-operator-pos expr))) 
       (cond
        (high-op-pos (infix-op-code (elt expr high-op-pos)
                                    (let ((*math-top-level* nil)) (subseq expr 0 high-op-pos))
-                                   (let ((*math-top-level* nil)) (subseq expr (1+ high-op-pos)))))
-       (t (infix-op-code +default-operator+ (subseq expr 0 1) (subseq expr 1)))))))
+                                   (let ((*math-top-level* nil)) (subseq expr (1+ high-op-pos)))
+                                   prefix-operator))
+       (t (infix-op-code +default-operator+ (subseq expr 0 1) (subseq expr 1)
+                         prefix-operator))))))
     
 (defun apply-default-operator (expr)
   (flet ((get-state (arg)
@@ -175,34 +177,40 @@ Where BODY= lambda-list form* or a symbol denoting a function"
                  (setf state next-state)))
       (reverse ret))))
 
-(defun infix-op-code (op lhs rhs)
+(defun infix-op-code (op lhs rhs &optional (prefix-operator #'operator))
   (labels ((args-present-error (side)
              (error "Unexpected ~A arguments for operator ~S." side op))
            (lhs-present-error () (args-present-error "left hand side"))
-           (make-op-call (opfn &rest args)
-             (if (symbolp opfn)
-                 `(,opfn ,@args)
-               `(funcall ,opfn ,@args))))
-    (let ((fn (operator op)))
-      (assert fn () "No operator found in math-form")
+           (make-op-call (opfn splice &rest args)
+            (if splice
+              (if (symbolp (first opfn))
+                  `(,@opfn ,@args)
+                `(funcall ',(first opfn) ,@(rest opfn) ,@args))
+              (if (symbolp opfn)
+                  `(,opfn ,@args)
+                `(funcall ,opfn ,@args)))))
+    (multiple-value-bind (prefix-op splice) (funcall prefix-operator op)
+      (assert prefix-op () "No operator found in math-form")
       (case (operator-type op)
         ;; infix
         ((:yfx :xfy) 
-         (make-op-call fn (convert-math-form lhs)
-                       (convert-math-form rhs)))
+         (make-op-call prefix-op splice (compute-prefix-form lhs prefix-operator)
+                       (compute-prefix-form rhs prefix-operator)))
         ;; unary postfix
         (:xf   
          (when rhs (args-present-error "right hand side"))
-         (make-op-call fn (convert-math-form lhs)))
+         (make-op-call prefix-op splice (compute-prefix-form lhs prefix-operator)))
         
         ;; unary prefix
         (:fx
          (when lhs (lhs-present-error))
-         (make-op-call fn (convert-math-form rhs)))
+         (make-op-call prefix-op splice (compute-prefix-form rhs prefix-operator)))
 
         ;; function
         (:frest
          (when lhs (lhs-present-error))
-         (make-op-call fn rhs))))))
+         (make-op-call prefix-op splice rhs))))))
+
+
 
 (set-macro-character #\{ #'b::curly-brace-reader nil *working-readtable*)
