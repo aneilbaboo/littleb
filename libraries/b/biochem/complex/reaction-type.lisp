@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-reaction.lisp,v 1.9 2007/10/09 18:26:01 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.1 2007/10/10 15:14:16 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction.lisp
@@ -30,7 +30,7 @@
 
 (in-package :b-user)
 
-(include (b/math @folder/complex-species-type))
+(include (b/math @folder/species-type))
 
 (include-declaration :expose-symbols '(<<->> ->>))
 
@@ -42,36 +42,6 @@
 ;     (values ,lhsvar ,rhsvar))))
      [complex-reaction ,lhsvar ,rhsvar])))
 
-(defun compute-rhs-graphs (lhs-graphs isomorphisms connects disconnects relabels remove)
-  (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))
-    (labels ((graph (n) (svref lhs-graphs n))
-             (vertex (g i) (case g
-                             (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
-                             (t (svref (svref isomorphisms (1- g)) i))))
-             (gvertex (gi) (let ((g (car gi)))
-                             (cons g (vertex g (cdr gi)))))
-             (connection (c) (mapcar #'gvertex c)))
-      
-      ;; disconnect edges
-      (loop for ((gnum . v1) (nil . v2)) in disconnects
-            do (setf (gtools:graph-vertex-edge-p (graph gnum) 
-                                                 (vertex gnum v1)
-                                                 (vertex gnum v2))
-                     nil))
-
-      ;; relabel verticies
-      (loop for ((g . v) nil to) in relabels
-            do (setf (site-label-value (gtools:labelled-graph-vertex-label 
-                                        (graph g) 
-                                        (vertex g v)))
-                     to))
-
-      ;; merge the graphs, connect edges between them
-      (let ((rhs-super-graph (gtools:merge-graphs (coerce lhs-graphs 'list) 
-                                                  :edges (mapcar #'connection connects)
-                                                  :remap `((nil ,@(mapcar #'gvertex remove))))))
-        ;; and return the distinct complexes resulting from this operation:
-        (gtools:unconnected-subgraphs rhs-super-graph)))))
 
 (defcon reference-pattern (:notrace)
   "Reference patterns are created when reactions are defined; each domain has a reference number indicating its identity in the context of a complex-reaction"
@@ -90,8 +60,7 @@
 
 (defcon selector-pattern (:notrace)
   "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
-  (id)
-  (setf .id (ensure-canonical-complex-graph id t)))
+  (id))
 
 (defcon complex-pattern-match (:notrace)
   (selector ; graph representing the selector pattern
@@ -113,14 +82,13 @@
   (setf .lhs (canonicalize-complex-reaction-argument lhs)
         .rhs (canonicalize-complex-reaction-argument rhs)))
 
-(defrule complex-reaction-exists 
-  [complex-reaction ?lhs ?rhs]
-  =>
-  (multiple-value-bind (graph-patterns rule-pattern rule-body)
-      (parse-complex-reaction ?lhs ?rhs)
-    (dolist (g graph-patterns)
-      [selector-pattern g])
-    (add-rule rule-pattern rule-body)))
+(defmethod print-concept ((o complex-reaction) &optional stream)
+  (if *debug-printing* (call-next-method)
+    (print-math-expression o stream)))
+
+(defmethod print-math-expression ((o complex-reaction) &optional stream outer-op)
+  (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
+
 
 (defun canonicalize-complex-reaction-argument (x)
   (labels ((canonicalize-object (x) 
@@ -163,33 +131,6 @@
     (t              (graphs-in-expression (list x)))))
                            
 
-
-(defun pattern-from-complex-reaction-argument (x)
-  "Takes an expression like {ksr + mapk} or {[[ksr.a !1 _][mapk.b !1 *]] + [mek.c _]}
-   and returns a list of complexes with named domains:
-   (((ksr.',(ksr 0) _ _)) ((mapk.',(mapk 0) _ _))) and
-   (((ksr.a !1 _ _)(mapk.b !1 *)) ((mek.c _ :u)))"
-  (let ((ref-table (make-hash-table :test #'equal)) ;; the ref table is 
-        (domain-table (make-hash-table)))
-    (labels ((new-domain-binding (d)
-               (list d (incf (gethash d domain-table 0))))
-             (check-domain-reference (d)
-               (let ((r (fld-form-field d)))
-                 (unless (atom r) (error "Invalid reference ~S - expecting an atom." d))
-                 (if (gethash r ref-table) 
-                     (error "Duplicate reference ~A." r)
-                   (setf (gethash r ref-table) t))
-               d))
-             (parse-domain (d)
-               (cond
-                ((fld-form-p d) (check-domain-reference d))
-                (t              `.d.,(new-domain-binding d))))
-             (parse-complex (cplex)
-               (mapcar (lambda (dform)
-                         `(,(parse-domain (object-form-object dform))
-                           ,@(object-form-args dform)))
-                       (object-form-body cplex))))
-      (mapcar #'parse-complex (unpack-complex-reaction-argument x)))))
 
 ;;;
 ;;; Named connection - a pair (c1 c2) where c1 and c2 are vertex names
@@ -363,20 +304,24 @@
 (defun graph-list-labels (glist)
   (apply #'concatenate 'simple-vector (mapcar #'gtools:labelled-graph-labels glist)))
 
-(defun parse-complex-reaction2 (lhs rhs)
+(defun compute-complex-graph-bonds (g)
+  "Returns a list of bonds between named vertex sites"
+  (remove-if (lambda (x) (eq (length x) 1))
+             (mapcar (lambda (bondlist) (remove-if #'fld-form-p bondlist))
+                     (mutils:mapatoms (lambda (i)
+                                        (gtools:labelled-graph-vertex-label g i))
+                                      (gtools:graph-edges g)))))
+
+(defun parse-complex-reaction2 (lhs-patterns rhs-patterns)
   "On input, lhs and rhs are a sum-expression of reference-patterns"
   (mutils:let+
-      (((lhs-patterns lhs-cnxns) 
-        (parse-complex-reaction-single-side-pattern lhs))
-       (*default-site-binding* (lhs-default-site-binding-function lhs-patterns))
-       ((rhs-patterns rhs-cnxns)
-        (parse-complex-reaction-single-side-pattern 
-         (pattern-from-complex-reaction-argument rhs)))
-       (created-cnxns  (compute-connection-difference rhs-cnxns lhs-cnxns))
-       (lost-cnxns     (compute-connection-difference lhs-cnxns rhs-cnxns))
-       (lhs-verticies  (graph-list-labels lhs-patterns))
-       (rhs-verticies  (graph-list-labels rhs-patterns))
-       (rhs-new-graph  (compute-rhs-new-graph rhs-patterns lhs-verticies))
+      ((lhs-cnxns        (mapcan #'compute-complex-graph-bonds lhs-patterns))
+       (rhs-cnxns        (mapcan #'compute-complex-graph-bonds rhs-patterns))
+       (created-cnxns    (compute-connection-difference rhs-cnxns lhs-cnxns))
+       (lost-cnxns       (compute-connection-difference lhs-cnxns rhs-cnxns))
+       (lhs-verticies    (graph-list-labels lhs-patterns))
+       (rhs-verticies    (graph-list-labels rhs-patterns))
+       (rhs-new-graph    (compute-rhs-new-graph rhs-patterns lhs-verticies))
        (label-changes    (compute-label-changes lhs-verticies rhs-verticies)))
     (declare (ignorable rhs-patterns rhs-noffsets))
     (labels ((named-vertex->graph-index (label)
@@ -425,7 +370,7 @@
   
 (defun parse-complex-reaction (lhs rhs)         
   (multiple-value-bind (lhs-patterns rhs-patterns rhs-new-graph connections disconnections relabels deletions)
-      (parse-complex-reaction2 lhs rhs)
+      (parse-complex-reaction2 (graphs-in-expression lhs) (graphs-in-expression rhs))
     (declare (ignorable rhs-patterns))
     (loop for p in lhs-patterns
           for gnum = 1 then (1+ gnum)
@@ -446,6 +391,38 @@
                                                                       ',disconnections
                                                                       ',relabels
                                                                       ',deletions))]))))
+
+
+(defun compute-rhs-graphs (lhs-graphs isomorphisms connects disconnects relabels remove)
+  (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))
+    (labels ((graph (n) (svref lhs-graphs n))
+             (vertex (g i) (case g
+                             (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
+                             (t (svref (svref isomorphisms (1- g)) i))))
+             (gvertex (gi) (let ((g (car gi)))
+                             (cons g (vertex g (cdr gi)))))
+             (connection (c) (mapcar #'gvertex c)))
+      
+      ;; disconnect edges
+      (loop for ((gnum . v1) (nil . v2)) in disconnects
+            do (setf (gtools:graph-vertex-edge-p (graph gnum) 
+                                                 (vertex gnum v1)
+                                                 (vertex gnum v2))
+                     nil))
+
+      ;; relabel verticies
+      (loop for ((g . v) nil to) in relabels
+            do (setf (site-label-value (gtools:labelled-graph-vertex-label 
+                                        (graph g) 
+                                        (vertex g v)))
+                     to))
+
+      ;; merge the graphs, connect edges between them
+      (let ((rhs-super-graph (gtools:merge-graphs (coerce lhs-graphs 'list) 
+                                                  :edges (mapcar #'connection connects)
+                                                  :remap `((nil ,@(mapcar #'gvertex remove))))))
+        ;; and return the distinct complexes resulting from this operation:
+        (gtools:unconnected-subgraphs rhs-super-graph)))))
 
 ;;;;
 ;;;;
@@ -565,3 +542,32 @@
 ;;;;       `([,x])))
 ;;;;    ((listp x)
 ;;;;     (mapcan #'unpack-complex-reaction-argument x))))
+
+
+
+;;;; (defun pattern-from-complex-reaction-argument (x)
+;;;;   "Takes an expression like {ksr + mapk} or {[[ksr.a !1 _][mapk.b !1 *]] + [mek.c _]}
+;;;;    and returns a list of complexes with named domains:
+;;;;    (((ksr.',(ksr 0) _ _)) ((mapk.',(mapk 0) _ _))) and
+;;;;    (((ksr.a !1 _ _)(mapk.b !1 *)) ((mek.c _ :u)))"
+;;;;   (let ((ref-table (make-hash-table :test #'equal)) ;; the ref table is 
+;;;;         (domain-table (make-hash-table)))
+;;;;     (labels ((new-domain-binding (d)
+;;;;                (list d (incf (gethash d domain-table 0))))
+;;;;              (check-domain-reference (d)
+;;;;                (let ((r (fld-form-field d)))
+;;;;                  (unless (atom r) (error "Invalid reference ~S - expecting an atom." d))
+;;;;                  (if (gethash r ref-table) 
+;;;;                      (error "Duplicate reference ~A." r)
+;;;;                    (setf (gethash r ref-table) t))
+;;;;                d))
+;;;;              (parse-domain (d)
+;;;;                (cond
+;;;;                 ((fld-form-p d) (check-domain-reference d))
+;;;;                 (t              `.d.,(new-domain-binding d))))
+;;;;              (parse-complex (cplex)
+;;;;                (mapcar (lambda (dform)
+;;;;                          `(,(parse-domain (object-form-object dform))
+;;;;                            ,@(object-form-args dform)))
+;;;;                        (object-form-body cplex))))
+;;;;       (mapcar #'parse-complex (unpack-complex-reaction-argument x)))))

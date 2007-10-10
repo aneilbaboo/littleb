@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: complex-species-type.lisp,v 1.9 2007/10/09 18:26:01 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.1 2007/10/10 15:14:16 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-speciestype.lisp
@@ -45,9 +45,9 @@
 ;;; DOMAIN - a description of a fragment of a graph
 ;;; COMPLEX - a species-type which 
 ;;;
-(in-package b-user)
+(in-package :b-user)
 
-(include b/biochem :expose)
+(include b/biochem/species :expose)
 
 (port:define-dspec-class defsite () "")
 (port:define-dspec-class defdomain () "")
@@ -351,11 +351,12 @@
    returns a canonical complex graph, and returns the location class of the graph"
   (multiple-value-bind (site-labels binding-table) 
       (parse-complex-description descr patternp)
-    (values (build-complex-graph site-labels binding-table)
-            (containing-location-class-for-domain-symbol-refs
-             (if patternp (mapcar #'unreference-graph-vertex-label
-                                  (remove-if-not #'domain-symbol-ref-p site-labels))
-               (remove-if-not #'domain-symbol-p site-labels))))))
+    (values (build-complex-graph site-labels binding-table))))
+
+;;;;             (containing-location-class-for-domain-symbol-refs
+;;;;              (if patternp (mapcar #'unreference-graph-vertex-label
+;;;;                                   (remove-if-not #'domain-symbol-ref-p site-labels))
+;;;;                (remove-if-not #'domain-symbol-p site-labels))))))
 
 (defun containing-location-class-for-domains (domains)
   (containing-location-class 
@@ -477,7 +478,7 @@
                  (t        (pattern-error head bindings "pattern not allowed here.")))))
     (cond
      ;; pattern domain
-     ((eq domain '?)
+     ((eq domain '*)
       (parse-wildcard-domain-description 
        head
        bindings
