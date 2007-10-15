@@ -42,51 +42,51 @@
 
 (include b/biochem :expose)
 
-(include (@file/complex-species-type @file/complex-reaction))
+(include (@file/species-type @file/reaction-type @file/reaction-inference))
 
 ;; tests
-(defdomain mapk a (p :value (member :u :p)))
-(defdomain ksr a b c)
-(defdomain mek a (p :value (member :u :p)))
+(defmonomer mapk a (p :value (member :u :p)))
+(defmonomer ksr a b c)
+(defmonomer mek a (p :value (member :u :p)))
 
 ;; examples:
 
 ;; complex spliting:
-;; [complex-reaction  '{[[ksr 1 _][mapk 1 *]]} '{ksr + mapk}]
+;; {[[ksr 1 _][mapk 1 *]] ->> ksr + mapk}]
 
 ;; complex fusion:
-;; [complex-reaction  '{[[ksr 1 _][mapk 1 *]] + [[ksr _ 3][mapk 3 :p]]}  '{[[ksr 1 2][mapk 1 :u][ksr 2 3][mapk 3 :p]]}]
+;; {[[ksr 1 _][mapk 1 *]] + [[ksr _ 3][mapk 3 :p]]}  '{[[ksr 1 2][mapk 1 :u][ksr 2 3][mapk 3 :p]]}]
 
 ;; domain swap
-;; [complex-reaction  '{[[ksr 1][mek 1 *]] + [mapk _ *]} '{[[ksr 1][mapk 1]] + [mek * *]}]
+;; {[[ksr 1][mek 1 *]] + [mapk _ *] ->> [[ksr 1][mapk 1]] + [mek * *]}]
 
 ;; domain creation
-;; [complex-reaction  '{[ksr _ * *]} '{[[ksr 1 * *][mapk 1 :p]]}]
+;; {[ksr _ * *] ->> [[ksr 1 * *][mapk 1 :p]]}]
 
 ;; domain destruction
-;; [complex-reaction  '{[[ksr 1 * *][mapk 1 :p]]} '{[ksr _ * *]}]
+;; {[[ksr 1 * *][mapk 1 :p]] ->> [ksr _ * *]}]
 
 ;; label change
-;; [complex-reaction  '{[[ksr 1 * *][mapk 1 :u]]} '{[[ksr 1 * *][mapk 1 :p]]}]
+;; {[[ksr 1 * *][mapk 1 :u]] ->> [[ksr 1 * *][mapk 1 :p]]}]
 
 ;; 3-way bond -> 2-way bond 
-;; [complex-reaction  '{[[ksr 1 * *][mapk 1 :u][mapk 1 :p]]} '{[[ksr 1 * *][mapk 1 :u]] + [mapk _ :p]}]
+;; {[[ksr 1 * *][mapk 1 :u][mapk 1 :p]] ->> [[ksr 1 * *][mapk 1 :u]] + [mapk _ :p]}]
 
 (defpackage a (:use cl) (:export reset))
 (defun a::reset () 
   (b:init)
   (include b/biochem/complex) 
-  ;(eval (read-from-string "[complex-reaction  '{[[ksr 1 * *][mapk 1 *]]} '{ksr + mapk}]")) 
-  (Format t "(compute-reaction-output  '{[[ksr 1][mapk 1 *]]} '{ksr + mapk} '(((ksr 1)(mapk 1))))~%~%~
+  ;(eval (read-from-string "[complex-reaction  '{[[ksr 1 * *][mapk 1 *]] ->> [ksr] + mapk}]")) 
+  (Format t "{[[ksr 1][mapk 1 *]] ->> [ksr] + [mapk]} [[ksr 1][mapk 1]]~%~%~
              complex fusion:~%~
-             (compute-reaction-output  '{[[ksr 1 _][mapk 1 *]] + [[ksr _ 3][mapk 3 :p]]}  '{[[ksr 1 2][mapk 1 :u][ksr 2 3][mapk 3 :p]]} '(((ksr 1)(mapk 1))((ksr _ 1)(mapk 1 :p))))~%~%~
+             {[[ksr 1 _][mapk 1 *]] + [[ksr _ 3][mapk 3 :p]] ->> [[ksr 1 2][mapk 1 :u][ksr 2 3][mapk 3 :p]]} [[ksr 1][mapk 1]] [[ksr _ 1][mapk 1 :p]]~%~%~
              domain swap~%~
-             (compute-reaction-output  '{[[ksr * 1 *][mapk 1 *]] + mek} '{[[ksr * 1 *][mek 1]] + mapk} '(((ksr 1 2 _)(mapk 1 :u)(mapk 2 :p)) ((mek _ :p))))~%~%~
+             {[[ksr * 1 *][mapk 1 *]] + mek ->> [[ksr * 1 *][mek 1]] + [mapk]} [[ksr 1 2 _][mapk 1 :u][mapk 2 :p]] [[mek _ :p]]~%~%~
              domain creation~%~
-             (compute-reaction-output  '{[ksr * * *]} '{[[ksr 1 * *][mapk 1 :p]]}  )~%~%~
+             {[ksr * * *] ->> [[ksr 1 * *][mapk 1 :p]]}~%~%~
              domain destruction~%~
-             (compute-reaction-output  '{[[ksr 1 * *][mapk 1]]} '{[ksr _ * *]} '(((ksr 1 2 _)(mapk 1 :p)(mek 2))))~%~%~
+             {[[ksr 1 * *][mapk 1]] ->> [ksr _ * *]} [[ksr 1 2 _][mapk 1 :p][mek 2]]~%~%~
              label change~%~
-             (compute-reaction-output  '{[[ksr 1 * *][mapk 1 :u]]} '{[[ksr 1 * *][mapk 1 :p]]} '(((ksr 1 2 _)(mapk 1 :p)(mek 2))))~%~%~
+             {[[ksr 1 * *][mapk 1 :u]] ->> [[ksr 1 * *][mapk 1 :p]]} [[ksr 1 2 _][mapk 1 :p][mek 2]]~%~%~
              3-way bond -> 2-way bond ~%~
-             (compute-reaction-output  '{[[ksr 1 * *][mek 1 :u][mapk 1 :p]]} '{[[ksr 1 * *][mek 1 *]] + [mapk _ :p]} '(((ksr 1 * *)(mek 1 :u)(mapk 1 :p))))~%~%"))
+             {[[ksr 1 * *][mek 1 :u][mapk 1 :p]] ->> [[ksr 1 * *][mek 1 *]] + [mapk _ :p]} [[ksr 1 _ _][mek 1 :u][mapk 1 :p]]~%~%"))

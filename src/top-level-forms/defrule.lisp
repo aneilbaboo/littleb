@@ -26,7 +26,7 @@
 ;;; Description: defrule, defines b rules
 ;;;
 
-;;; $Id: defrule.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: defrule.lisp,v 1.2 2007/10/15 12:48:51 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -105,8 +105,6 @@
 #+Lispworks
 (editor:setup-indent 'defrule 1 2 9 t)
 )
-
-
 
 
 

@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -82,31 +82,32 @@
            (extend-rule-parse-bodies (lisa-patterns)
              (mapcar (lambda (rb) (append rb lisa-patterns)) rule-parse-bodies)))
 
-    (case (pattern-type pattern)
-      (:value  (extend-rule-parse-bodies (rule-parse-read-value-pattern rule-parse pattern)))
+    (let ((pattern (or (expand-pattern pattern nil) pattern)))
+      (case (pattern-type pattern)
+        (:value  (extend-rule-parse-bodies (rule-parse-read-value-pattern rule-parse pattern)))
       
-      (:test   (extend-rule-parse-bodies `((lisa:test ,@(test-pattern-form pattern)))))
+        (:test   (extend-rule-parse-bodies `((lisa:test ,@(test-pattern-form pattern)))))
 
-      (:not    (add-not-patterns (pattern-args pattern)))
+        (:not    (add-not-patterns (pattern-args pattern)))
 
-      (:exists (add-exists-patterns (pattern-args pattern)))
+        (:exists (add-exists-patterns (pattern-args pattern)))
       
-      (:and    (add-and-patterns (pattern-args pattern) rule-parse-bodies))
+        (:and    (add-and-patterns (pattern-args pattern) rule-parse-bodies))
 
-      (:or     (mapcan (lambda (subp)                         
-                         (if subp (rule-parse-add-pattern rule-parse subp rule-parse-bodies)
-                           rule-parse-bodies)) ;; NIL - sub patterns cause duplication of the rule-parse body
-                       ;; without adding a pattern - this is useful for detecting null conditions
-                       (pattern-args pattern)))
+        (:or     (mapcan (lambda (subp)                         
+                           (if subp (rule-parse-add-pattern rule-parse subp rule-parse-bodies)
+                             rule-parse-bodies)) ;; NIL - sub patterns cause duplication of the rule-parse body
+                         ;; without adding a pattern - this is useful for detecting null conditions
+                         (pattern-args pattern)))
 
-      (:find   (let ((find-pattern (pattern-args pattern))) ;; :find always succeeds, but pattern-vars
-                 (rule-parse-add-pattern rule-parse `(:or (:not ,@find-pattern) 
-                                             (:and ,@find-pattern))
-                                   rule-parse-bodies)))
+        (:find   (let ((find-pattern (pattern-args pattern))) ;; :find always succeeds, but pattern-vars
+                   (rule-parse-add-pattern rule-parse `(:or (:not ,@find-pattern) 
+                                                        (:and ,@find-pattern))
+                                           rule-parse-bodies)))
 
-      (:global (add-global-pattern rule-parse pattern))
+        (:global (add-global-pattern rule-parse pattern))
 
-      (otherwise (b-error "unrecognized pattern type.")))))
+        (otherwise (b-error "unrecognized pattern type."))))))
 
 (defun add-global-pattern (rule-parse p &optional (obj-var (gensym "?OBJ") obj-var-p))
   (let ((o (etypecase p
@@ -238,23 +239,31 @@
 ;;;                  varbind patterns = (?VAR {obj-pattern | fld-pattern}*)
 ;;;
 (defun rule-parse-read-value-pattern (rule-parse p &optional (val-var (gentemp "?O")))
-  (cond 
-   ((symbolp p)
-    (add-global-pattern rule-parse p val-var))
+  (let ((p (or (expand-pattern p val-var) p)))
+    (cond 
+     ((symbolp p)
+      (add-global-pattern rule-parse p val-var))
    
-   ((fld-form-p p)
-    (rule-parse-read-fld-pattern rule-parse p val-var))
+     ((fld-form-p p)
+      (rule-parse-read-fld-pattern rule-parse p val-var))
    
-   ((object-form-p p)
-    (rule-parse-read-object-pattern rule-parse p val-var))
+     ((object-form-p p)
+      (rule-parse-read-object-pattern rule-parse p val-var))
    
-   ((varbind-pattern-p p)
-    (mapcan (lambda (subp)
-              (rule-parse-read-value-pattern rule-parse subp (varbind-pattern-var p)))
-            (varbind-pattern-args p)))
+     ((varbind-pattern-p p)
+      (mapcan (lambda (subp)
+                (let ((epattern (expand-pattern subp (varbind-pattern-var p))))
+                  (if epattern
+                      (mapcan (lambda (esubp)
+                                (apply #'append (rule-parse-add-pattern  rule-parse esubp)))
+                              epattern)
+                    (rule-parse-read-value-pattern rule-parse subp (varbind-pattern-var p)))))
+              (varbind-pattern-args p)))
        
-   (t (b-error "Pattern ~S is unrecognized.  "
-             p))))
+     (t (b-error "Pattern ~S is unrecognized.  "
+                 p)))))
+
+
 
 ;;;
 ;;; FLD patterns - O.F1.F2...Fn.  Where value-var is a pattern-var which will bind the value of the field
@@ -309,7 +318,7 @@
 ;;; OBJECT PATTERN:  [...] or (?VAR [...]) - returns a list of LISA patterns
 ;;; 
 (defun rule-parse-read-object-pattern (rule-parse pattern &optional (obj-var (gentemp "?O")))
-  "Converts ` expressions into a list of LISA patterns.  read-object-pattern is called by :and :or :not :exists pattern readers and dispatches to more specific object pattern expression readers."
+  "Converts expressions into a list of LISA patterns.  read-object-pattern is called by :and :or :not :exists pattern readers and dispatches to more specific object pattern expression readers."
   (cond ((pattern-var-p (car pattern))
          (rule-parse-read-object-pattern rule-parse (second pattern) (first pattern)))
         
@@ -673,3 +682,21 @@
 (defun add-rule (pattern function)
   (dolist (lisa-pattern (rule-parse-lisa-patterns (make-rule-parse pattern)))
     (lisa::define-rule (gensym) lisa-rule)))
+
+
+;;;
+;;; pattern expanders
+;;;
+(defvar *pattern-expanders* ())
+
+(defun add-pattern-expander (name &optional (priority 0))
+  (setf *pattern-expanders* (add-prioritized-symbol name priority *pattern-expanders*)))
+
+(defun remove-pattern-expander (name)
+  (setf *pattern-expanders* (remove-prioritized-symbol name *pattern-expanders*)))
+
+(defun expand-pattern (p objvar &optional (expanders *pattern-expanders*))
+  (if expanders
+      (or (funcall (caar expanders) p objvar)
+          (expand-pattern p objvar (rest expanders)))))
+  

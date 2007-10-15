@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.2 2007/09/28 19:56:47 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.3 2007/10/15 12:48:50 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -108,20 +108,29 @@ accessed with symbols like .field-name."
    (t form)))
 )
 
+;;;
+;;; PRIORITY LISTs - base functionality for adding/removing prioritized names
+;;;                  from a list
+;;;
+(defun add-prioritized-symbol (name priority priority-list)
+  (labels ((add-it (rest-list)
+             (let ((head (first rest-list)))
+               (cond
+                ((or (null head) 
+                     (>= priority (cdr head)))
+                 (list* (cons name priority) rest-list))
+                (t
+                 (list* head (add-it (rest rest-list))))))))
+    (add-it (remove name priority-list :key #'car))))
+
+(defun remove-prioritized-symbol (name priority-list)
+  (remove name priority-list :key #'first))
+
+;;;
+;;; OBJECT EXPANDERS - a prioritized list of symbols representing object-expansion functions
+;;;
 (defvar *object-expanders* '()
   "A cons (FN-NAME . PRIORITY)")       
-
-;;;; (defmacro define-object-expander (name priority (form &optional environment)
-;;;;                                        &body body)
-;;;;  
-;;;;   (let ((priority (or priority 0))
-;;;;         (environment (or environment '#:env)))
-;;;;     `(prog1 (defun ,name (,form ,environment)
-;;;;               (declare (ignorable ,environment))
-;;;;               ,@body)
-;;;;        (setf *object-expanders*
-;;;;              (add-object-expander ',name ,priority
-;;;;                                   (remove ',name *object-expanders* :key #'car))))))
 
 (defun add-object-expander (expander &optional (priority 0))
  "Adds an expander, to the list of object expanders consulted by the OBJECT expander macro.
@@ -136,20 +145,10 @@ accessed with symbols like .field-name."
         PRIORITY is a number (or NIL, interpreted as 0) which like set-pprint-dispatch,
      is used to prioritize expanders.  The highest priority & most recently defined
      expander which returns a value is used."
-  (labels ((add-it (expanders)
-             (let ((head (first expanders)))
-               (cond
-                ((or (null head) 
-                     (>= priority (cdr head)))
-                 (list* (cons expander priority) expanders))
-                (t
-                 (list* head (add-it (rest expanders))))))))
-    (setf *object-expanders*
-          (add-it (remove expander *object-expanders* :key #'car)))))
-    
+ (setf *object-expanders* (add-prioritized-symbol expander priority *object-expanders*)))
 
 (defun remove-object-expander (expander)
-  (setf *object-expanders* (remove expander *object-expanders* :key #'first)))
+  (setf *object-expanders* (remove-prioritized-symbol expander *object-expanders*)))
 
 (defmacro internal-kb-access-object (usedb  bindings
                                             key-form

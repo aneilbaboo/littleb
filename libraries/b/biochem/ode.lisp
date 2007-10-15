@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -104,3 +104,4 @@
       {?s.moles.t0 := ?t0})
 
      (t {?s.conc.t0 := ?t0}))))
+

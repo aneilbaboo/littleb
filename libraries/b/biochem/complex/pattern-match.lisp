@@ -1,5 +1,3 @@
-;;;; This file is part of little b.
-
 ;;;; The MIT License
 
 ;;;; Copyright (c) 2007 Aneil Mallavarapu
@@ -22,32 +20,23 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; File: core-biochem
-;;; Description: defines species-type, species, location, 
+;;; $Id: pattern-match.lisp,v 1.1 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Name:  $
 
-;;; $Id: biochem.lisp,v 1.2 2007/10/15 12:48:49 amallavarapu Exp $
+;;; Description: Matches complex patterns in the database
 
-(in-package #I@file)
+(in-package :b-user)
 
-(include-declaration :expose-symbols (location-class-dimension)
-                     :use-packages (mallavar-utility))
- 
-(include-documentation
-  :description "Includes the core concepts for the biochemistry system.~
-                Note: This file does not contain bindings for dimensionalization - ~
-                use </2-dimensional or </3-dimensional or </non-dimensional instead.  ~
-                $Date: 2007/10/15 12:48:49 $"
-  :authors "Aneil Mallavarapu"
-  :organization "Harvard Medical School")
+(defcon complex-pattern-match (:notrace)
+  (complex-pattern ; graph representing the complex pattern
+                   ; (cannot use PATTERN because this interferes w/ lisa)
+   complex-species-type
+   isomorphism))
 
-(include (@>/math))
-
-(include (@/species-type
-          @/species 
-          @/location 
-          @/species-type 
-          @/reaction 
-          @/reaction-type
-          @/dimensionalization
-          ) :expose)
+(defrule detect-complex-pattern-isomorphism
+  (:and (?pattern [complex-pattern ?subgraph])
+        (?species-type [complex-species-type ?graph]))
+  =>
+  (dolist (iso (gtools:find-subgraph-isomorphisms ?subgraph ?graph))
+    [complex-pattern-match ?pattern ?species-type iso]))
 
