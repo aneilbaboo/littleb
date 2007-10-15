@@ -1,4 +1,4 @@
-;;;; The MIT License
+ ;;;; The MIT License
 
 ;;;; Copyright (c) 2007 Aneil Mallavarapu
 
@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.3 2007/10/15 13:21:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -46,7 +46,7 @@
 ;;;
 (in-package :b-user)
 
-(include b/biochem/species :expose)
+(include b/biochem/species :expose :modify b/biochem)
 
 ;;;
 ;;;

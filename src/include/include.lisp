@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.2 2007/10/15 13:21:05 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -260,7 +260,7 @@
            (Warning generated in ~A)."
               ipath-pkg ipath exposure 
               ipath (unless (same-pkg-p) exposure)
-              (when (same-pkg-p) ipath-pkg)
+              (unless (same-pkg-p) ipath-pkg)
               (or iipath "Listener"))))))
 
 (defun include-funcall (include-path function &rest args)
