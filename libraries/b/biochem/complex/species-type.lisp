@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.3 2007/10/15 13:21:00 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.4 2007/10/17 12:09:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -152,14 +152,6 @@
                         (and (member-type-p value)
                              (second value)))))
     (cond
-;;;;      ;; based on an already defined site:
-;;;;      (defsite
-;;;;       (when (or value connector)
-;;;;         (error "Site ~S is already defined." (site-info-symbol labels)))
-;;;;       (let ((new (copy-site-info defsite)))
-;;;;         (setf (site-info-labels new) (append (site-info-labels new)
-;;;;                                              xlabels))
-;;;;         new))
 
      ;; attempt to provide both connector and value definitions:
      ((and value connector)
@@ -178,17 +170,12 @@
                                  :type connector
                                  :sublocation sublocation)))))
 
-;;;; (defun define-site (symbol &rest keys &key value default connector)
-;;;;     (setf (get symbol 'site-info) (apply #'make-site-info symbol keys)))
 
-;;;; (defmacro defsite (symbol &rest keys &key values default allow disallow)
-;;;;   `(port:dspec (defsite ,symbol)
-;;;;      (remprop ',symbol 'site-info)
-;;;;      (apply #'define-site ',symbol ',keys)
-;;;;      ',symbol))
-
-
-
+(defun ensure-canonical-complex-graph (x &optional force-pattern)
+  (gtools:canonical-graph
+   (etypecase x
+     (list (make-complex-graph x force-pattern))
+     (complex-graph x))))
 
 ;;;
 ;;; COMPLEX GRAPH - graph structure

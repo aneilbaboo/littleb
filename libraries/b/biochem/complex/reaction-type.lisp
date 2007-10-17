@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.3 2007/10/17 12:09:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -48,11 +48,6 @@
   (id)
   (setf .id (ensure-canonical-complex-graph id t)))
 
-(defun ensure-canonical-complex-graph (cdescr &optional patternp)
-  (gtools:canonical-graph
-   (etypecase cdescr
-     (list (make-complex-graph  cdescr patternp))
-     (complex-graph  cdescr))))
 
 (defmethod print-concept ((o reference-pattern) &optional stream)
   (let ((graph     o.id))
@@ -61,9 +56,7 @@
 (defcon complex-pattern (reference-pattern :notrace)
   "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
   (id)
-  (setf .id (etypecase id
-              (list (gtools:canonical-graph (make-complex-graph id)))
-              (complex-graph id))))
+  (setf .id (ensure-canonical-complex-graph id nil)))
 
 (defcon complex-reaction-type ()
   (lhs 
@@ -119,6 +112,15 @@
     (sum-expression (graphs-in-expression x.vars))
     (t              (graphs-in-expression (list x)))))
                            
+
+(defun extract-canonical-graphs-from-expression (expr)
+  (let ((graphs (graphs-in-expression expr)))
+    (loop for g in graphs
+          for (cg r) = (multiple-value-list (gtools:canonical-graph (graph-remove-reference-labels g)))
+          for rg = (gtools:reorder-graph g r)
+          collect cg into dereferenced-graphs
+          collect rg into reference-graphs
+          finally return (values reference-graphs dereferenced-graphs))))
 
 
 ;;;
@@ -271,7 +273,7 @@
 
 (defun make-complexes (graphs)
   (mapcar (lambda (g)
-            [complex-species-type (gtools:canonical-graph g)])
+            [complex-species-type g])
           graphs))
 
 (defun graph-remove-reference-labels (g)
@@ -300,8 +302,10 @@
 (defun compute-complex-reaction-type-changes (cr)
   "Returns:  NEW-BONDS, LOST-BONDS, LABEL-CHANGES, LOST-VERTICIES, LHS-PATTERN GRAPHS, RHS-PATTERN GRAPHS, NEW-RHS-PATTERN GRAPH"
   (mutils:let+
-      ((lhs-patterns     (graphs-in-expression cr.lhs))
-       (rhs-patterns     (graphs-in-expression cr.rhs))
+      (((lhs-patterns deref-lhs-patterns)
+                         (extract-canonical-graphs-from-expression cr.lhs))
+       ((rhs-patterns deref-rhs-patterns)
+                         (extract-canonical-graphs-from-expression cr.rhs))
        (lhs-cnxns        (mapcan #'compute-complex-graph-bonds lhs-patterns))
        (rhs-cnxns        (mapcan #'compute-complex-graph-bonds rhs-patterns))
        (created-cnxns    (compute-bond-set-difference rhs-cnxns lhs-cnxns))
@@ -309,7 +313,9 @@
        (lhs-verticies    (graph-list-labels lhs-patterns))
        (rhs-verticies    (graph-list-labels rhs-patterns))
        (rhs-new-graph    (compute-rhs-new-graph rhs-patterns lhs-verticies))
-       (label-changes    (compute-label-changes lhs-verticies rhs-verticies)))
+       (label-changes    (compute-label-changes lhs-verticies rhs-verticies))
+       (deref-rhs-new    (graph-remove-reference-labels rhs-new-graph))) ;; deref'd new rhs graph new components
+
     (declare (ignorable rhs-patterns rhs-noffsets))
     (labels ((named-vertex->graph-index (label)
                ;; converts a named-vertex to a graph index (GNUM . VINDEX)
@@ -333,10 +339,9 @@
                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
                label-changes)
        (lost-verticies)
-       (mapcar #'graph-remove-reference-labels lhs-patterns) ;; lhs-patterns
-       (mapcar #'graph-remove-reference-labels rhs-patterns) ;; rhs-patterns
-       (graph-remove-reference-labels rhs-new-graph) ;; new rhs graph new components
-       ))))
+       deref-lhs-patterns
+       deref-rhs-patterns
+       deref-rhs-new))))
 
 (defun compute-rhs-graphs (lhs-graphs isomorphisms bonds disbonds relabels remove)
   (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))
