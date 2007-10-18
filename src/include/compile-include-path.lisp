@@ -249,7 +249,9 @@ symbols in the correct package."
                         (args (rest oform)))
                     (case op
                       (include 
-                       (destructuring-bind (iform-paths &optional (exposure :use)) args
+                       (destructuring-bind (iform-paths &optional (exposure :use) 
+                                                        &rest keyword-args) args
+                         (declare (ignorable keyword-args))
                          (dolist (iform-path (ensure-list iform-paths))
                            (setf ops (compute-ipath-operations (include-path iform-path)
                                                                exposure ipath ops)))))
@@ -257,9 +259,6 @@ symbols in the correct package."
                        (add-operation `(:include-declaration ,ipath ,ipath-pkg ,@args))))))
                 (add-operation `(:compile-and-load ,ipath))))))))
       ops))
-
-
-
 
 
 ;;;

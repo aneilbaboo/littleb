@@ -45,7 +45,7 @@
 (include (@file/species-type @file/reaction-type @file/reaction-inference))
 
 ;; tests
-(defmonomer mapk a (p :value (member :u :p)))
+(defmonomer mapk a (p :value (member :p :u)))
 (defmonomer ksr a b c)
 (defmonomer mek a (p :value (member :u :p)))
 

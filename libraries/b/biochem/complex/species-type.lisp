@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.4 2007/10/17 12:09:50 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.5 2007/10/18 00:13:41 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -29,15 +29,8 @@
 
 ;;;
 ;;; examples:
-;;;    a species: [[ksr 1 _ _] [mapk 1]]
-;;;    a reaction: {[ksr _] + [mapk _] -> [[ksr 1][mapk 1]]}
-;;;            ==  {[ksr _1 * *] + [mapk _1 * *] -> [[ksr 1 * *][mapk 1 * *]]
-
-;;;
-;;;    [[d1-s-1 *][d2-s-1 *]] [d3...] -> [[d1 _]] + [d2-s1-s1-d3] 
-;;;
-;;;                                 -> might actually be [[d1 _ 2] 
-;;;
+;;;    a species: [[ksr 1 _ _] [mapk 1 :u]] ; shorthand = [[ksr 1][mapk 1]]
+;;;    a reaction: {[ksr _ * *] + [mapk _] ->> [[ksr 1][mapk 1]]}
 
 ;;;
 ;;; SITE - describes a site - 
@@ -71,21 +64,23 @@
    &property (location-class := compartment)))
 
 (defprop monomer.sites ()
- (let* ((sites (map 'vector (lambda (sspec)
-                              (apply #'make-site-info (if (listp sspec) sspec (list sspec))))
+ (let* ((sindex -1)
+        (sites (map 'vector (lambda (sspec)
+                              (apply #'make-site-info (append (if (listp sspec) sspec (list sspec))
+                                                              (list :index (incf sindex)))))
                     value))
         (slist (coerce sites 'list)))
    (when #1=(set-difference slist
-                            (remove-duplicates slist :key #'site-info-symbol))
+                            (remove-duplicates slist :key #'site-info-name))
      (b-error "Duplicate site name (~S) in ~S" object 
-              (site-info-symbol (first #1#))))
+              (site-info-name (first #1#))))
    sites))
      
 
 (defield monomer.site (x)
   (etypecase x
     (integer (svref .sites x))
-    (symbol  (find x .sites :key #'site-info-symbol))))
+    (symbol  (find x .sites :key #'site-info-name))))
 
 (defgeneric monomer-sites (d)
   (:method ((d symbol)) (|MONOMER.SITES| (eval d)))
@@ -97,7 +92,7 @@
 
 (defmethod documentation ((d monomer) (type (eql :ctor-help)))
   (labels ((simplify-label (si) 
-             (let ((labs (site-info-labels si)))
+             (let ((labs (site-info-tags si)))
                (if (= (length labs) 1) (First labs) labs)))
            (state-site-doc (si)
              (list (simplify-label si)
@@ -105,13 +100,14 @@
     (format nil "COMPLEX CTOR: [~S~{ ~S~}]~@[ / CONNECTORS: ~{~S~^, ~}~]~@[ / VALUES: ~{~{~S.[~S]~}~^, ~}~]~@[ -- ~A~]"
             d.name
             (map 'list #'simplify-label d.sites)
-            (map 'list #'site-info-symbol (remove-if-not #'bond-site-info-p d.sites))
+            (map 'list #'site-info-name (remove-if-not #'bond-site-info-p d.sites))
             (map 'list #'state-site-doc (remove-if-not #'state-site-info-p d.sites))
             d.documentation)))
 
 (defun monomer-symbol-p (o)
-  (and (symbolp o)
-       (monomer-p (ignore-errors (eval o)))))
+  (or (wildcard-monomer-symbol-p o)
+      (and (symbolp o)       
+           (monomer-p (ignore-errors (eval o))))))
 
 (predefine (:global complex-species-type)
 (defmethod documentation ((d monomer) (type (eql :fields-help)))
@@ -126,9 +122,9 @@
 ;;;
 ;;; SITE-INFO structure
 ;;;
-(defstruct (site-info (:constructor nil)) labels)
+(defstruct (site-info (:constructor nil)) tags index)
 
-(defun site-info-symbol (s) (first (site-info-labels s)))
+(defun site-info-name (s) (first (site-info-tags s)))
 
 ;; bond sites can connect to other bond sites
 (defstruct (bond-site-info (:include site-info))
@@ -139,13 +135,16 @@
   type default)
 
 (defun member-type-p (x) (and (consp x) (eq (first x) 'member)))
+(defun keywordify (x)
+  (typecase x
+    (symbol (intern (symbol-name x) :keyword))
+    (t      x)))
 
-(defun make-site-info (labels &rest args &key value default connector sublocation)
+(defun make-site-info (tags &rest args &key value default connector sublocation index)
   (declare (ignorable args))
-  (let* ((labels    (if (listp labels) labels (list labels)))   
-         (symbol    (intern (symbol-name (first labels)) :keyword))
-         (xlabels   (rest labels)) ; extra labels
-;         (defsite   (get symbol 'site-info)) ; existing defined site
+  (let* ((tags      (mapcar #'keywordify
+                            (if (listp tags) tags (list tags))))
+         (name      (first tags))
          (connector (or connector (not (or value default))))
          (value     (or value (and (not connector) (not sublocation))))
          (default    (or default 
@@ -161,12 +160,13 @@
      ((not (or connector
                (typep default value)))
       (error "Default value ~S is not of type ~S in site ~S"
-             default value symbol))
+             default value name))
 
     
-     (value (make-state-site-info :labels labels :type value :default default))
+     (value (make-state-site-info :tags tags :type value :default default :index index))
 
-     (t     (make-bond-site-info :labels labels
+     (t     (make-bond-site-info :tags tags
+                                 :index index
                                  :type connector
                                  :sublocation sublocation)))))
 
@@ -231,8 +231,8 @@
                (cons    (find value test :test #'eql))))
 
            (wildcard-test (test glabel)
-             (let ((site-test (wildcard-label-site test))
-                   (value-test (wildcard-label-value test)))
+             (let ((site-test (wildcard-label-tags test))
+                   (value-test (wildcard-label-state test)))
                (and (site-test site-test 
                                (complex-graph-label-to-site-labels glabel))
                     (value-test value-test (site-label-value glabel)))))
@@ -256,10 +256,32 @@
     #'complex-graph-label-test-predicate))
 
 ;;;
+;;;  BASE CLASS: COMPLEX-GRAPH-CONCEPT
+;;;
+(defcon complex-graph-concept (:abstract)
+  (&optional id))
+
+(defprop complex-graph-concept.constructor-description
+    (:=
+     (complex-graph-description object.id)))
+
+(defmethod print-concept ((o complex-graph-concept) &optional stream)
+  (let* ((descr o.constructor-description)
+         (complex (> (length descr) 1)))
+    (pprint-logical-block (stream descr
+                                  :prefix (if complex "[" "")
+                                  :suffix (if complex "]" ""))
+      (loop for mdescr = (pprint-pop)
+            do (prin1 `[,@mdescr] stream)
+               (pprint-newline-selectively :linear stream)
+               (pprint-exit-if-list-exhausted)))))
+
+
+;;;
 ;;;  COMPLEX-SPECIES-TYPE:
 ;;;
 ;;;
-(defcon complex-species-type (species-type)
+(defcon complex-species-type (species-type complex-graph-concept)
   "SPECIES-TYPE which is described as a graph"
   (&optional (id 
               :documentation "A list specifying monomers and their connectivity"))
@@ -271,10 +293,10 @@
                                 (cons           (make-complex-graph id nil))))))))
 
 (defield complex-species-type.monomers ()
-  (remove-if-not #'symbolp (gtools:labelled-graph-labels .id)))
+  (remove-if-not #'symbolp (gtools:graph-labels .id)))
 
-(defield complex-species-type.site-bonds (dindex sindex)
-  (complex-graph-site-bonds .id dindex sindex))
+(defield complex-species-type.site-bonds (mindex sindex)
+  (complex-graph-site-bonds .id mindex sindex))
 
 
 ;;;
@@ -302,7 +324,7 @@
 
 (defun complex-graph-label-to-site-labels (glabel)
   "Given a GLABEL, e.g., (0 KSR), returns the labels of that site."
-  (site-info-labels (monomer-site-info (second glabel) (first glabel))))
+  (site-info-tags (monomer-site-info (second glabel) (first glabel))))
 
 ;;;
 ;;; LOGICAL-LABEL:
@@ -321,19 +343,25 @@
 (defun make-wildcard-label (monomer 
                             sindex
                             &optional site-test (value-test nil value-test-p))
-  (let ((nst    (normalize-test site-test 'and)))
+  (let ((tags-test    (normalize-test site-test 'and)))
     (if value-test-p
-        (list sindex monomer nst value-test)
-      (list sindex monomer nst))))
+        (list sindex monomer tags-test value-test)
+      (list sindex monomer tags-test))))
 
 (declaim (inline wildcard-label-monomer wildcard-label-index
-                 wildcard-label-site wildcard-label-value wildcard-label-p))
+                 wildcard-label-site wildcard-label-state wildcard-label-p))
 (defun wildcard-label-p (x) (and (consp x) (eq '? (second x))))
 (defun wildcard-label-monomer (x) (first x))
 (defun wildcard-label-index (x) (second x))
-(defun wildcard-label-value (x) (third x))
-(defun wildcard-label-site (x) (fourth x))
-
+(defun wildcard-label-state (x) (fourth x))
+(defun wildcard-label-tags (x) (third x))
+(defun wildcard-state-label-p (x) (= (length x) 4))
+(defun wildcard-monomer-symbol-p (x) (eq x '*))
+(defun wildcard-binding-p (x) (eq x '*))
+(defun wildcard-monomer-reference-p (x) 
+  (or (wildcard-monomer-symbol-p x)
+      (and (fld-form-p x)
+           (wildcard-monomer-symbol-p (fld-form-object x)))))
 
 ;;;
 ;;; GRAPH GENERATION FUNCTIONS:
@@ -351,11 +379,6 @@
     (values (build-complex-graph site-labels binding-table)
             patternp)))
 
-;;;;             (containing-location-class-for-monomer-symbol-refs
-;;;;              (if patternp (mapcar #'unreference-graph-vertex-label
-;;;;                                   (remove-if-not #'monomer-symbol-ref-p site-labels))
-;;;;                (remove-if-not #'monomer-symbol-p site-labels))))))
-
 (defun containing-location-class-for-monomers (monomers)
   (containing-location-class 
    (mapcar (lambda (d) (eval d).location-class) monomers)))
@@ -370,7 +393,7 @@
    (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
 
 (defun unreference-graph-labels (g)
-  (map-into (gtools:labelled-graph-labels g)
+  (map-into (gtools:graph-labels g)
             #'unreference-graph-vertex-label)
   g)
 ;;;
@@ -471,7 +494,7 @@
                  (t        (pattern-error head bindings "pattern not allowed here.")))))
     (cond
      ;; pattern monomer
-     ((eq monomer '*)
+     ((wildcard-monomer-symbol-p monomer)
       (parse-wildcard-monomer-description 
        head
        bindings
@@ -480,7 +503,7 @@
 
      ;; not a pattern monomer
      ((symbolp monomer)
-      (parse-ordered-monomer-description 
+      (parse-named-monomer-description 
        monomer head bindings binding-table offset patternp))
 
      (t (error "Unrecognized monomer: ~S" monomer)))))
@@ -489,13 +512,13 @@
 ;;;
 ;;; RECORDING BONDS:
 ;;;
-;;;; (defun record-monomer-site (dindex sindex binding-table)
+;;;; (defun record-monomer-site (mindex sindex binding-table)
 ;;;;   "Records bonds between the monomer indicies and the sites"
-;;;;   (push sindex (gethash (coerce dindex 'float) binding-table)))
+;;;;   (push sindex (gethash (coerce mindex 'float) binding-table)))
 
-(defun record-monomer (dindex nsites binding-table)
+(defun record-monomer (mindex nsites binding-table)
   "Records the edges of the monomer in binding-table"
-  (push (make-number-list dindex (+ dindex nsites))
+  (push (make-number-list mindex (+ mindex nsites))
         (gethash '|monomer-edges| binding-table)))
 
 (defun make-number-list (start end &optional (increment 1))
@@ -510,9 +533,9 @@
   "Records that site index is bound by variable indicated in BINDING.
   Returns nil on failure."
   (cond
-   ((eq binding '*) t) ; * means no bonds - used for patterns
+   ((wildcard-bond-label-p binding) t) ; * means no bonds - used for patterns
 
-   ((unconnected-binding-p binding)
+   ((unbonded-label-p binding)
     (setf (gethash (gen-bond-label binding-table) 
                    binding-table)
           (list sindex sindex)))
@@ -533,10 +556,13 @@
 (defun default-site-binding (monomer site-num &optional binding) 
   (funcall *default-site-binding* monomer site-num binding))
 
+(defun square-bracket-fld-form-p (x)
+  (and (fld-form-p x)
+       (eq (fld-form-field x) '#.(fld-form-field '().[]))))
 ;;;
-;;; PARSE-ORDERED-MONOMER-DESCRIPTION
+;;; PARSE-NAMED-MONOMER-DESCRIPTION
 ;;;
-(defun parse-ordered-monomer-description (monomer-object
+(defun parse-named-monomer-description (monomer-object
                                          monomer
                                          bindings
                                          binding-table
@@ -549,17 +575,17 @@
                      with either other site offsets or values
          PATTERNP is always NIL."
   (let ((pattern-detected-p nil)
-        (sites              (monomer-sites monomer-object)))
+        (sites              (map 'list #'identity (monomer-sites monomer-object))))
     (labels
         ((site-error (binding si msg &rest args)
            (b-error "Invalid binding ~S for site ~S in monomer ~S ~
                                      - ~?"
-                    binding (site-info-labels si) monomer
+                    binding (site-info-tags si) monomer
                     msg args))
          (site-value-from-binding (binding si)
            (cond 
-            ((eq :default binding)   (state-site-info-default si))
-            ((eq '* binding)         '*)
+            ((eq '%%default binding)   (state-site-info-default si))
+            ((wildcard-binding-p binding)  '*)
             ((typep binding (state-site-info-type si))  binding)
             ((and (consp binding) 
                   (every (lambda (x) (typep x (state-site-info-type si)))
@@ -568,39 +594,113 @@
              binding)
             (t (site-error binding si
                            "expecting type ~S" (state-site-info-type si)))))
-         (record-binding (si binding i) ; returns a site label on success
-           (when (eq binding '*) 
-             (setf pattern-detected-p t)
-             ;(unless patternp (pattern-error monomer bindings "patterns not allowed here."))
-             )
-           (let ((sindex (position si sites)))
-             ;(record-monomer-site offset i binding-table)
-             (etypecase si
-               (bond-site-info
-                (unless (record-bond-binding i binding binding-table)
-                  (site-error binding si
-                              "expecting _ or a bond a positive integer"))
-                (list sindex monomer))
-               (state-site-info
-                (list sindex monomer
-                      (site-value-from-binding binding si)))))))
+         (record-named-binding (binding i)
+           (let* ((name   (keywordify (fld-form-object binding)))
+                  (sinfo  (find name sites :key #'site-info-name)))
+             (prog1
+                 (etypecase sinfo
+                   (bond-site-info (record-binding2 sinfo (fld-form-field binding) i))
+                   (state-site-info (record-binding2 sinfo (fld-form-field binding) i))
+                   (null (b-error "Unexpected site ~A, name is not one of ~S"
+                                  binding (mapcar #'site-info-name sites))))
+               (setf sites (delete name sites :key #'site-info-name)))))
+         (record-binding (binding i) ; returns a site label on success
+           (cond 
+            ;; named binding: X.n or X.[...]
+            ((fld-form-p binding)
+             (record-named-binding binding i))
+
+            ;; ordered binding:
+            (t (record-binding2 (pop sites) binding i))))
+         (record-binding2 (si binding i)
+           (when (eq binding '%%default)
+             (setf binding (default-site-binding monomer (site-info-index si))))
+           (when (wildcard-binding-p binding) (setf pattern-detected-p t))
+           (etypecase si
+             (bond-site-info
+              (unless (record-bond-binding i binding binding-table)
+                (site-error binding si
+                            "expecting _, * or a positive integer representing a bond label"))
+              (list (site-info-index si) monomer))
+             (state-site-info
+              (list (site-info-index si) monomer
+                    (site-value-from-binding binding si))))))
+
       (record-monomer offset (length sites) binding-table)
       (loop ;; connect the monomer node to the site nodes:
-            with i = (1+ offset) 
-            for si across sites
-            for rest-bindings = bindings then (rest rest-bindings)
+            for i from (1+ offset) to (+ offset (length sites))
+            for rest-bindings = bindings then (or (rest rest-bindings) '(%%default))
             for binding = (first rest-bindings)  
-            for site-label = (record-binding 
-                              si 
-                              (default-site-binding
-                               monomer (- i offset 1)
-                               binding)
-                              i)
+            for site-label = (record-binding  binding i)
             when site-label 
             collect site-label into site-labels
-            and do (incf i)
             finally return (values (list* monomer site-labels)
                                    pattern-detected-p)))))
+;;;; (defun parse-named-monomer-description (monomer-object
+;;;;                                          monomer
+;;;;                                          bindings
+;;;;                                          binding-table
+;;;;                                          offset
+;;;;                                          patternp)
+;;;;   "When monomer is a symbol naming a defined monomer, and bindings are the 
+;;;;    RETURNS: SITE-LABELS, PATTERNP
+;;;;    Where site- and value-labels are labels for the graph,
+;;;;          bonds is a hash-table mapping binding vars to lists pairing sites offsets
+;;;;                      with either other site offsets or values
+;;;;          PATTERNP is always NIL."
+;;;;   (let ((pattern-detected-p nil)
+;;;;         (sites              (monomer-sites monomer-object)))
+;;;;     (labels
+;;;;         ((site-error (binding si msg &rest args)
+;;;;            (b-error "Invalid binding ~S for site ~S in monomer ~S ~
+;;;;                                      - ~?"
+;;;;                     binding (site-info-tags si) monomer
+;;;;                     msg args))
+;;;;          (site-value-from-binding (binding si)
+;;;;            (cond 
+;;;;             ((eq :default binding)   (state-site-info-default si))
+;;;;             ((eq '* binding)         '*)
+;;;;             ((typep binding (state-site-info-type si))  binding)
+;;;;             ((and (consp binding) 
+;;;;                   (every (lambda (x) (typep x (state-site-info-type si)))
+;;;;                          binding))
+;;;;              (unless patternp (pattern-error monomer bindings "patterns not allowed here."))
+;;;;              binding)
+;;;;             (t (site-error binding si
+;;;;                            "expecting type ~S" (state-site-info-type si)))))
+;;;;          (record-binding (si binding i) ; returns a site label on success
+;;;;            (when (eq binding '*) 
+;;;;              (setf pattern-detected-p t)
+;;;;              ;(unless patternp (pattern-error monomer bindings "patterns not allowed here."))
+;;;;              )
+;;;;            (cond 
+;;;;             (let ((sindex (position si sites)))
+;;;;               (etypecase si
+;;;;                 (bond-site-info
+;;;;                  (unless (record-bond-binding i binding binding-table)
+;;;;                    (site-error binding si
+;;;;                                "expecting _ or a bond a positive integer"))
+;;;;                  (list sindex monomer))
+;;;;                 (state-site-info
+;;;;                  (list sindex monomer
+;;;;                        (site-value-from-binding binding si)))))))
+;;;;       (record-monomer offset (length sites) binding-table)
+;;;;       (loop ;; connect the monomer node to the site nodes:
+;;;;             with i = (1+ offset) 
+;;;;             for i = si across sites
+;;;;             for rest-bindings = bindings then (rest rest-bindings)
+;;;;             for binding = (first rest-bindings)  
+;;;;             for site-label = (record-binding 
+;;;;                               si 
+;;;;                               (default-site-binding
+;;;;                                monomer (- i offset 1)
+;;;;                                binding)
+;;;;                               i)
+;;;;             when site-label 
+;;;;             collect site-label into site-labels
+;;;;             and do (incf i)
+;;;;             finally return (values (list* monomer site-labels)
+;;;;                                    pattern-detected-p)))))
 
 (defun unkeywordify-fld-form-field (f)
   (let ((field (fld-form-field f)))
@@ -609,60 +709,76 @@
 
 
 ;;;
-;;; PARSE-WILDCARD-MONOMER-DESCRIPTION for [? ...] monomers
+;;; PARSE-WILDCARD-MONOMER-DESCRIPTION for [* ...] monomers
 ;;;
 (defun parse-wildcard-monomer-description (monomer bindings binding-table offset)
-  (flet ((make-label (i &optional site-test value-test)
-           ;(record-monomer-site offset i binding-table)
-           (let ((sindex (- i offset 1)))
-             (make-wildcard-label monomer sindex site-test value-test))))
+  (flet ((make-label (i &optional site-test (value-test nil value-test-p))
+             (let ((sindex      (- i offset 1))
+                   (value-test  (normalize-test value-test 'or)))
+               (apply #'make-wildcard-label 
+                      monomer sindex site-test
+                      (if value-test-p (list value-test))))))
+                      
     (record-monomer offset (length bindings) binding-table)
     (loop for binding in bindings
           for i = (1+ offset) then (1+ i)
           if (fld-form-p binding)
-            ;; [? L.[V1 V2...]] --- a value binding with label specification
-            if (eq '#.(fld-form-field '().[]) (fld-form-field binding))
-               collect (make-label i 
-                                        (fld-form-object binding)
-                                        (fld-form-args binding))
+            ;; [* TAG-TEST.[V1 V2...]] --- a value binding with label specification
+            if (square-bracket-fld-form-p binding)
+            collect (make-label i 
+                                (fld-form-object binding)
+                                (fld-form-args binding))
                into site-labels
 
-            ;; [? site-test.1] -- bond binding
+            ;; [* TAG-TEST.1] -- bond binding
             else do (when (fld-form-args binding)
                       (error "Use ~S.[value] to specify a site with a value; ~
                               Use ~0@*~S.var to specify a bond; ~
                               Use ~0@*~S._ to specify an unconnected site."
                              (fld-form-object binding)))
                     (record-bond-binding i (fld-form-field binding)
-                                               binding-table)
+                                         binding-table)
                  and collect (make-label i (fld-form-object binding))
                      into site-labels
   
-         ;; [? 1] - a wildcard pattern with a bound site, no labels specified
+         ;; [* 1] - a wildcard pattern with a bound site, no labels specified
          else if (user-bond-label-p binding)
               do (record-bond-binding i binding binding-table)
-              and collect (make-label i) into site-labels
+              and collect (make-label i '*) into site-labels
   
-         ;; [? label-test] - a wildcard pattern with a label-test only (cnxns unspecified)
+         ;; [* label-test] - a wildcard pattern with a label-test only (cnxns unspecified)
          else collect (make-label i binding) into site-labels
               
          finally return (values (list* monomer site-labels)
                               (1+ i)))))
 
 (defun normalize-test (x &optional (logical-op 'and))
-  (cond
-   ((eq x '?) (list logical-op))
-   ((and (not (logical-label-p x))
-         (consp x))     (list* logical-op x))
-   (t         x)))
+  (labels ((keywordify-logical-test (x)
+             (list* (first x) 
+                    (mapcar (lambda (elt)
+                              (if (consp elt)
+                                  (keywordify-logical-test elt)
+                                (keywordify elt)))
+                            (rest x)))))
+    (cond
+     ((wildcard-binding-p x) x)
+     ((consp x)
+      (keywordify-logical-test 
+       (if (logical-label-p (first x))
+           x
+         (list* logical-op x))))
+     (t (keywordify x)))))
 
 
 ;;;
 ;;; Variables accepted by the complex constructor syntax:
 ;;;
 
-(defun unconnected-binding-p (x) 
-  (and (symbolp x) (string= (symbol-name x) "_")))
+(defun unbonded-label-p (x) 
+  (member x '(_ :_)))
+
+(defun wildcard-bond-label-p (x)
+  (member x '(* :*)))
 
 (defun bond-label-p (x)
   "Objects used to denote a bond in a complex"
@@ -747,23 +863,27 @@
        (selector-graph-ignorable-vertex-p rg i)))))
                                    
 (defun selector-graph-ignorable-vertex-p (rg i)
-  (let ((label (gtools:labelled-graph-vertex-label rg i)))
+  (let ((label (gtools:graph-vertex-label rg i)))
   (cond
    ((site-label-has-value-p label) 
     (eq label '*))
    (t (= (length (gtools:graph-vertex-outputs rg i)) 1)))))
 
+;;;
+;;; COMPLEX-EXPANDER: implements [] syntax
+;;;
 (add-object-expander 'complex-expander 0)
 (defun complex-expander (args environment)
   (declare (ignorable environment))
   (let ((first (first args)))
     (cond
      ((monomer-symbol-ref-p first)
-       `(complex-ctor '(,args)))
+       `(make-complex '(,args)))
      ((monomer-form-ref-p first)
-       `(complex-ctor ',(mapcar #'object-form-body args))))))
+       `(make-complex ',(mapcar #'object-form-body args))))))
 
-(defun complex-ctor (cdescr)  
+(defun make-complex (cdescr)  
+  "Given a list of the form ((D1 1a 1b 1c) (D2 2a 2b 2c)...) where Dn are domain symbols and nx are bindings, constructs a complex"
   (cond
    (*reference-labels*    [reference-pattern 
                            (make-complex-graph
@@ -786,9 +906,6 @@
          (or (fld-form-p head)
              (some (lambda (x) (eq x '*)) x)))))
 
-(defmethod print-concept ((o complex-species-type) &optional stream)
-  (let ((graph     o.id))
-    (print-complex-graph graph stream "[" "]")))
 
 (defun firsthash (keys hash-table &optional default)
   "Returns the hash-value of a key in keys, otherwise default"
@@ -798,111 +915,143 @@
             return v)
       default))
 
-(defun print-complex-graph (graph &optional 
-                                  (stream *standard-output*)
-                                  (prefix "[") 
-                                  (suffix "]"))
-  (let* ((dvertexes (complex-graph-monomer-vertexes graph))
-        (multi     (> (length dvertexes) 1))
-        (cnxn-num  0)
-        (var-table (make-hash-table :test #'equal)))
-    (flet ((add-bond (cnxns)
-             (or (firsthash cnxns var-table)
-                 (loop with new-var = (incf cnxn-num)
-                       for c in cnxns
-                       do (setf (gethash c var-table) new-var)
-                       finally return new-var))))
-      (pprint-logical-block (stream dvertexes
-                                    :prefix (if multi prefix "")
-                                    :suffix (if multi suffix ""))
-        (loop 
-         with labels = (gtools:labelled-graph-labels graph)
-         for dindex = 0 then (1+ dindex)
-         for dvertex in dvertexes
-         for monomer = (elt labels dvertex)
-         for sinfos = (monomer-sites monomer)
-         do (pprint-logical-block (stream () :prefix prefix :suffix suffix)
-              (prin1 monomer stream)
-              (loop for sindex from 0 below (length sinfos)
-                    do (princ #\space stream)
-                    (cond
-                     ((state-site-info-p (svref sinfos sindex))
-                      (prin1 (site-label-value
-                              (gtools:labelled-graph-vertex-label
-                               graph 
-                               (complex-graph-dindex-sindex-to-vertex graph dindex sindex)))
-                             stream))
 
-                     ;; connector sites
-                     (t
-                      (let ((cnxns (complex-graph-site-bonds graph dindex sindex)))
-                        (cond
-                         ((null cnxns) (princ #\* stream))
-                         ((equal cnxns `((,dindex ,sindex)))  ; connected to self = empty
-                          (princ #\_ stream))
-                         (t  
-                          (princ (add-bond (list* (list dindex sindex) cnxns))
-                                 stream)))))))
-              (pprint-newline :linear stream)))))))
 
-(defun complex-graph-site-bonds (g dindex sindex)
-  "For 0-based monomer DINDEX and 0-based site SINDEX, returns a list of 
+(defun complex-graph-description (graph)
+  (let* ((mvertexes (complex-graph-monomer-vertexes graph))
+         (cnxn-num  0)
+         (var-table (make-hash-table :test #'equal))
+         (labels    (gtools:graph-labels graph)))
+    (labels ((add-bond (cnxns)
+               (or (firsthash cnxns var-table)
+                   (loop with new-var = (incf cnxn-num)
+                         for c in cnxns
+                         do (setf (gethash c var-table) new-var)
+                         finally return new-var)))
+             (calculate-bond-label (mindex sindex)               
+               (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
+                 (cond
+                  ((null cnxns) '*)
+                  ((equal cnxns `((,mindex ,sindex)))  ; connected to self = empty
+                   '_)
+                  (t  
+                   (add-bond (list* (list mindex sindex) cnxns))))))
+             (simplify-tags-test (x)
+               (if (and (consp x) 
+                        (eq (first x) 'and))
+                   (rest x)
+                 x))
+             (simplify-state-test (x)
+               (cond
+                ((equal x '(or :*)) '(*))
+                ((eq (first x) 'or) (rest x))
+                (t x))))
+                 
+      (loop 
+       for mindex = 0 then (1+ mindex)
+       for mvertex in mvertexes
+       for monomer = (elt labels mvertex)
+       if (wildcard-monomer-reference-p monomer)
+       collect 
+       (list* monomer
+              (loop for svertex in (complex-graph-monomer-site-vertexes graph mindex)
+                    for site-label = (gtools:graph-vertex-label graph svertex)
+                    for sindex = 0 then (1+ sindex)
+                    for test-label = (simplify-tags-test (wildcard-label-tags site-label))
+                    collect 
+                    (cond 
+                     ;; state sites:
+                     ((wildcard-state-label-p site-label)
+                      `,.test-label.[,@(simplify-state-test (wildcard-label-state site-label))])
+
+                     ;; connector sites:
+                     (t              
+                      (let* ((blabel (keywordify (calculate-bond-label mindex sindex))))
+                      `,.test-label.,blabel)))))
+
+       else
+       collect
+       (list* monomer
+              (loop with sinfos = (monomer-sites monomer)
+                    for sindex from 0 below (length sinfos)
+                    for sinfo = (svref sinfos sindex)
+                    collect (cond
+                             ;; state sites
+                             ((state-site-info-p sinfo)
+                              (site-label-value
+                               (gtools:graph-vertex-label
+                                graph 
+                                (complex-graph-mindex-sindex-to-vertex graph mindex sindex))))
+                             
+                             ;; connector sites
+                             ((bond-site-info-p sinfo)
+                              (calculate-bond-label mindex sindex)))))))))
+
+(defun complex-graph-constructor-form (graph)
+  (let ((descr (complex-graph-description graph)))
+    (case (length descr)
+      (1 `[,@descr])
+      (t `[,@(mapcar (lambda (mdescr)
+                      `[,@mdescr])
+                    descr)]))))
+
+(defun complex-graph-site-bonds (g mindex sindex)
+  "For 0-based monomer MINDEX and 0-based site SINDEX, returns a list of 
    monomer-site index cons pairs"
-  (let* ((dvertex   (elt (complex-graph-monomer-vertexes g) dindex))
-         (svertex   (elt (complex-graph-monomer-site-vertexes g dindex) sindex))
-         (label     (gtools:labelled-graph-vertex-label g svertex))    
-         (neighbors (delete dvertex (gtools:graph-vertex-outputs g svertex))))
+  (let* ((mvertex   (elt (complex-graph-monomer-vertexes g) mindex))
+         (svertex   (elt (complex-graph-monomer-site-vertexes g mindex) sindex))
+         (neighbors (delete mvertex (gtools:graph-vertex-outputs g svertex))))
     (mapcar (lambda (i)
-              (multiple-value-list (complex-graph-dindex-sindex-from-vertex g i)))
+              (multiple-value-list (complex-graph-mindex-sindex-from-vertex g i)))
             neighbors)))
     
-(defun complex-graph-dindex-sindex-from-vertex (g i)
-  (let* ((labels   (gtools:labelled-graph-labels g))
-         (nlabel   (elt labels i))
-         (dvertexes (complex-graph-monomer-vertexes g))
-         (dvertex   (first (intersection dvertexes
+(defun complex-graph-mindex-sindex-from-vertex (g i)
+  (let* (; (labels   (gtools:graph-labels g))
+         ; (nlabel   (elt labels i))
+         (mvertexes (complex-graph-monomer-vertexes g))
+         (mvertex   (first (intersection mvertexes
                                          (gtools:graph-vertex-outputs g i)))))
-    (unless dvertex
+    (unless mvertex
       (error "Invalid input to ~S, ~S is not a site vertex"
              'complex-graph-resolve-site-index i))
-    (let ((dindex    (position dvertex dvertexes)))
-      (values dindex
-              (position i (complex-graph-monomer-site-vertexes g dindex))))))
+    (let ((mindex    (position mvertex mvertexes)))
+      (values mindex
+              (position i (complex-graph-monomer-site-vertexes g mindex))))))
         
 
 (defun complex-graph-monomer-vertexes (g)
   "Returns a list of vertex indexes representing monomers"
   (loop for i from 0 below (gtools:graph-vertex-count g)
-        for lab = (gtools:labelled-graph-vertex-label g i)
+        for lab = (gtools:graph-vertex-label g i)
         when (or (monomer-symbol-p lab)
                  (and (fld-form-p lab) (monomer-symbol-p (fld-form-object lab))))
         collect i))
 
-(defun complex-graph-dindex-to-vertex (g dindex)
+(defun complex-graph-mindex-to-vertex (g mindex)
   (let ((dverts (complex-graph-monomer-vertexes g)))
     (cond
-     ((>= dindex #1=(length dverts))
+     ((>= mindex #1=(length dverts))
       (error "Monomer index out of range (~S).  ~S contains only ~S monomers."
-             dindex g #1#))
-     (t (nth dindex dverts)))))
+             mindex g #1#))
+     (t (nth mindex dverts)))))
 
-(defun complex-graph-dindex-sindex-to-vertex (g dindex sindex)
+(defun complex-graph-mindex-sindex-to-vertex (g mindex sindex)
   "Resolves a 0-based monomer/site specification to a vertex in the graph."
-  (let ((sverts (complex-graph-monomer-site-vertexes g dindex)))
+  (let ((sverts (complex-graph-monomer-site-vertexes g mindex)))
     (cond
      ((>= sindex #1=(length sverts))
       (error "Site index out of range (~S) for monomer ~S.  Only ~S sites for this monomer in ~S."
-             sindex dindex #1# g))
+             sindex mindex #1# g))
      (t (nth sindex sverts)))))
 
-(defun complex-graph-monomer-site-vertexes (g d)
-  "Where g is a labelled graph and d is the 0-based monomer index.
+(defun complex-graph-monomer-site-vertexes (g m)
+  "Where g is a labelled graph and m is the 0-based monomer index.
 Returns the vertexes representing sites in the correct order."
   (sort (gtools:graph-vertex-outputs 
          g
-         (elt (complex-graph-monomer-vertexes g) d))
+         (elt (complex-graph-monomer-vertexes g) m))
         (gtools:graph-type-label-less-predicate 'complex-graph)
-        :key (lambda (i) (site-label-sindex (gtools:labelled-graph-vertex-label g i)))))
+        :key (lambda (i) (site-label-sindex (gtools:graph-vertex-label g i)))))
 
 
 (defun pattern-error (monomer bindings &optional msg &rest args)
@@ -913,7 +1062,7 @@ Returns the vertexes representing sites in the correct order."
   (assert (object-form-p o))
   (let ((body (object-form-body o)))
     (cond
-     ((object-form-p (first body)) (mapcar #'object-form-body ))
+     ((object-form-p (first body)) (mapcar #'object-form-body body))
      (t                            (list body)))))
       
 
@@ -935,3 +1084,51 @@ Returns the vertexes representing sites in the correct order."
                             ,cst-graph nil))))))))))
 
 (add-pattern-expander 'complex-pattern-expander)
+
+
+;;;; (defun print-complex-graph (graph &optional 
+;;;;                                   (stream *standard-output*)
+;;;;                                   (prefix "[") 
+;;;;                                   (suffix "]"))
+;;;;   (let* ((mvertexes (complex-graph-monomer-vertexes graph))
+;;;;         (multi     (> (length mvertexes) 1))
+;;;;         (cnxn-num  0)
+;;;;         (var-table (make-hash-table :test #'equal)))
+;;;;     (flet ((add-bond (cnxns)
+;;;;              (or (firsthash cnxns var-table)
+;;;;                  (loop with new-var = (incf cnxn-num)
+;;;;                        for c in cnxns
+;;;;                        do (setf (gethash c var-table) new-var)
+;;;;                        finally return new-var))))
+;;;;       (pprint-logical-block (stream mvertexes
+;;;;                                     :prefix (if multi prefix "")
+;;;;                                     :suffix (if multi suffix ""))
+;;;;         (loop 
+;;;;          with labels = (gtools:graph-labels graph)
+;;;;          for mindex = 0 then (1+ mindex)
+;;;;          for mvertex in mvertexes
+;;;;          for monomer = (elt labels mvertex)
+;;;;          for sinfos = (if (wildcard-monomer-symbol-p monomer) nil (monomer-sites monomer))
+;;;;          do (pprint-logical-block (stream () :prefix prefix :suffix suffix)
+;;;;               (prin1 monomer stream)
+;;;;               (loop for sindex from 0 below (length sinfos)
+;;;;                     do (princ #\space stream)
+;;;;                     (cond
+;;;;                      ((state-site-info-p (svref sinfos sindex))
+;;;;                       (prin1 (site-label-value
+;;;;                               (gtools:graph-vertex-label
+;;;;                                graph 
+;;;;                                (complex-graph-mindex-sindex-to-vertex graph mindex sindex)))
+;;;;                              stream))
+
+;;;;                      ;; connector sites
+;;;;                      (t
+;;;;                       (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
+;;;;                         (cond
+;;;;                          ((null cnxns) (princ #\* stream))
+;;;;                          ((equal cnxns `((,mindex ,sindex)))  ; connected to self = empty
+;;;;                           (princ #\_ stream))
+;;;;                          (t  
+;;;;                           (princ (add-bond (list* (list mindex sindex) cnxns))
+;;;;                                  stream)))))))
+;;;;               (pprint-newline :linear stream)))))))

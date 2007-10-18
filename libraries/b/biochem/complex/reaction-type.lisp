@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.3 2007/10/17 12:09:50 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.4 2007/10/18 00:13:41 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -43,15 +43,15 @@
      [complex-reaction-type ,lhsvar ,rhsvar])))
 
 
-(defcon reference-pattern (:notrace)
+(defcon reference-pattern (complex-graph-concept :notrace)
   "Reference patterns are created when reactions are defined; each monomer has a reference number indicating its identity in the context of a complex-reaction-type"
   (id)
   (setf .id (ensure-canonical-complex-graph id t)))
 
 
-(defmethod print-concept ((o reference-pattern) &optional stream)
-  (let ((graph     o.id))
-    (print-complex-graph graph stream "[" "]")))
+;;;; (defmethod print-concept ((o reference-pattern) &optional stream)
+;;;;   (let ((graph     o.id))
+;;;;     (print-complex-graph graph stream "[" "]")))
 
 (defcon complex-pattern (reference-pattern :notrace)
   "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
@@ -255,19 +255,19 @@
     (gtools:graph-delete-verticies-if 
      rhs-super-graph
      (lambda (i)
-       (find (gtools:labelled-graph-vertex-label rhs-super-graph i)
+       (find (gtools:graph-vertex-label rhs-super-graph i)
              lhs-verticies
              :test #'named-vertex=)))))
 
 (defun graph-list-labels (glist)
-  (apply #'concatenate 'simple-vector (mapcar #'gtools:labelled-graph-labels glist)))
+  (apply #'concatenate 'simple-vector (mapcar #'gtools:graph-labels glist)))
 
 (defun compute-complex-graph-bonds (g)
   "Returns a list of bonds between named vertex sites"
   (remove-if (lambda (x) (eq (length x) 1))
              (mapcar (lambda (bondlist) (remove-if #'fld-form-p bondlist))
                      (mutils:mapatoms (lambda (i)
-                                        (gtools:labelled-graph-vertex-label g i))
+                                        (gtools:graph-vertex-label g i))
                                       (gtools:graph-edges g)))))
 
 
@@ -284,9 +284,9 @@
               ((site-label-p lab) (mapcar #'extract-true-label lab))
               (t                  lab))))
     (let ((gcopy (gtools:copy-graph g)))
-      (map-into (gtools:labelled-graph-labels gcopy)
+      (map-into (gtools:graph-labels gcopy)
                 #'extract-true-label
-                (gtools:labelled-graph-labels g))
+                (gtools:graph-labels g))
       gcopy)))
   
 
@@ -321,7 +321,7 @@
                ;; converts a named-vertex to a graph index (GNUM . VINDEX)
                (or (loop for graph in (list* rhs-new-graph lhs-patterns)
                          for gindex = 0 then (1+ gindex)
-                         for vindex = (position label (gtools:labelled-graph-labels graph) 
+                         for vindex = (position label (gtools:graph-labels graph) 
                                                 :test #'named-vertex=)
                          when vindex return (cons gindex vindex))
                    (error "BUG: LABEL ~S not FOUND" label)))
@@ -362,7 +362,7 @@
 
       ;; relabel verticies
       (loop for ((g . v) nil to) in relabels
-            do (setf (site-label-value (gtools:labelled-graph-vertex-label 
+            do (setf (site-label-value (gtools:graph-vertex-label 
                                         (graph g) 
                                         (vertex g v)))
                      to))
@@ -441,7 +441,7 @@
 ;;;;                ;; converts a named-vertex to a graph index (GNUM . VINDEX)
 ;;;;                (or (loop for graph in (list* rhs-new-graph lhs-patterns)
 ;;;;                          for gindex = 0 then (1+ gindex)
-;;;;                          for vindex = (position label (gtools:labelled-graph-labels graph) 
+;;;;                          for vindex = (position label (gtools:graph-labels graph) 
 ;;;;                                                 :test #'named-vertex=)
 ;;;;                          when vindex return (cons gindex vindex))
 ;;;;                    (error "BUG: LABEL ~S not FOUND" label)))
@@ -535,7 +535,7 @@
 ;;;;     (fix-automatic-bond-labels binding-table)
 ;;;;     (loop with graph = (build-complex-graph slabels binding-table)
 ;;;;           for i from 0 below (gtools:graph-vertex-count graph)
-;;;;           for lab = (gtools:labelled-graph-vertex-label graph i)
+;;;;           for lab = (gtools:graph-vertex-label graph i)
 ;;;;           finally return (values graph
 ;;;;                                  (compute-bond-list binding-table slabels)))))
 ;;;;     
