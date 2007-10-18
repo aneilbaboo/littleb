@@ -44,11 +44,15 @@
 ;;;              (query [x ?a ?b]) == (query (?a ?b) [x ?a ?b]) ; pattern vars in order encountered
 ;;;              
 
-;;; $Id: query.lisp,v 1.2 2007/10/09 18:26:02 amallavarapu Exp $
+;;; $Id: query.lisp,v 1.3 2007/10/18 18:49:59 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
 
+(defmacro lookup (object)
+  "Query a specific object without pattern matching"
+  `(with-fast-query-object ,object))
+  
 (defmacro query (head &optional (body nil body-p))
   (cond
    ;; (query [myobject...])

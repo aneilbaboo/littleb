@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.3 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.4 2007/10/18 18:49:59 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -150,42 +150,51 @@ accessed with symbols like .field-name."
 (defun remove-object-expander (expander)
   (setf *object-expanders* (remove-prioritized-symbol expander *object-expanders*)))
 
-(defmacro internal-kb-access-object (usedb  bindings
-                                            key-form
-                                            obj-form
-                                            user-forms 
-                                            create-forms)
+(defmacro internal-kb-access-object (mode  bindings
+                                           key-form
+                                           obj-form
+                                           user-forms 
+                                           create-forms)
   (let ((found '#:found)
         (key   '#:key))
-    (cond
-     (usedb (let* ((add-obj-form `(kb-add-object ,key ,obj-form)))
-              `(let* (,@bindings
-                      (,key      ,key-form)
-                      (,found    (kb-find-object ,key)))
-                 (with-fields (or ,found ,add-obj-form)
-                   ,@user-forms
-                   (unless ,found 
-                     ,@create-forms)
-                   object))))
-     (t      `(with-find-or-create-object 
-                (let* (,@bindings)
-                  (with-fields ,obj-form ,@user-forms ,@create-forms object)))))))
+    (ecase mode
+     (:find-or-create  (let* ((add-obj-form `(kb-add-object ,key ,obj-form)))
+                         `(let* (,@bindings
+                                 (,key      ,key-form)
+                                 (,found    (kb-find-object ,key)))
+                            (with-fields (or ,found ,add-obj-form)
+                              ,@user-forms
+                              (unless ,found 
+                                ,@create-forms)
+                              object))))
+     (:fast-query     `(let* (,@bindings)
+                         (kb-find-object ,key-form)))
+     (:force-create   `(with-find-or-create-object 
+                         (let* (,@bindings)
+                           (with-fields ,obj-form ,@user-forms ,@create-forms object)))))))
 
 (defmacro kb-find-or-create (bindings key-form obj-form find-actions create-actions)
   "Evaluates ARGS-FORM, storing the result in ARGS.  KEY-FORM should compute a key used for finding the object; OBJ-FORM should be a form which creates a new instance of the object"
-  `(internal-kb-access-object t ,bindings ,key-form ,obj-form ,find-actions ,create-actions))
+  `(internal-kb-access-object :find-or-create ,bindings ,key-form ,obj-form ,find-actions ,create-actions))
 
 (defmacro with-forced-create-object (&body body)
   "installs a version of kb-find-or-create which forces creation of objects 
    (but does not force creation of arguments to the object)"
   `(macrolet ((kb-find-or-create (bindings key-form obj-form find-actions create-actions)
                 `(internal-kb-access-object 
-                  nil ,bindings ,key-form ,obj-form ,find-actions ,create-actions)))
+                  :force-create ,bindings ,key-form ,obj-form ,find-actions ,create-actions)))
      ,@body))
 
 (defmacro with-find-or-create-object (&body body)
-  `(macrolet ((kb-find-or-create (key-form obj-form &optional actions)
-                `(internal-kb-access-object t ,key-form ,obj-form ,actions)))
+  `(macrolet ((kb-find-or-create (bindings key-form obj-form find-actions create-actions)
+                `(internal-kb-access-object
+                  :find-or-create ,bindings ,key-form ,obj-form ,find-actions ,create-actions)))
+     ,@body))
+
+(defmacro with-fast-query-object (&body body)
+  `(macrolet ((kb-find-or-create (bindings key-form obj-form find-actions create-actions)
+                `(internal-kb-access-object
+                  :fast-query ,bindings ,key-form ,obj-form ,find-actions ,create-actions)))
      ,@body))
 
 (defun object-expansion (args force-new env)
