@@ -25,18 +25,27 @@
 ;;; File: portable-pkg
 ;;; Description: much of the code within lifted from the CLOCC PORTABLE project
 
-;;; $Id: portable-pkg.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: portable-pkg.lisp,v 1.2 2007/10/20 20:15:10 amallavarapu Exp $
 ;;;
 (defpackage portable
   (:use cl)
-  #+lispworks (:import-from #:clos #:class-slots)
+
+  (:import-from #:clos
+   #-:allegro #:class-slots
+   #:funcallable-standard-object
+   #:funcallable-standard-class #:set-funcallable-instance-function)
+  
   (:export ;; mop
+   #:funcallable-standard-object #:funcallable-standard-class #:set-funcallable-instance-function
    #:class-all-superclasses #:find-direct-superclasses #:is-standard-classp 
    #:finalize-inheritance #:class-finalized-p #:ensure-class #:class-slot-initargs
    #:class-slot-list #:slot-definition-allocation #:slot-definition-one-initarg
    #:slot-definition-name #:class-slots 
    #:class-direct-superclasses #:class-direct-subclasses
    #:copy-instance
+
+   ;; funcallable
+   funcallable-standard-class set-funcallable-instance-function
            
    ;; prompt functions
    #:prompt-for-yes-or-no
