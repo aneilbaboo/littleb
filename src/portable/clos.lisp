@@ -39,8 +39,8 @@
    #+lucid (clos:class-slots class)
    #+sbcl (sb-pcl::class-slots class))
 
-(defun class-slots1 (class)
-  (class-slots class))
+;;;; (defun class-slots1 (class)
+;;;;   (class-slots class))
 
 (declaim (inline slot-definition-name))
 
@@ -92,25 +92,25 @@
 (defun slot-name (slot)
   (slot-definition-name slot))
 
-(defun class-slot-list (class &optional (all t))
-  "Return the list of slots of a CLASS.
-CLASS can be a symbol, a class object (as returned by `class-of')
-or an instance of a class.
-If the second optional argument ALL is non-NIL (default),
-all slots are returned, otherwise only the slots with
-:allocation type :instance are returned."
-      (unless (class-finalized-p class)
-        (finalize-inheritance class))
-      (mapcan (if all (compose #'list #'slot-name)
-                (lambda (slot)
-                  (when (eq (slot-alloc slot) :instance)
-                    (list (slot-name slot)))))
-              (class-slots1 class)))
+;;;; (defun class-slot-list (class &optional (all t))
+;;;;   "Return the list of slots of a CLASS.
+;;;; CLASS can be a symbol, a class object (as returned by `class-of')
+;;;; or an instance of a class.
+;;;; If the second optional argument ALL is non-NIL (default),
+;;;; all slots are returned, otherwise only the slots with
+;;;; :allocation type :instance are returned."
+;;;;       (unless (class-finalized-p class)
+;;;;         (finalize-inheritance class))
+;;;;       (mapcan (if all (compose #'list #'slot-name)
+;;;;                 (lambda (slot)
+;;;;                   (when (eq (slot-alloc slot) :instance)
+;;;;                     (list (slot-name slot)))))
+;;;;               (class-slots1 class)))
 
 (defun copy-instance (o)
   "Returns a shallow copy of the standard class o"
   (loop with new = (make-instance (type-of o))
-        for slot in (class-slot-list (class-of o))
+        for slot in (class-slots (class-of o))
         do (setf (slot-value new slot) (slot-value o slot))
         finally return new))
 
@@ -213,3 +213,8 @@ initargs for all slots are returned, otherwise only the slots with
   (hcl:class-direct-subclasses class)
   #-Lispworks
   (clos:class-direct-subclasses class))
+
+
+;;;
+;;; FUNCALLABLE IMPLEMENTATION
+;;;
