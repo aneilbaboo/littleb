@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.2 2007/10/20 20:15:09 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.3 2007/10/22 18:50:57 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -281,6 +281,7 @@
    (args :initarg :args :reader anonymous-fld-function-args))
   (:metaclass port:funcallable-standard-class))
 
+(set-pprint-dispatch 'function nil) 
 (defun make-anonymous-fld-function-key (object field args)
   (vector 'anonymous-fld-function object field args))
 
