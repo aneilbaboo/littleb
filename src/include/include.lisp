@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.2 2007/10/15 13:21:05 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.3 2007/10/22 18:50:37 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -226,8 +226,8 @@
 ;;;
 (defun check-ipath-circular-dependency (ipath)
   (whenit (position ipath *active-include-paths* :test #'equalp)
-    (error "Circular INCLUDE dependency:~{ ~A =>~} ~A" 
-           (subseq *active-include-paths* 0 it) ipath)))    
+    (error "Circular INCLUDE dependency: ~A~{ <= ~A~} <= ~A" 
+           ipath #1=(subseq *active-include-paths* 0 it) ipath)))
 
 (defun check-ipath-exists (ipath &optional
                                  (file (include-path-effective-file ipath)))
