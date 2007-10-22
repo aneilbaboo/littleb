@@ -26,7 +26,7 @@
 ;;; Description: defrule, defines b rules
 ;;;
 
-;;; $Id: defrule.lisp,v 1.2 2007/10/15 12:48:51 amallavarapu Exp $
+;;; $Id: defrule.lisp,v 1.3 2007/10/22 18:53:18 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -46,7 +46,7 @@
         (form            '#:form)
         (rule-name       '#:rule-name)
         (user-name       '#:user-name))
-    `(flet ((,(intern "ADD-RULE") (,pattern ,form &optional ,user-name)
+    `(flet ((ADD-RULE (,pattern ,form &optional ,user-name)
               (let ((,rule-name (or ,user-name (gentempn (format nil "~A-DYNRULE" ',name) 0 ,*package*))))
                 (eval `(defrule ,,rule-name ,,pattern => ,,form)))))
        ,@body)))
