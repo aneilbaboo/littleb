@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.3 2007/10/22 18:50:57 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.4 2007/10/22 19:17:50 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -281,7 +281,7 @@
    (args :initarg :args :reader anonymous-fld-function-args))
   (:metaclass port:funcallable-standard-class))
 
-(set-pprint-dispatch 'function nil) 
+(set-pprint-dispatch 'anonymous-fld-function 'anonymous-fld-function-printer most-positive-fixnum)
 (defun make-anonymous-fld-function-key (object field args)
   (vector 'anonymous-fld-function object field args))
 
@@ -294,9 +294,14 @@
                  ffun fn)
                 ffun)))))
 
-(defmethod print-object ((o anonymous-fld-function) stream)
-  (print-object (list* 'fld (anonymous-fld-function-object o) (anonymous-fld-function-field o) (anonymous-fld-function-args o)) stream))
-
+(defun anonymous-fld-function-printer (stream o)
+  (let ((*print-case* :downcase))
+    (print-object
+     (list* 'fld 
+            (anonymous-fld-function-object o)
+            (anonymous-fld-function-field o)
+            (anonymous-fld-function-args o)) stream)))
+  
 (defmethod fld ((object (eql ?)) field &rest args)
   (make-anonymous-fld-function object field args (lambda (o) (apply #'fld o field args))))
 
