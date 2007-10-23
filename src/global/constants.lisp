@@ -26,7 +26,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.2 2007/10/23 17:16:49 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -40,7 +40,7 @@
 
 (defparameter *print-depth* 0)
 (defconstant *default-print-level* 10)
-
+(setf *debugger-hook* (lambda (c dh) (let ((*print-level* 10)) (invoke-debugger c))))
 (defun littleb-version ()
   "Returns 3 values: major version, minor version, revision number"
   (values b-system:*b-major-version*

@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.4 2007/10/22 19:17:50 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.5 2007/10/23 17:16:49 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -255,7 +255,7 @@
 
 (defmethod fld :around (object (field (eql :apply)) &rest args)
   (declare (ignorable field))
-  (apply #'fld object (fix-apply-args args)))
+  (apply #'apply #'fld object args))
 
 (defmethod (setf fld) :around (value object (field (eql :apply)) &rest args)
   (declare (ignorable field))
@@ -301,7 +301,10 @@
             (anonymous-fld-function-object o)
             (anonymous-fld-function-field o)
             (anonymous-fld-function-args o)) stream)))
-  
+
+(defmethod print-object ((o anonymous-fld-function) stream)
+  (anonymous-fld-function-printer stream o))
+
 (defmethod fld ((object (eql ?)) field &rest args)
   (make-anonymous-fld-function object field args (lambda (o) (apply #'fld o field args))))
 

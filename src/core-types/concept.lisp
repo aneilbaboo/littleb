@@ -25,7 +25,7 @@
 ;;; File: concept
 ;;; Description: defines the base class, CONCEPT
 
-;;; $Id: concept.lisp,v 1.1 2007/09/25 17:54:10 amallavarapu Exp $
+;;; $Id: concept.lisp,v 1.2 2007/10/23 17:16:49 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -108,7 +108,7 @@
   (if (concept-property o field) t))
   
 (defun unbound-property-error (obj field)
-  (error "Property ~S of ~S is unbound." field obj))
+  (b-error "Property ~S of ~S is unbound." field obj))
 
 (defun concept-interface (c iclass)
   (getf (concept-interfaces c) iclass))
