@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -43,20 +43,105 @@
 ;;;
 ;;; For computing the ODE rates:
 ;;;
-(defprop reaction-type.rate-fn (:documentation "A function or function name which compute the rate of a reaction of this type"))
+(defprop reaction-type.rate-fn (:documentation "A math expression describing rate in terms of the species-types and localizations which make up the left hand side"))
 
-(defprop reaction-type.k (dictionary :#= [dictionary] :relevance t
-                         :documentation "A dictionary of named constants referenced by the rate-fn property"))
+(defprop reaction-type.rate-calculator
+    (:documentation "A list which stores the user's original rate specification (the arguments to set-rate-function)"))
+
+(defprop reaction-type.k 
+    (dictionary :#= [dictionary] :relevance t
+                :documentation "A dictionary of named constants referenced by the rate-fn property"))
 
 
 (defield reaction-type.set-rate-function (fn &rest args)
-  (funcall fn object args))
+  (let ((rate-dimension {(location-class-dimension .location-class)
+                         * *molecular-amount-dimension* 
+                         / *time-dimension*}))
+    (setf .rate-calculator (list* fn args)
+          .rate-fn         (apply fn
+                                  rate-dimension 
+                                  .k 
+                                  (nconc
+                                   (apply #'mapcar #'list
+                                          (mapcar (lambda (rtr)
+                                                    (list rtr.(localization t)
+                                                          rtr.stoichiometry
+                                                          (location-class-dimension
+                                                           rtr.species-type.location-class)))
+                                                  .lhs-requirements))
+                                   args)))))
+
+;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
+;;;     - function of 5 or more arguments which return a math expression expression
+;;;     - may also set entries in a dictionary (usually constants)
+;;;
+;;; INPUTS: LAMBDA-LIST     - user-supplied arguments to .SET-RATE-FUNCTION
+;;;      
+;;;         ENTITIES        - list of n entities (e.g., species-type objects)
+;;;         STOICHIOMETRIES - list of n integers representing stoichiometries of the entities
+;;;         DIMENSIONS      - list of n dimensions representing the concentration dimension of each entity
+;;;         RATE-DIMENSION  - the dimension of the expression to be calculated 
+;;;                           (the implementation may use this value to fix user inputs,
+;;;                           produce warnings or errors)
+;;;         DICTIONARY      - a DICTIONARY object which provides a namespace for any new objects
+;;;                           which must be generated (e.g., new reference variables)
+;;;
+;;;
+(define-macro define-custom-rate 
+    (name (&rest lambda-list)
+          (&optional rate-dimension dictionary entities stoichiometries dimensions)
+          &body body)
+  (destructuring-bind (&optional (rate-dimension '#:rate-dimension)
+                                 (dictionary '#:dictionary)
+                                 (entities '#:entities)
+                                 (stoichiometries '#:stoichiometries)                     
+                                 (dimensions '#:dimensions))
+      (list rate-dimension dictionary entities stoichiometries dimensions)
+    (mutils:let+ 
+        (((user-doc body) (if (stringp (first body)) (values (first body) (rest body))
+                            (values nil body)))
+         (doc-str         (format nil "USAGE: x.(set-rate-function '~S ,@lambda-list).~@[  ~A~]"
+                                  name user-doc))
+         (user-args       '#:user-args))
+      
+      `(progn
+         (defmethod documentation ((o (eql ',name)) (doc-type (eql 'function)))
+           ,doc-str)
+         (define-function ,name 
+             (,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions &rest ,user-args)
+           (destructuring-bind ,lambda-list ,user-args
+             ,@body))))))
+
+(defprop reaction.%precomputed-rate (:= nil))
+
+(defrule reset-reaction-precomputed-rate
+  "When .rate-fn of reaction-type changes, delete the precomputed rate of the reaction"
+  (?rxn [reaction (?type [[reaction-type] :rate-fn ?rf])])
+  =>
+  (setf ?rxn.%precomputed-rate nil))
 
 (defield reaction.rate ()
-  (funcall .type.rate-fn object))
+  (or .%precomputed-rate
+      (setf .%precomputed-rate
+            .type.rate-fn.(map-substitution (reaction-rate-substituter object)))))
 
-(defrule compute-reaction-rate-fn
-  (?rxn [reaction ?rxn-type ?rxn-loc])
+(defun reaction-rate-substituter (rxn)
+  (let ((substs (|REACTION.SUBSTITUTION-TABLE| rxn)))
+    (labels ((substitute (o)
+               (typecase o
+                 (function     (funcall o rxn))
+                 (species-type (let ((species (gethash o substs)))
+                                 (unless species (b-error "BUG: Unable to substitute ~S; ~
+                                                 no species exists for this species-type."
+                                                          o))
+                                 species.conc))
+                 (t            (let ((subst (gethash o substs)))
+                                 (if subst (substitute subst)
+                                   o))))))
+      #'substitute)))
+
+(defrule add-reaction-influences
+  (?rxn reaction); ?rxn-type ?rxn-loc])
    =>
    (compute-reaction-rate-influences ?rxn ?rxn.reactants (lambda () {- ?rxn.rate}))
    (compute-reaction-rate-influences ?rxn ?rxn.products (lambda () ?rxn.rate)))

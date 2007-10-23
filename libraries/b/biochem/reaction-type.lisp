@@ -25,12 +25,12 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
 (include @>/math :use)
-(include (@/location @/species))
+(include (@/location @/species @/localization))
 
 (include-documentation :description "Describes REACTION-TYPE concepts.")
 
@@ -39,7 +39,6 @@
    (rhs :documentation "Right hand side components") ; Sn = integer stoichiometry and RTn = species-type or localization-requirement
    &optional (location-class concept-class := nil)
    &property 
-   (reactions      := (make-hash-table) :relevance t)
    (lhs-requirements := ()) ; a list of reaction-type-requirement objects
    (rhs-requirements := ()) ; " "    "  "         "           "
    (reactants  := (make-hash-table) :relevance t) ; key = location, val = assoc list of cons pairs where
@@ -56,26 +55,6 @@
   (if *debug-printing* (call-next-method)
     (print-math-expression rt stream)))
 
-(defcon localization (:notrace)
-  (entity location))
-
-
-(defield localization.is-valid-for (loc-class)
-  (let ((fi   (find .location loc-class._fieldinfos :key ?.symbol)))
-    (and (typep fi 'fieldinfo)
-         (subtypep (if (mutils:allow-type-p fi.type)
-                       (mutils:allow-type-type fi.type) fi.type)
-                   'location))))
-
-(defmethod print-object ((o localization) stream)
-  (print-math-expression o stream t))
-
-(defmethod print-math-expression ((o localization) &optional stream outer-op)
-  (pprint-math-form `{,o.entity @ ,o.location} stream outer-op))
-;;;; (defmethod print-concept ((l localization) &optional stream)
-;;;;   (if *debug-printing* (call-next-method)
-;;;;     (print-math-expression l stream)))
-
 (defmethod print-math-expression ((rt reaction-type) &optional 
                                   (stream *standard-output*) (outer-op t))
   (with-print-context rt
@@ -83,34 +62,40 @@
                            {rt.lhs @ rt.location-class})))
       (pprint-math-form `{,rt.lhs -> ,rt.rhs} stream outer-op))))
 
-(defield reaction-type.lhs-species (loc req)
-  (get-reaction-type-species object loc req .reactants))
+;;;; (defield reaction-type.lhs-species (loc req)
+;;;;   (get-reaction-type-species object loc req .reactants))
 
-(defield (setf reaction-type.lhs-species) (value loc selector)
-  (setf (get-reaction-type-species object loc selector .reactants) value))
+;;;; (defield (setf reaction-type.lhs-species) (value loc selector)
+;;;;   (setf (get-reaction-type-species object loc selector .reactants) value))
 
-(defield reaction-type.rhs-species (loc selector)
-  (get-reaction-type-species object loc selector .products))
+;;;; (defield reaction-type.rhs-species (loc selector)
+;;;;   (get-reaction-type-species object loc selector .products))
 
-(defield (setf reaction-type.rhs-species) (value loc req)
-  (setf (get-reaction-type-species object loc req .products) value))
+;;;; (defield (setf reaction-type.rhs-species) (value loc req)
+;;;;   (setf (get-reaction-type-species object loc req .products) value))
 
-(defun get-reaction-type-species (rt loc selector ht)
-  (let* ((key (etypecase selector
-                (reaction-type-requirement nil)
-                (location-requirement      ?.location-requirement)
-                (species-type              ?.species-type)))
-         (retval (assoc (gethash loc ht) selector :key key)))
-    (unless retval (b-error "Invalid selector (~S). No matching species in ~S." selector rt))))
+;;;; (defun get-reaction-type-species (rt loc selector ht)
+;;;;   (let* ((key (etypecase selector
+;;;;                 (reaction-type-requirement nil)
+;;;;                 (location-requirement      ?.location-requirement)
+;;;;                 (species-type              ?.species-type)))
+;;;;          (retval (assoc (gethash loc ht) selector :key key)))
+;;;;     (unless retval (b-error "Invalid selector (~S). No matching species in ~S." selector rt))))
 
-(defun (setf get-reaction-type-species) (rct rt loc req ht)
-  (assert (and (species-p rct) (eq req.reaction-type rt)))
-  (pushnew (cons req rct) (gethash loc ht) :key #'car))
+;;;; (defun (setf get-reaction-type-species) (rct rt loc req ht)
+;;;;   (assert (and (species-p rct) (eq req.reaction-type rt)))
+;;;;   (pushnew (cons req rct) (gethash loc ht) :key #'car))
 
-(defield reaction-type.satisfied-at (loc)
-  (eq (length (gethash loc .reactants)) 
-      (length .lhs-requirements)))
+;;;; (defield reaction-type.satisfied-at (loc)
+;;;;   (eq (length (gethash loc .reactants)) 
+;;;;       (length .lhs-requirements)))
 
+
+
+(defield species-type.required (subloc)
+  "Returns an object which represents a requirement for a species in a relative location.  SUBLOC is a keyword which names a field of a location which points to another location."
+  (b-warn "~S.(REQUIRED ~S) is deprecated: use ~0@*{~S @ ~S}" object subloc)
+  {object @ subloc})
 ;;;
 ;;; reaction-type-requirement - 
 ;;;
@@ -118,11 +103,12 @@
   (reaction-type         
     side                   ; :lhs or :rhs
     species-type           ; species-type required
-    localization           ; nil or a symbol denoting a field of a location
+    sublocation           ; nil or a symbol denoting a field of a location
     stoichiometry))       ; stoichiometry required.
 
-(defield reaction-type-requirement.location-requirement ()
-  [location-requirement .species-type .localization])
+(defield reaction-type-requirement.localization (&optional simplifyp)
+  (if (and simplifyp (null .sublocation)) .species-type
+    [localization .species-type .sublocation]))
 
 (defun create-reaction-type-requirements (rtype side se)
   "Given a reaction-type and a sum-expression appropriate for the lhs or rhs of a species-type, returns a list of reaction-type-requirement objects"
@@ -137,14 +123,6 @@
                                                     stype localization stoich])))))
    (t  [reaction-type-requirement rtype side nil nil nil]
        nil)))
-
-(defun ensure-location-requirement (o)
-  (etypecase o
-    (location-requirement o)
-    (species-type            [location-requirement o nil])))
-(defield reaction-type.in (loc)
-  (gethash loc .reactions))
-
 
 (defun determine-reaction-type-location-class (defined-lclass lhs rhs)
   (flet ((find-location-class-in-sum-expression (se)
@@ -180,18 +158,15 @@
 (defoperator -> ((+ 2 (operator-precedence '+)) :xfy)
   (lhs rhs)
   (if (localization-p lhs)
-      [reaction-type lhs.reactants rhs lhs.location-class]
+      [reaction-type lhs.entity rhs lhs.location-class]
     [reaction-type lhs rhs]))
 
 (defoperator <- ((+ 2 (operator-precedence '+)) :xfy)
   (rhs lhs)
   (if (localization-p lhs)
-      [reaction-type lhs.reactants rhs lhs.location-class]
+      [reaction-type lhs.entity rhs lhs.location-class]
     [reaction-type lhs rhs]))
 
-(defoperator @ ((1- (operator-precedence '+)) :xfy) 
-  (rct loc-class)
-  [localization rct loc-class])
 
 ;;;; ;;;
 ;;;; ;;;
@@ -222,7 +197,7 @@
 (defoperator <-> ((+ 2 (operator-precedence '+)) :xfy)
   (lhs rhs)
   (if (localization-p lhs)
-      [reversible-reaction lhs.reactants rhs lhs.location-class]
+      [reversible-reaction lhs.entity rhs lhs.location-class]
     [reversible-reaction lhs rhs]))
 
 

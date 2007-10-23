@@ -27,7 +27,7 @@
 ;;;              this is a meta-reaction which implicates 
 ;;;              reaction-types and enzyme substrate complexes
 
-;;; $Id: enzymatic-reaction.lisp,v 1.1 2007/09/25 17:54:02 amallavarapu Exp $
+;;; $Id: enzymatic-reaction.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 ;;;
 ;;;
 (in-package #I@FILE)
@@ -107,15 +107,24 @@
                                       (first (last step-descriptions)))))))
 
 (defield enzymatic-reaction.set-rate-function (fn &key fwd rev)
-  (loop with fwd-rtypes = .fwd
-        with rev-rtypes = .rev
-        initially (when (or {fwd-rtypes._length > 0} 
-                            {rev-rtypes._length > 0})
-                     (compute-enzymatic-reaction-steps object .steps))
-        for i from 1 to .fwd._length
-        for fwd-arg in fwd
-        for rev-arg in rev
-        for fwd-rtype = fwd-rtypes.(_try-key i)
-        for rev-rtype = rev-rtypes.(_try-key i)
-        when fwd-rtype do fwd-rtype.(set-rate-function fn fwd-arg)
-        when rev-rtype do rev-rtype.(set-rate-function fn rev-arg)))
+  (flet ((ensure-list (x) (if (listp x) x (list x))))
+    (loop with fwd-rtypes = .fwd
+          with rev-rtypes = .rev
+          initially (when (or {fwd-rtypes._length > 0} 
+                              {rev-rtypes._length > 0})
+                      (compute-enzymatic-reaction-steps object .steps))
+          for i from 1 to .fwd._length
+          for fwd-params = fwd then (rest fwd)
+          for rev-params = rev then (rest rev)
+          for fwd-arg = (first fwd-params)
+          for rev-arg = (first rev-params)
+          for fwd-rtype = fwd-rtypes.(_try-key i)
+          for rev-rtype = rev-rtypes.(_try-key i)
+          when fwd-rtype do
+          (format t "DOING: ~S~%" `fwd-rtype.(apply :set-rate-function ,fn (ensure-list ,fwd-arg)))
+          fwd-rtype.(apply :set-rate-function fn (ensure-list fwd-arg))
+
+          when rev-rtype do
+
+          (format t "DOING: ~S~%" `rev-rtype.(apply :set-rate-function ,fn (ensure-list ,fwd-arg)))
+          rev-rtype.(apply :set-rate-function fn (ensure-list rev-arg)) )))

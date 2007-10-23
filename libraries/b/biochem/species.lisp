@@ -27,6 +27,7 @@
 
 (in-package #I@FOLDER)
 
+(include (@folder/species-type @folder/location))
 ;;;
 ;;; species
 ;;;
@@ -38,6 +39,25 @@
     (b-error "Cannot create species of type ~S in ~S.  Location-class mismatch: expecting ~S, but received (class ~S)."
            .type .location .type.location-class (class-of .location)))
   =>
-  {(gethash .location .type.species) := object}
   {.type.(in .location) :# object}) ; name this object according to the type & where it is located.
 
+(defield species-type.in (loc)
+  "Returns the species of this type which exists in location LOC, or NIL"
+  (lookup [species object loc]))
+
+(defield location.all-species ()
+  (remove object (query species) :key ?.location :test-not #'eq))
+
+(predefine (:class (species reaction))
+(defield location.contains (&rest stypes)
+  "Causes one or more SPECIES of type X to be generated in the location"
+  (labels ((create-species (x) 
+             (etypecase x
+               (list         (mapcar #'create-species x))
+               (species-type (list [species x object]))
+               (reaction-type (list [reaction x object])))))
+    (mapcan #'create-species stypes))))
+
+
+(defield location.species (stype)
+  (find stype .all-species :key ?.type))

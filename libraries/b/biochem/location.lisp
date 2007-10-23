@@ -25,14 +25,13 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
 
 (include @/dimensionalization :use)
 
-(include @/species)
 
 ;;; has-sublocation is a helper concept:
 (defcon has-sublocation (:notrace)
@@ -45,11 +44,6 @@
   (&property 
    (size :#= [reference-var] :relevance t)))
 
-(defield location.species (stype)
-  (find stype .all-species :key ?.type))
-
-(defield location.all-species ()
-  (remove object (query species) :key ?.location :test-not #'eq))
 
 ;;;;   ; how we'd like to be able to do this:
 ;;;;   ; (query (:and [species ? ?obj]
@@ -82,16 +76,6 @@
   (let* ((fld (class-of ?prop).field-symbol))
     [has-sublocation ?loc fld ?subloc]))
         
-
-(predefine (:class (species reaction))
-(defield location.contains (&rest stypes)
-  "Causes one or more SPECIES of type X to be generated in the location"
-  (labels ((create-species (x) 
-             (etypecase x
-               (list         (mapcar #'create-species x))
-               (species-type (list [species x object]))
-               (reaction-type (list [reaction x object])))))
-    (mapcan #'create-species stypes))))
 
 (defield location.sublocation (subloc)
   (if subloc object.,subloc
@@ -130,19 +114,6 @@
                            x y)))))
           loc-classes))
               
-;;;
-;;; LOCATION-REQUIREMENT - represents a requirement for a species-type in a sublocation of location
-;;;
-(defcon location-requirement (:notrace)
-  ((type species-type)
-   (localization symbol)))
-
-(defield location-requirement.is-valid-for (loc-class)
-  (let ((fi   (find .localization loc-class._fieldinfos :key ?.symbol)))
-    (and (typep fi 'fieldinfo)
-         (subtypep (if (mutils:allow-type-p fi.type)
-                       (mutils:allow-type-type fi.type) fi.type)
-                   'location))))
 
 ;;;; ;; simple, atomic locations
 (defcon compartment (location)
@@ -203,3 +174,20 @@
 (defgeneric location-class-dimension (lclass)
   (:method ((lc (eql compartment))) *compartment-size-dimension*)
   (:method ((lc (eql membrane))) *membrane-size-dimension*))
+
+
+
+
+;;;; ;;;
+;;;; ;;; LOCATION-REQUIREMENT - represents a requirement for a species-type in a sublocation of location
+;;;; ;;;
+;;;; (defcon location-requirement (:notrace)
+;;;;   ((type species-type)
+;;;;    (localization symbol)))
+
+;;;; (defield location-requirement.is-valid-for (loc-class)
+;;;;   (let ((fi   (find .localization loc-class._fieldinfos :key ?.symbol)))
+;;;;     (and (typep fi 'fieldinfo)
+;;;;          (subtypep (if (mutils:allow-type-p fi.type)
+;;;;                        (mutils:allow-type-type fi.type) fi.type)
+;;;;                    'location))))

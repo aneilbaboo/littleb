@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.4 2007/10/18 00:13:41 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.5 2007/10/23 17:25:56 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -60,7 +60,9 @@
 
 (defcon complex-reaction-type ()
   (lhs 
-   rhs)
+   rhs
+   &property
+   (location-class := compartment))
   (setf .lhs (canonicalize-complex-reaction-type-argument lhs)
         .rhs (canonicalize-complex-reaction-type-argument rhs)))
 
@@ -83,7 +85,7 @@
                                                       c o))
                                             (canonicalize-object o)))))
                (list           (apply #'s+ (mapcar #'canonicalize-object x)))
-               (localization   [localization (canonicalize-object x.reactants) x.sublocation])
+               (localization   [localization (canonicalize-object x.entity) x.location])
                (monomer         (eval `[,x.name]))
                (complex-species-type [reference-pattern x.id])
                (reference-pattern x))))
@@ -102,25 +104,28 @@
          ,@body))))
      
 (defun graphs-in-expression (x)
+  "Returns complex-graph objects plus the corresponding vars in the expression"
   (etypecase x
-    (list          (mapcar (lambda (elt) 
-                             (typecase elt
-                              (localization elt.type.id)
-                              (reference-pattern elt.id)
-                              (t (b-error "Invalid input to complex-reaction-type: ~S" elt))))
-                           x))
+    (list           (loop for elt in x
+                          collect elt into rxn-vars
+                          collect (typecase elt
+                                    (localization elt.type.id)
+                                    (reference-pattern elt.id)
+                                    (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
+                          into graphs
+                         finally return (values graphs rxn-vars)))
     (sum-expression (graphs-in-expression x.vars))
     (t              (graphs-in-expression (list x)))))
                            
 
 (defun extract-canonical-graphs-from-expression (expr)
-  (let ((graphs (graphs-in-expression expr)))
+  (mutils:let+ (((graphs rxn-vars) (graphs-in-expression expr)))
     (loop for g in graphs
           for (cg r) = (multiple-value-list (gtools:canonical-graph (graph-remove-reference-labels g)))
           for rg = (gtools:reorder-graph g r)
           collect cg into dereferenced-graphs
           collect rg into reference-graphs
-          finally return (values reference-graphs dereferenced-graphs))))
+          finally return (values reference-graphs dereferenced-graphs rxn-vars))))
 
 
 ;;;
@@ -302,7 +307,7 @@
 (defun compute-complex-reaction-type-changes (cr)
   "Returns:  NEW-BONDS, LOST-BONDS, LABEL-CHANGES, LOST-VERTICIES, LHS-PATTERN GRAPHS, RHS-PATTERN GRAPHS, NEW-RHS-PATTERN GRAPH"
   (mutils:let+
-      (((lhs-patterns deref-lhs-patterns)
+      (((lhs-patterns deref-lhs-patterns lhs-rxn-vars)
                          (extract-canonical-graphs-from-expression cr.lhs))
        ((rhs-patterns deref-rhs-patterns)
                          (extract-canonical-graphs-from-expression cr.rhs))
@@ -341,7 +346,8 @@
        (lost-verticies)
        deref-lhs-patterns
        deref-rhs-patterns
-       deref-rhs-new))))
+       deref-rhs-new
+       lhs-rxn-vars))))
 
 (defun compute-rhs-graphs (lhs-graphs isomorphisms bonds disbonds relabels remove)
   (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))

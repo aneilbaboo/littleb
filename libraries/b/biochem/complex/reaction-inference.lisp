@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -40,19 +40,18 @@
     (add-rule rule-pattern actions)))
 
 
-(defprop reaction-type.pattern-map (:relevance t))
+(defprop reaction-type.pattern-map (:= ()))
 
 (defun compute-graph-inference-rule-parts (cr)   
   "Where LHS and RHS are sum-expressions or lists of COMPLEX-PATTERNS:
    RETURNS: LHS-PATTERNS (complex-graphs representing the patterns)
             RULE-LHS
             RULE-RHS"
-  (multiple-value-bind (bonds lost-bonds relabels deletions lhs-patterns rhs-patterns rhs-new-graph)
+  (multiple-value-bind (bonds lost-bonds relabels deletions lhs-patterns rhs-patterns rhs-new-graph
+                              lhs-requirements)
       (compute-complex-reaction-type-changes cr)
     (declare (ignorable rhs-patterns))
-    (loop with lhs-graphs = '#:lhs-graphs
-          with lhs-cplxes = '#:lhs-cplxes
-          for p in lhs-patterns
+    (loop for p in lhs-patterns
           for gnum = 1 then (1+ gnum)
           for cstype = (intern (format nil "?CST~A" gnum)) ;; complex-species-type variable
           for ivar = (intern (format nil "?I~A" gnum)) ;; isomorphism
@@ -61,16 +60,36 @@
           collect ivar into ivars
           finally return (values lhs-patterns
                                  `(:and ,@rule-pattern)
-                                 `(let* ((,lhs-cplxes (list ,@lhs-cstypes))
-                                         (,lhs-graphs (mapcar ?.id ,lhs-cplxes)))
-                                    [[reaction-type ,lhs-cplxes
-                                                    (make-complexes
-                                                     (compute-rhs-graphs (apply #'vector
-                                                                          ,rhs-new-graph
-                                                                          ,lhs-graphs)
-                                                                         (vector ,@ivars)
-                                                                         ',bonds
-                                                                         ',lost-bonds
-                                                                         ',relabels
-                                                                         ',deletions))]
-                                     :pattern-map (mapcar #'cons ,lhs-cplxes ,lhs-graphs)])))))
+                                 `(create-reaction-type-from-complex-reaction-type
+                                   ,cr                  ; complex reaction
+                                   ',lhs-requirements   ; list of localization or complex-pattern objects
+                                   (list ,@lhs-cstypes) ; LHS complex-species-types in new reaction-type 
+                                   ,rhs-new-graph       ; the new rhs-graphs
+                                   (vector ,@ivars)     ; isomorphisms
+                                   ',bonds              ; bonds to create
+                                   ',lost-bonds         ; bonds to delete
+                                   ',relabels           ; relabellings
+                                   ',deletions)))))     ; verticies to delete
+
+(defcon complex-reaction-inference (:notrace)
+  ((type complex-reaction-type)
+   (instance reaction-type)
+   &property 
+   requirements))
+  
+(defun create-reaction-type-from-complex-reaction-type 
+       (cr lhs-requirements lhs-cplxes rhs-new-graph isomorphisms bonds lost-bonds relabels deletions)
+  (let* ((lhs-graphs (mapcar ?.id lhs-cplxes))
+         (rtype      [reaction-type 
+                      lhs-cplxes
+                      (make-complexes
+                       (compute-rhs-graphs (apply #'vector
+                                                  rhs-new-graph
+                                                  lhs-graphs)
+                                           isomorphisms
+                                           bonds
+                                           lost-bonds
+                                           relabels
+                                           deletions))]))
+    [[complex-reaction-inference cr rtype]
+     :map  (mapcar #'cons 'lhs-requirements lhs-cplxes)]))

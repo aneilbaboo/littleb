@@ -23,15 +23,15 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.1 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
-(in-package #I@FILE)
+(in-package :b-user)
 
 (include-declaration :use-packages mallavar-utility)
 
 (include @>/util :use)
-(include (@>/biochem
+(include (@>/biochem/ode
           @>/units/dimensionalization
           @>/math 
           @>/math/ode-var
@@ -39,6 +39,7 @@
 
 (include-documentation :description "Provides extensions to the b/biochem package which enable ODE models to be built."
                        :authors ("Aneil Mallavarapu"))
+
 ;;;
 ;;; For computing the ODE rates:
 ;;;
@@ -47,6 +48,11 @@
 (defprop complex-reaction-type.k (dictionary :#= [dictionary] :relevance t
                          :documentation "A dictionary of named constants referenced by the rate-fn property"))
 
+
+(defun compute-reaction-rate-from-complex-reaction (cr)
+  "Given a complex-reaction-type, this function returns a function which takes a reaction and calculates its rate"
+  (
+  
 (defrule complex-reaction-type-set-rate-fn-on-reaction-types
   (:and [complex-reaction-type-instantiation ?crt ?rt]
    [[complex-reaction-type ?crt] :_set-rate-fn-args ?rfa])

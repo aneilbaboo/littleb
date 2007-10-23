@@ -26,7 +26,7 @@
 ;;; Description:
 
 
-;;; $Id: std-rate-functions.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: std-rate-functions.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -36,104 +36,106 @@
 (include (@>/math 
           @>/biochem 
           @>/util
+          @>/biochem/ode
           @>/biochem/dimensionalization) :use)
 
-(defun mass-action (rtype args)
-  "Initializes the reaction-type rtype with the mass-action constant, const"
-  (let ((const (first args)))
-    {rtype.k.mass-action :#= (ensure-reference-var const)}
-    {rtype.rate-fn := 'mass-action-rate}))
+;;;
 
-(defun mass-action-rate (rxn)
-  "Given a reaction, returns an expression describing the mass-action kinetics of that reaction.
-For example, if r is a reaction object describing a reaction of 1 A + 3 B -> 1 C, with rate constant K
-then (mass-action r) => {K * A.concentration * B.concentration ^ 3}"
-  (let* ((rtype     rxn.type)
-         (factors   (mapcar (lambda (assoc)
-                              (let ((r-req (car assoc))
-                                    (rct   (cdr assoc)))
-                                (declare (type reaction-type-requirement r-req)
-                                         (type species rct))
-                                {rct.conc ^ r-req.stoichiometry}))
-                            rxn.reactants))
-         (product   (cond
-                     ((null factors)         1)
-                     ((> (length factors) 1) (apply #'s* factors))
-                     (t                      (first factors))))
-         (rate      {product * rtype.k.mass-action}))
-    (unless (eq (dimension-of rate)
-                {*molecular-amount-dimension* / *time-dimension* / (dimension-of rxn.location.size)})
-      (b-error "Invalid reaction constant, ~S.k.mass-action.  ~S is of dimension ~S, but ~S is expected."
-               rtype rtype.k.mass-action (dimension-of rtype.k.mass-action) 
-               {*molecular-amount-dimension* / *time-dimension* / (dimension-of rxn.location.size) / (dimension-of product)}))
-    rate))
-(export 'mass-action)
+  
+(define-custom-rate mass-action (constant) 
+    (rate-dimension
+     dictionary
+     entities
+     stoichiometries
+     dimensions)
+  (let ((mass-action-term 1) ;; initialize the mass-action term and 
+        (constant-dimension rate-dimension)) ;; expected dimension of the constant
 
+    ;; calculate the mass-action term and the constant's expected dimension
+    (loop for stoich in stoichiometries
+          for entity in entities
+          for dimension in dimensions
+          do (setf mass-action-term {mass-action-term * entity ^ stoich}
+                   constant-dimension {constant-dimension / dimension ^ stoich}))
 
+    ;; check the constant's dimension
+    (unless (eq (dimension-of constant) constant-dimension)
+      (cond
+
+       ;; if it's a number, we'll warn & fix it automatically:
+       ((numberp constant) 
+        (setf constant {constant * constant-dimension.unit})
+        (b-warn "Numeric constant give for ~S.mass-action. Using dimensional constant: ~S."
+                dictionary constant))
+
+       ;; incorrect units provided: throw an error 
+       (t (b-error "Invalid units used for ~S.mass-action.  Expecting ~S."
+                   dictionary constant-dimension.unit))))
     
-(defun mass-action-term-dimension (rtype-lhs &optional rtype-loc-class)
-  (values
-   (reduce (lambda (term1 term2) 
-             (let* ((var    (car term2))
-                    (st-lc  (cond
-                             ((location-requirement-p var) var.type.location-class)
-                             (t                            
-                              (unless (or (null rtype-loc-class)
-                                          (eql rtype-loc-class var.location-class))
-                                (error "Invalid location ~S" var.location-class))
-                              (setf rtype-loc-class var.location-class))))
-                    (stoich (cdr term2)))
-               {term1 * *molecular-amount-dimension* / (location-class-dimension st-lc) ^ stoich}))
-           (list* nil rtype-lhs.map-terms))
-   rtype-loc-class))
+    (setf constant {dictionary.mass-action :#= (ensure-reference-var constant)})
 
-(defun mass-action-constant-dimension (rtype-lhs &optional rtype-loc-class)
-  (let+ (((matd rtype-loc-class) (mass-action-term-dimension rtype-lhs rtype-loc-class)))         
-    {*molecular-amount-dimension* 
-     / *time-dimension* 
-     / (location-class-dimension rtype-loc-class) 
-     / matd}))
+    {constant * mass-action-term}))
 
-(export 'mass-action-constant-dimension)
+(define-custom-rate custom-rate (expr &rest constants)
+    (rate-dimension dictionary entities stoichiometries dimensions)
+  "USAGE: X.(set-rate-function 'custom-rate {mathematical-expression} :const1-name const1 :const2-name const2) where X is an object which supports has a SET-RATE-FUNCTION field"
+  (declare (ignorable stoichiometries entities dimensions rate-dimension))
+  ;; stuff the constants in the dictionary
+  (do () ((null constants))
+    (let ((key (pop constants))
+          (val (pop constants)))
+    {dictionary.,key 
+                :#=
+                (ensure-reference-var val)}))
+  expr.(map-substitution (lambda (o) 
+                           (or dictionary.(_try-key o) o))))
 
-(defun std-rate-var-substitution-fn (rxn)
-  "Given a reaction object, returns a function which returns the appropriate
-substitution of a reaction-type, location-requirement, keyword or"
-  (flet ((subst-obj (o)
-           (funcall (std-rate-var-substitution-fn rxn) o)))
-    (lambda (o)
-      (typecase o 
-        (species-type        (cdr (assoc o rxn.reactants 
-                                         :key ?.species-type)).conc)
-        (location-requirement (cdr (assoc o rxn.reactants :key ?.location-requirement)).conc)
-        (function             (funcall o rxn))
-        (t                    o)))))
+(defun hill-function (stoichiometries entities dimensions rate-dimension dictionary 
+                                      species &key (kd 1) (hill 1))
+  ;; NEED TO WRITE DIMENSION CHECKING CODE
+  (setf dictionary.kd (ensure-reference-var kd)
+        dictionary.hill (ensure-reference-var hill))
+  {species ^ :hill / {species ^ :hill + :kd ^ :hill}})
+  
 
-(defun custom-rate-var-substitution-fn (rxn)
-  (let ((std-fn (std-rate-var-substitution-fn rxn)))
-    (lambda (o)
-      (funcall std-fn 
-               (if (keywordp o) rxn.type.k.,o o)))))
 
-(export 'custom-rate)
-(defun custom-rate (rtype args)
-  (destructuring-bind (math-expr &rest consts) args
-    {rtype.rate-fn := (calculate-custom-rate-function math-expr)}
-    (map-plist (lambda (const-name val)
-                 {rtype.k.,const-name :#= (ensure-reference-var val)})
-               consts)))
+;;;; (defun std-rate-var-substitution-fn (rxn)
+;;;;   "Given a reaction object, returns a function which returns the appropriate
+;;;; substitution of a reaction-type, location-requirement, keyword or"
+;;;;   (flet ((subst-obj (o)
+;;;;            (funcall (std-rate-var-substitution-fn rxn) o)))
+;;;;     (lambda (o)
+;;;;       (typecase o 
+;;;;         (species-type        (cdr (assoc o rxn.reactants 
+;;;;                                          :key ?.species-type)).conc)
+;;;;         (localization        (cdr (assoc o rxn.reactants :key ?.location-requirement.lo)).conc)
+;;;;         (function             (funcall o rxn))
+;;;;         (t                    o)))))
 
-(defun calculate-custom-rate-function (math-expr)
-  (lambda (rxn) 
-    (lambda () 
-      (handler-case math-expr.(map (custom-rate-var-substitution-fn rxn))
-        (dimension-combination-error (dim-err)
-                                     (setf (b-error-cause dim-err)
-                                           (format nil "Computing custom rate of ~S."
-                                                   rxn))
-                                     (error dim-err))))))
-;;;;  
-;;;;     
+;;;; (defun custom-rate-var-substitution-fn (rxn)
+;;;;   (let ((std-fn (std-rate-var-substitution-fn rxn)))
+;;;;     (lambda (o)
+;;;;       (funcall std-fn 
+;;;;                (if (keywordp o) rxn.type.k.,o o)))))
+;;;; (define-generic custom-rate (rtype args)
+;;;;   (:method ((rtype reaction-type) &optional args)
+;;;;    (destructuring-bind (math-expr &rest consts) args
+;;;;      {rtype.rate-fn := (calculate-custom-rate-function math-expr)}
+;;;;      (map-plist (lambda (const-name val)
+;;;;                   {rtype.k.,const-name :#= (ensure-reference-var val)})
+;;;;                 consts))))
+
+;;;; (defun calculate-custom-rate-function (math-expr)
+;;;;   (lambda (rxn) 
+;;;;     (lambda () 
+;;;;       (handler-case math-expr.(map (custom-rate-var-substitution-fn rxn))
+;;;;         (dimension-combination-error (dim-err)
+;;;;                                      (setf (b-error-cause dim-err)
+;;;;                                            (format nil "Computing custom rate of ~S."
+;;;;                                                    rxn))
+;;;;                                      (error dim-err))))))
+;;;; ;;;;  
+;;;; ;;;;     
 
 
 ;;;; (defun has-let-method-p (e)
@@ -167,3 +169,27 @@ substitution of a reaction-type, location-requirement, keyword or"
 ;;;;   (let ((rtype rxn.type))
 ;;;;     {rtype.k.mass-action 
 ;;;;      * rtype.lhs.(map (replace-species-type-with-conc-fn rxn) '+ '* '* 'exponentiate-var-to-num)}))
+
+;;;; (defun mass-action-term-dimension (rtype-lhs &optional rtype-loc-class)
+;;;;   (values
+;;;;    (reduce (lambda (term1 term2) 
+;;;;              (let* ((var    (car term2))
+;;;;                     (st-lc  (cond
+;;;;                              ((location-requirement-p var) var.type.location-class)
+;;;;                              (t                            
+;;;;                               (unless (or (null rtype-loc-class)
+;;;;                                           (eql rtype-loc-class var.location-class))
+;;;;                                 (error "Invalid location ~S" var.location-class))
+;;;;                               (setf rtype-loc-class var.location-class))))
+;;;;                     (stoich (cdr term2)))
+;;;;                {term1 * *molecular-amount-dimension* / (location-class-dimension st-lc) ^ stoich}))
+;;;;            (list* nil rtype-lhs.map-terms))
+;;;;    rtype-loc-class))
+
+;;;; (defun mass-action-constant-dimension (rtype-lhs &optional rtype-loc-class)
+;;;;   (let+ (((matd rtype-loc-class) (mass-action-term-dimension rtype-lhs rtype-loc-class)))         
+;;;;     {*molecular-amount-dimension* 
+;;;;      / *time-dimension* 
+;;;;      / (location-class-dimension rtype-loc-class) 
+;;;;      / matd}))
+

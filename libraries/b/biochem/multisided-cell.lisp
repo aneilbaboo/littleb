@@ -26,7 +26,7 @@
 
 ;;; Description: 
 ;;;
-;;; $Id: multisided-cell.lisp,v 1.1 2007/09/25 17:54:03 amallavarapu Exp $
+;;; $Id: multisided-cell.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 (include-declaration :use-packages (mallavar-utility))
@@ -44,6 +44,9 @@
    (membranes :#=  [DICTIONARY])
    (membrane-interfaces :#= [DICTIONARY])))
 
+(defmethod location-class-dimension ((x (eql multisided-cell)))
+  *membrane-size-dimension*)
+
 (defcon location-interface (location)
   "a relationship between two locations which can be used as a location in reactions which take place across their superlocation"
   ((loc1 location)
@@ -53,6 +56,9 @@
   
   (b-assert (typep .loc1 (type-of .loc2)) () "Interfaced locations are of different types (~S ~S)" .loc1 .loc2))
 
+
+(defmethod location-class-dimension ((x (eql location-interface)))
+  {*membrane-size-dimension* / *distance-dimension*})
 
 (defield multisided-cell.define-closed-membrane (&rest name-size-pairs)
   (warn "Using function (b/biochem/multisided-cell::multisided-cell.define-closed-membrane) which may not be fully debugged - use with caution - check your results.")

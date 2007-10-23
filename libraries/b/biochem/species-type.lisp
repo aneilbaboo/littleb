@@ -25,33 +25,17 @@
 ;;; File: species-type
 ;;; Description: Defines the species-type concept. 
 
-;;; $Id: species-type.lisp,v 1.2 2007/10/09 18:26:01 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
-(include @/location) 
+(include (@/location @/localization))
 
 (defcon species-type () 
   "Represents a chemically distinct molecular entity" 
   (&optional (ID := *name*)
    &property (location-class    location-class := compartment
-                                :documentation "The class of location in which species of this type can go")
-             (species := (make-hash-table) :relevance t
-                      :documentation "A hashtable of species, for internal use")))
-
-(defield species-type.required (subloc)
-  "Returns an object which represents a requirement for a species in a relative location.  SUBLOC is a keyword which names a field of a location which points to another location."
-  (b-warn "~S.(REQUIRED ~S) is deprecated: use ~0@*{~S @ ~S}" object subloc)
-  {object @ subloc})
-
-;  (has-name object.(required subloc) [location-requirement object subloc]))
-
-(defield species-type.@ (subloc)
-  {object @ subloc})
-
-(defield species-type.in (loc)
-  "Returns the species of this type which exists in location LOC, or NIL"
-  (gethash loc .species))
+                                :documentation "The class of location in which species of this type can go")))
 
 
 (define-macro def-species-types (location-class &body stype-defs)

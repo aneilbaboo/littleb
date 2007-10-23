@@ -31,7 +31,7 @@
 ;;;              is not represented in an aggregate.
 
 
-;;; $Id: aggregate.lisp,v 1.1 2007/09/25 17:54:02 amallavarapu Exp $
+;;; $Id: aggregate.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 ;;;
 
 (in-package #I@FILE)
@@ -198,37 +198,3 @@ Current implementation is ugly and slow, but works"
                               (setf ag.(rxn signal).,rxn-dir value))))
     value))
   
-
-;;;; (defun simplify-dimerizing-aggregate-components (components loc-class)
-;;;;   (flet ((report-error (msg &rest args)
-;;;;                  (b-error "Invalid components provided to [dimerizing-aggregate ~S].  ~A"
-;;;;                           components (apply #'format nil "~A" msg args))))
-;;;;     (let* ((clist     (if (polynomial-p components) components.vars))
-;;;;            (rtypes    ())
-;;;;            (loc-reqs  ()))
-
-;;;;       (dolist (c clist)
-;;;;         (typecase c
-;;;;           (species-type        (push c rtypes))
-;;;;           (location-requirement (push c loc-reqs))
-;;;;           (t                    (report-error "Component is not a species-type or localization-requirement: ~S"
-;;;;                                               c))))
-
-;;;;       (when (< (poly-sum-var-coefficients components) 2)
-;;;;         (report-error "Fewer than 2 components provided."))
-
-;;;;       (when (or (null loc-reqs)
-;;;;                 (not (all-same loc-reqs :key ?.localization)))
-;;;;         (report-error "A dimerizing aggregate may have only 1 sublocation requirement"))
-
-;;;;       (when (null rtypes)
-;;;;         (setf rtypes    (mapcar ?.type loc-reqs)              
-;;;;               loc-reqs  nil))
-
-;;;;       (when (not (all-same rtypes :key ?.location-class))
-;;;;         (report-error "Components must be all of the same location-class or a ~
-;;;;                        sublocation of the location-class."))
-
-;;;;       (values (apply #'o+ (nconc rtypes loc-reqs))
-;;;;               (first rtypes).location-class))))
-

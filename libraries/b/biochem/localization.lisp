@@ -22,34 +22,32 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; File: reaction.lisp
-;;; Description:
+;;; $Id: localization.lisp,v 1.1 2007/10/23 17:25:55 amallavarapu Exp $
 
-;;; $Id: reaction.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
 
-(in-package #I@FOLDER)
+;;; Description:  
+;;; LOCALIZATION OBJECT: USED TO REPRESENT {entity @ location}
+;;;
 
-(include @/reaction-type)
+(in-package #I@library/biochem)
 
-(defcon reaction ()
-  ((type      reaction-type)
-   (location  location))
-  =>
-  {.type.(in .location) :# object}
-  {.reactants := (satisfy-requirements .type :lhs-requirements .location)}
-  {.products := (satisfy-requirements .type :rhs-requirements .location)})
+(defcon localization (:notrace)
+  (entity location))
 
-(defprop reaction.reactants (:= ()))
+(defield localization.is-valid-for (loc-class)
+  (let ((fi   (find .location loc-class._fieldinfos :key ?.symbol)))
+    (and (typep fi 'fieldinfo)
+         (subtypep (if (mutils:allow-type-p fi.type)
+                       (mutils:allow-type-type fi.type) fi.type)
+                   'location))))
 
-(defprop reaction.products (:= ()))
+(defmethod print-object ((o localization) stream)
+  (let ((*print-context* t)) (print-math-expression o stream t)))
 
-(defun satisfy-requirements (rxn-type side loc)
-  "Ensures that species are created in loc (or sublocations of loc), as specified by the reaction-type-requirements of rxn-type"
-  (loop for req in rxn-type.,side
-        collect  (cons req
-                       [species req.species-type 
-                                loc.(sublocation req.sublocation)])))
-  
+(defmethod print-math-expression ((o localization) &optional stream outer-op)
+  (pprint-math-form `{,o.entity @ ,o.location} stream outer-op))
 
-(defield reaction-type.in (loc)
-  (lookup [reaction object loc]))
+
+(defoperator @ ((1- (operator-precedence '+)) :xfy) 
+  (rct loc-class)
+  [localization rct loc-class])
