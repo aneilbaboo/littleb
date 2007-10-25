@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.5 2007/10/25 15:04:08 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.6 2007/10/25 16:04:11 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -66,7 +66,7 @@
 (defun entity-dimension (e)
   (etypecase e
     (localization (entity-dimension e.entity))
-    (complex-graph-concept e.location-class)))
+    (complex-graph-concept (location-class-dimension e.location-class))))
 
 (defrule complex-reaction-set-rate-fn
   "Copies the rate information over from the complex-reaction-type to the reaction-type when a complex-reaction-inference is detected."

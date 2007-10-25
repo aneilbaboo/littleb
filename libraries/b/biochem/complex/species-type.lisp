@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.6 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.7 2007/10/25 16:04:11 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -533,7 +533,7 @@
                            (fld-form-object head))
                  ((monomer-p head) head.name)
                  ((symbolp head)  head)
-                 (t        (pattern-error head bindings "pattern not allowed here.")))))
+                 (t        (pattern-error head bindings "reference labelling (e.g., [MONOMER.LABEL ...]) only allowed in reaction definitions.")))))
     (cond
      ;; wildcard monomer
      ((wildcard-monomer-symbol-p monomer)

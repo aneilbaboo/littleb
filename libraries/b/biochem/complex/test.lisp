@@ -57,5 +57,5 @@
 
 [[ksr 1 2][mek 1][mapk 2]]
 
-[[kse 1 2 3][mek 1][mapk 2][mek 3]]
+[[ksr 1 2 3][mek 1][mapk 2][mek 3]]
 
