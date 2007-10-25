@@ -1,6 +1,6 @@
 (in-package b-user)
 
-(include b-user/3d-ode-biochemistry)
+(include b-user/3d-ode-biochem)
 (include (@folder/locations/cell
           @folder/reactions/mapk-cascade-k1
           @folder/reactions/egfr-egf-k1 

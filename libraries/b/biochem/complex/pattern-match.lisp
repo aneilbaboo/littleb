@@ -20,17 +20,19 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: pattern-match.lisp,v 1.1 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: pattern-match.lisp,v 1.2 2007/10/25 03:58:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: Matches complex patterns in the database
 
-(in-package :b-user)
+(in-package #I@library/biochem)
+
+(include @folder/species-type)
 
 (defcon complex-pattern-match (:notrace)
-  (complex-pattern ; graph representing the complex pattern
+  ((complex-pattern complex-pattern) ; graph representing the complex pattern
                    ; (cannot use PATTERN because this interferes w/ lisa)
-   complex-species-type
+   (complex-species-type complex-species-type)
    isomorphism))
 
 (defrule detect-complex-pattern-isomorphism

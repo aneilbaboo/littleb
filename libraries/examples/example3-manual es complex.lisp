@@ -7,7 +7,7 @@
 ;;;
 (in-package b-user)
 
-(include (b-user/non-dimensional-ode-biochemistry
+(include (b-user/ode-biochem
           b/matlab/ode-translation) :expose)
 
 ;; SPECIES

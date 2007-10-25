@@ -77,4 +77,5 @@
 
 (defprop membrane.apposition (:= nil))
 
-(defmethod location-class-dimension ((lc (eql membrane-apposition))) *membrane-size-dimension*)
+(defmethod location-class-dimensionality ((lc (eql membrane-apposition))) 
+  (1- *compartment-dimensionality*))

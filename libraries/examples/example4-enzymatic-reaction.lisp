@@ -7,7 +7,7 @@
 ;;; Showing how to generate single or multi-step reactions:
 ;;;
 
-(include (b-user/non-dimensional-ode-biochemistry
+(include (b-user/ode-biochem
           b/matlab/ode-translation))
 
 ;; SPECIES

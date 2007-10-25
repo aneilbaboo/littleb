@@ -3,7 +3,7 @@
 ;;; 
 (in-package :b-user)
 
-(include b-user/non-dimensional-ode-biochemistry)
+(include b-user/ode-biochem)
 
 ;; SPECIES
 (def-species-types compartment enz sub prod)

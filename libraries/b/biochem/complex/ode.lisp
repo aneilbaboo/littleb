@@ -23,10 +23,10 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
-(in-package :b-user)
+(in-package #I@file)
 
 (include-declaration :use-packages mallavar-utility)
 
@@ -35,7 +35,11 @@
           @>/units/dimensionalization
           @>/math 
           @>/math/ode-var
-          @library/biochem/complex) :expose)
+          @folder/species-type
+          @folder/reaction-inference
+          @folder/reaction-type) 
+         :expose
+         :modify b/biochem)
 
 (include-documentation :description "Provides extensions to the b/biochem package which enable ODE models to be built."
                        :authors ("Aneil Mallavarapu"))
@@ -43,30 +47,46 @@
 ;;;
 ;;; For computing the ODE rates:
 ;;;
-(defprop complex-reaction-type._set-rate-fn-args (:documentation "A function or function name which compute the rate of a reaction of this type"))
+(defprop complex-reaction-type.rate-fn (:documentation "A function or function name which compute the rate of a reaction of this type"))
 
-(defprop complex-reaction-type.k (dictionary :#= [dictionary] :relevance t
-                         :documentation "A dictionary of named constants referenced by the rate-fn property"))
+(defprop complex-reaction-type.rate-calculator (:documentation "A list capturing the user's input to .SET-RATE-FUNCTION"))
 
-
-(defun compute-reaction-rate-from-complex-reaction (cr)
-  "Given a complex-reaction-type, this function returns a function which takes a reaction and calculates its rate"
-  (
-  
-(defrule complex-reaction-type-set-rate-fn-on-reaction-types
-  (:and [complex-reaction-type-instantiation ?crt ?rt]
-   [[complex-reaction-type ?crt] :_set-rate-fn-args ?rfa])
-  =>
-  ?rt.(apply :set-rate-function ?rfa))
+(defprop complex-reaction-type.k
+    (dictionary :#= [dictionary] :relevance t
+                :documentation "A dictionary of named constants referenced by the rate-fn property"))
 
 (defield complex-reaction-type.set-rate-function (fn &rest args)
-  (setf ._set-rate-fn-args (list* fn args)))
+  (let* ((entities         object.lhs.vars)
+         (stoichiometries  (make-list (length entities) :initial-element 1))
+         (dimensions       (mapcar #'entity-dimension entities)))
+    (apply fn
+           rate-dimension
+           .k
+           entities 
+           stoichiometries
+           dimensions
+           args)))
+  
+(defun entity-dimension (e)
+  (etypecase e
+    (localization (entity-dimension e.entity))
+    (complex-graph-concept e.location-class)))
 
+(defrule complex-reaction-set-rate-fn
+  "Copies the rate information over from the complex-reaction-type to the reaction-type when a complex-reaction-inference is detected."
+  (:and [complex-reaction-inference ?cr ?rtype ?matches]
+   (?rate-fn ?cr.rate-fn))
+  =>
+  ?rtype.k.(_copy-from ?cr.k)
+  (dolist (match ?matches)
+    {?rtype.k.,(car match) := (cdr match)})
+  {?rtype.rate-fn := ?rate-fn})
 
 (defprop complex-pattern.t0 ())
 
 (defrule initialize-complex-species-type-t0 
   (:and [complex-pattern-match ?cp ?cst ?iso]
-        (?cp [[complex-pattern] :complex-pattern.t0 ?t0]))
+        (?t0 ?cp.t0))
   =>
-  {?cst.t0 := t0})
+  {?cst.t0 := ?t0})
+

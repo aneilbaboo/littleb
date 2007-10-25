@@ -6,7 +6,7 @@
 ;;;
 ;;;     which is interpreted as a mass-action reaction which 
 ;;;           involves a single enzyme-substrate complex
-(include (b-user/non-dimensional-ode-biochemistry
+(include (b-user/ode-biochem
           b/matlab/ode-translation))
 
 ;; SPECIES

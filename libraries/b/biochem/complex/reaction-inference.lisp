@@ -20,15 +20,15 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.4 2007/10/25 03:58:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
 ;;;              are satisfied, and generates reaction-type objects 
 
-(in-package :b-user)
+(in-package #I@library/biochem)
 
-(include (@folder/reaction-type @folder/pattern-match))
+(include (@folder/species-type @folder/reaction-type) :use :modify b/biochem)
 
 (defrule complex-reaction-exists 
   (?cr complex-reaction-type)
@@ -73,8 +73,7 @@
 
 (defcon complex-reaction-inference (:notrace)
   ((type complex-reaction-type)
-   (instance reaction-type)
-   &property 
+   (instance reaction-type) 
    requirements))
   
 (defun create-reaction-type-from-complex-reaction-type 
@@ -91,5 +90,4 @@
                                            lost-bonds
                                            relabels
                                            deletions))]))
-    [[complex-reaction-inference cr rtype]
-     :map  (mapcar #'cons 'lhs-requirements lhs-cplxes)]))
+    [complex-reaction-inference cr rtype (mapcar #'cons lhs-requirements lhs-cplxes)]))

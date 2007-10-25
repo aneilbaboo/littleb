@@ -26,6 +26,6 @@
 (include (@>/math/ode-var
           @>/biochem 
           @</ode 
-          @</enzymatic-reaction
+          @</complex/ode
           @</std-rate-functions) :expose)
 

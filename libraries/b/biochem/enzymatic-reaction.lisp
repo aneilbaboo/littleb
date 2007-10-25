@@ -27,13 +27,14 @@
 ;;;              this is a meta-reaction which implicates 
 ;;;              reaction-types and enzyme substrate complexes
 
-;;; $Id: enzymatic-reaction.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: enzymatic-reaction.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
 ;;;
 ;;;
-(in-package #I@FILE)
+(in-package #I@folder)
  
-(include (@>/biochem @>/math
-          @>/util) :expose)
+(include (@>/math
+          @>/util
+          @/species-type @/reaction-type) :expose)
 
 (defcon enzymatic-reaction ()
   ((e :documentation "Enzyme which catalyzes the reaction")
@@ -51,7 +52,7 @@
    (rev       dictionary :#= [dictionary] :relevance t
               :documentation "A dictionary of REACTION-TYPEs representing reverse steps."))
   
-  (setf .location-class (b/biochem::determine-reaction-type-location-class location-class {e + p} {e + s})
+  (setf .location-class (determine-reaction-type-location-class location-class {e + p} {e + s})
         .e (if (math-expression-p e) e {e})
         .s (if (math-expression-p s) s {s})
         .p (if (math-expression-p p) p {p})))

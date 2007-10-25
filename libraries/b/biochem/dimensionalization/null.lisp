@@ -26,6 +26,5 @@
 (include @<</dimensionalization :use)
 
 (assume :biochem-dimensionalization ()
-  {*compartment-size-dimension* := null-dimension}
-  {*membrane-size-dimension*    := null-dimension})
+  {*compartment-dimensionality* := 3})
 

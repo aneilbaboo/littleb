@@ -38,17 +38,16 @@
 ;;; DOMAIN - a description of a fragment of a graph
 ;;; COMPLEX - a species-type which 
 ;;;
-(in-package b-user)
+(in-package #I@folder)
 
-(include b/biochem :expose)
-
-(include (@file/species-type @file/reaction-type @file/reaction-inference))
+(include (@file/species-type @file/reaction-type @file/pattern-match @file/reaction-inference))
 
 ;; tests
-(defmonomer mapk a (p :value (member :p :u)))
+(defmonomer mapk a (p :value (member :u :p)))
 (defmonomer ksr a b c)
 (defmonomer mek a (p :value (member :u :p)))
-
+(defmonomer (egfr membrane) ligand)
+(defmonomer egf receptor)
 ;; examples:
 
 ;; complex spliting:

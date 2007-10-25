@@ -1,4 +1,4 @@
- ;;;; The MIT License
+;;; The MIT License
 
 ;;;; Copyright (c) 2007 Aneil Mallavarapu
 
@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.5 2007/10/18 00:13:41 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.6 2007/10/25 03:58:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -37,9 +37,9 @@
 ;;; MONOMER - a description of a fragment of a graph
 ;;; COMPLEX - a species-type which 
 ;;;
-(in-package :b-user)
+(in-package #I@library/biochem)
 
-(include b/biochem/species :expose :modify b/biochem)
+(include b/biochem/species)
 
 ;;;
 ;;;
@@ -82,13 +82,18 @@
     (integer (svref .sites x))
     (symbol  (find x .sites :key #'site-info-name))))
 
-(defgeneric monomer-sites (d)
-  (:method ((d symbol)) (|MONOMER.SITES| (eval d)))
-  (:method ((d monomer)) (|MONOMER.SITES| d))
-  (:method ((d cons)) (monomer-sites (fld-form-object d))))
+(defgeneric monomer-lclass (m)
+  (:method ((m symbol)) (|MONOMER.LOCATION-CLASS| (eval m)))
+  (:method ((m monomer)) (|MONOMER.LOCATION-CLASS| m))
+  (:method ((m cons)) (|MONOMER.LOCATION-CLASS| (eval (fld-form-object m)))))
 
-(defun monomer-site-info (d i)
-  (svref (monomer-sites d) i))
+(defgeneric monomer-sites (m)
+  (:method ((m symbol)) (|MONOMER.SITES| (eval m)))
+  (:method ((m monomer)) (|MONOMER.SITES| m))
+  (:method ((m cons)) (monomer-sites (fld-form-object m))))
+
+(defun monomer-site-info (m i)
+  (svref (monomer-sites m) i))
 
 (defmethod documentation ((d monomer) (type (eql :ctor-help)))
   (labels ((simplify-label (si) 
@@ -259,7 +264,22 @@
 ;;;  BASE CLASS: COMPLEX-GRAPH-CONCEPT
 ;;;
 (defcon complex-graph-concept (:abstract)
-  (&optional id))
+  (&optional id 
+   &property location-class))
+  
+(defun complex-graph-location-class (cg monomer-test)
+  (loop with lclass = compartment
+        with lclass-dim = *compartment-dimensionality*
+        for lab across (gtools:graph-labels cg)
+        when (funcall monomer-test lab)
+        do (let* ((m-lclass (monomer-lclass lab))
+                  (m-dim    (location-class-dimensionality m-lclass)))
+             (when (< m-dim lclass-dim)
+               (setf lclass-dim m-dim
+                     lclass m-lclass)))
+        finally return lclass))
+              
+        
 
 (defprop complex-graph-concept.constructor-description
     (:=
@@ -290,13 +310,36 @@
     (cons          (setf .id (gtools:canonical-graph 
                               (etypecase id
                                 (complex-graph  id)
-                                (cons           (make-complex-graph id nil))))))))
+                                (cons           (make-complex-graph id nil)))))))
+  =>
+  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
 (defield complex-species-type.monomers ()
   (remove-if-not #'symbolp (gtools:graph-labels .id)))
 
 (defield complex-species-type.site-bonds (mindex sindex)
   (complex-graph-site-bonds .id mindex sindex))
+
+
+;;; REFERENCE-PATTERN
+(defcon reference-pattern (complex-graph-concept :notrace)
+  "Reference patterns are created when reactions are defined; each monomer has a reference number indicating its identity in the context of a complex-reaction-type"
+  (id)
+  (setf .id (ensure-canonical-complex-graph id t))
+  =>
+  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-ref-p)))
+
+
+
+;;;
+;;; COMPLEX-PATTERN
+;;;
+(defcon complex-pattern (reference-pattern :notrace)
+  "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
+  (id)
+  (setf .id (ensure-canonical-complex-graph id nil))
+  =>
+  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
 
 ;;;
@@ -457,7 +500,6 @@
                         binding-table
                         pattern-detected-p)))
 
-
 ;;;
 ;;; PARSE-MONOMER-DESCRIPTION - figures out whether a pattern or concrete monomer is being described
 ;;;
@@ -493,7 +535,7 @@
                  ((symbolp head)  head)
                  (t        (pattern-error head bindings "pattern not allowed here.")))))
     (cond
-     ;; pattern monomer
+     ;; wildcard monomer
      ((wildcard-monomer-symbol-p monomer)
       (parse-wildcard-monomer-description 
        head
@@ -501,7 +543,7 @@
        binding-table
        offset))
 
-     ;; not a pattern monomer
+     ;; not a wildcard monomer
      ((symbolp monomer)
       (parse-named-monomer-description 
        monomer head bindings binding-table offset patternp))
@@ -629,78 +671,14 @@
       (record-monomer offset (length sites) binding-table)
       (loop ;; connect the monomer node to the site nodes:
             for i from (1+ offset) to (+ offset (length sites))
-            for rest-bindings = bindings then (or (rest rest-bindings) '(%%default))
-            for binding = (first rest-bindings)  
+            for rest-bindings = (or bindings '(%%default)) 
+                           then (or (rest rest-bindings) '(%%default))
+            for binding = (first rest-bindings)   
             for site-label = (record-binding  binding i)
             when site-label 
             collect site-label into site-labels
             finally return (values (list* monomer site-labels)
                                    pattern-detected-p)))))
-;;;; (defun parse-named-monomer-description (monomer-object
-;;;;                                          monomer
-;;;;                                          bindings
-;;;;                                          binding-table
-;;;;                                          offset
-;;;;                                          patternp)
-;;;;   "When monomer is a symbol naming a defined monomer, and bindings are the 
-;;;;    RETURNS: SITE-LABELS, PATTERNP
-;;;;    Where site- and value-labels are labels for the graph,
-;;;;          bonds is a hash-table mapping binding vars to lists pairing sites offsets
-;;;;                      with either other site offsets or values
-;;;;          PATTERNP is always NIL."
-;;;;   (let ((pattern-detected-p nil)
-;;;;         (sites              (monomer-sites monomer-object)))
-;;;;     (labels
-;;;;         ((site-error (binding si msg &rest args)
-;;;;            (b-error "Invalid binding ~S for site ~S in monomer ~S ~
-;;;;                                      - ~?"
-;;;;                     binding (site-info-tags si) monomer
-;;;;                     msg args))
-;;;;          (site-value-from-binding (binding si)
-;;;;            (cond 
-;;;;             ((eq :default binding)   (state-site-info-default si))
-;;;;             ((eq '* binding)         '*)
-;;;;             ((typep binding (state-site-info-type si))  binding)
-;;;;             ((and (consp binding) 
-;;;;                   (every (lambda (x) (typep x (state-site-info-type si)))
-;;;;                          binding))
-;;;;              (unless patternp (pattern-error monomer bindings "patterns not allowed here."))
-;;;;              binding)
-;;;;             (t (site-error binding si
-;;;;                            "expecting type ~S" (state-site-info-type si)))))
-;;;;          (record-binding (si binding i) ; returns a site label on success
-;;;;            (when (eq binding '*) 
-;;;;              (setf pattern-detected-p t)
-;;;;              ;(unless patternp (pattern-error monomer bindings "patterns not allowed here."))
-;;;;              )
-;;;;            (cond 
-;;;;             (let ((sindex (position si sites)))
-;;;;               (etypecase si
-;;;;                 (bond-site-info
-;;;;                  (unless (record-bond-binding i binding binding-table)
-;;;;                    (site-error binding si
-;;;;                                "expecting _ or a bond a positive integer"))
-;;;;                  (list sindex monomer))
-;;;;                 (state-site-info
-;;;;                  (list sindex monomer
-;;;;                        (site-value-from-binding binding si)))))))
-;;;;       (record-monomer offset (length sites) binding-table)
-;;;;       (loop ;; connect the monomer node to the site nodes:
-;;;;             with i = (1+ offset) 
-;;;;             for i = si across sites
-;;;;             for rest-bindings = bindings then (rest rest-bindings)
-;;;;             for binding = (first rest-bindings)  
-;;;;             for site-label = (record-binding 
-;;;;                               si 
-;;;;                               (default-site-binding
-;;;;                                monomer (- i offset 1)
-;;;;                                binding)
-;;;;                               i)
-;;;;             when site-label 
-;;;;             collect site-label into site-labels
-;;;;             and do (incf i)
-;;;;             finally return (values (list* monomer site-labels)
-;;;;                                    pattern-detected-p)))))
 
 (defun unkeywordify-fld-form-field (f)
   (let ((field (fld-form-field f)))

@@ -1,6 +1,6 @@
 (in-package b-user)
 
-(include (b-user/3d-ode-biochemistry
+(include (b-user/3d-ode-biochem
           b/matlab/ode-translation) :expose)
 
 ;;;  SPECIES

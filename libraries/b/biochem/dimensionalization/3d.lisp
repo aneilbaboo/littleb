@@ -32,5 +32,4 @@
 (include @>/units/standard :expose)
 
 (assume :biochem-dimensionalization ()
-  {*compartment-size-dimension* := volume}
-  {*membrane-size-dimension*    := area})
+  {*compartment-dimensionality* := 3})

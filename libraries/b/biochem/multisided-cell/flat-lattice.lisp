@@ -34,9 +34,12 @@
              (cells := (make-hash-table :test 'equalp))
              (appositions := (make-hash-table :test 'equalp))))
  
-(defield flat-lattice.define-apposition (cell-1 cell-1-memb cell-2 cell-2-memb
-                                                  &optional (size (quantity 1 *membrane-size-dimension*))
-                                                  (ic-size (quantity 1 *compartment-size-dimension*)))
+(defield flat-lattice.define-apposition 
+  (cell-1 cell-1-memb cell-2 cell-2-memb
+          &optional
+          (size (quantity 1 
+                          (location-class-dimension membrane)))
+          (ic-size (quantity 1 *compartment-size-dimension*)))
   "Input: is the cells and membranes to be apposed, given as numbers."
   (let* ((m1    (.cell cell-1).membranes.,cell-1-memb)
          (m2    (.cell cell-2).membranes.,cell-2-memb))

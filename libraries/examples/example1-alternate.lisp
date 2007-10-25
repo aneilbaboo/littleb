@@ -4,7 +4,7 @@
 ;;; 
 (in-package :b-user)
 
-(include b-user/non-dimensional-ode-biochemistry)
+(include b-user/ode-biochem)
 
 ;; SPECIES
 (define enz [species-type])  ;; the same as this code in example1.lisp: 

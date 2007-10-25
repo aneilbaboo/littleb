@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.4 2007/10/25 03:58:00 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -52,24 +52,24 @@
     (dictionary :#= [dictionary] :relevance t
                 :documentation "A dictionary of named constants referenced by the rate-fn property"))
 
-
 (defield reaction-type.set-rate-function (fn &rest args)
   (let ((rate-dimension {(location-class-dimension .location-class)
                          * *molecular-amount-dimension* 
                          / *time-dimension*}))
     (setf .rate-calculator (list* fn args)
-          .rate-fn         (apply fn
-                                  rate-dimension 
-                                  .k 
-                                  (nconc
-                                   (apply #'mapcar #'list
-                                          (mapcar (lambda (rtr)
-                                                    (list rtr.(localization t)
-                                                          rtr.stoichiometry
-                                                          (location-class-dimension
-                                                           rtr.species-type.location-class)))
-                                                  .lhs-requirements))
-                                   args)))))
+          .rate-fn         (funcall
+                            fn
+                            rate-dimension 
+                            .k 
+                            (nconc
+                             (apply #'mapcar #'list
+                                    (mapcar (lambda (rtr)
+                                              (list rtr.(localization t)
+                                                    rtr.stoichiometry
+                                                    (location-class-dimension
+                                                     rtr.species-type.location-class)))
+                                            .lhs-requirements))
+                             args)))))
 
 ;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
 ;;;     - function of 5 or more arguments which return a math expression expression
@@ -91,12 +91,11 @@
     (name (&rest lambda-list)
           (&optional rate-dimension dictionary entities stoichiometries dimensions)
           &body body)
-  (destructuring-bind (&optional (rate-dimension '#:rate-dimension)
-                                 (dictionary '#:dictionary)
-                                 (entities '#:entities)
-                                 (stoichiometries '#:stoichiometries)                     
-                                 (dimensions '#:dimensions))
-      (list rate-dimension dictionary entities stoichiometries dimensions)
+  (let ((rate-dimension  (or rate-dimension '#:rate-dimension))
+        (dictionary      (or dictionary  '#:dictionary))
+        (entities        (or entities '#:entities))
+        (stoichiometries (or stoichiometries '#:stoichiometries))
+        (dimensions      (or dimensions '#:dimensions)))
     (mutils:let+ 
         (((user-doc body) (if (stringp (first body)) (values (first body) (rest body))
                             (values nil body)))
@@ -108,7 +107,10 @@
          (defmethod documentation ((o (eql ',name)) (doc-type (eql 'function)))
            ,doc-str)
          (define-function ,name 
-             (,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions &rest ,user-args)
+             (,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions ,user-args)
+           (declare (ignorable ,rate-dimension ,dictionary ,entities
+                               ,stoichiometries ,dimensions))
+                               
            (destructuring-bind ,lambda-list ,user-args
              ,@body))))))
 
@@ -126,7 +128,8 @@
             .type.rate-fn.(map-substitution (reaction-rate-substituter object)))))
 
 (defun reaction-rate-substituter (rxn)
-  (let ((substs (|REACTION.SUBSTITUTION-TABLE| rxn)))
+  (let ((substs (|REACTION.SUBSTITUTION-TABLE| rxn))
+        (type-substs rxn.type.k._hash-table))
     (labels ((substitute (o)
                (typecase o
                  (function     (funcall o rxn))
@@ -135,7 +138,8 @@
                                                  no species exists for this species-type."
                                                           o))
                                  species.conc))
-                 (t            (let ((subst (gethash o substs)))
+                 (t            (let ((subst (or (gethash o type-substs)
+                                                (gethash o substs))))
                                  (if subst (substitute subst)
                                    o))))))
       #'substitute)))

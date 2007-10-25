@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.4 2007/10/25 03:58:00 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -170,24 +170,14 @@
   {.inner.size :@= 4/3 * pi value ^ 3})
 
 
+;;;
+;;; LOCATION DIMENSIONALITY:  compartment size dimensionality 
+;;;
+(defgeneric location-class-dimensionality (lclass)
+  (:method ((lc (eql compartment))) *compartment-dimensionality*)
+  (:method ((lc (eql membrane))) (1- *compartment-dimensionality*)))
 
-(defgeneric location-class-dimension (lclass)
-  (:method ((lc (eql compartment))) *compartment-size-dimension*)
-  (:method ((lc (eql membrane))) *membrane-size-dimension*))
+(define-function location-class-dimension (lclass)
+  {*distance-dimension* ^ (location-class-dimensionality lclass) })
 
 
-
-
-;;;; ;;;
-;;;; ;;; LOCATION-REQUIREMENT - represents a requirement for a species-type in a sublocation of location
-;;;; ;;;
-;;;; (defcon location-requirement (:notrace)
-;;;;   ((type species-type)
-;;;;    (localization symbol)))
-
-;;;; (defield location-requirement.is-valid-for (loc-class)
-;;;;   (let ((fi   (find .localization loc-class._fieldinfos :key ?.symbol)))
-;;;;     (and (typep fi 'fieldinfo)
-;;;;          (subtypep (if (mutils:allow-type-p fi.type)
-;;;;                        (mutils:allow-type-type fi.type) fi.type)
-;;;;                    'location))))

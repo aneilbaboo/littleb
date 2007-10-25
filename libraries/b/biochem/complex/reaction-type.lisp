@@ -21,60 +21,83 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.5 2007/10/23 17:25:56 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.6 2007/10/25 03:58:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
 ;;; Description: defines the complex-species-type structure
 ;;;              relies on the graph-tools library
 
-(in-package :b-user)
+(in-package #I@library/biochem)
 
-(include (b/math @folder/species-type))
-
-(include-declaration :expose-symbols '(<<->> ->>))
+(include (b/math @folder/species-type @library/biochem/reaction-type))
 
 (defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
     (lhs rhs)
   (let ((lhsvar '#:lhs)
         (rhsvar '#:rhs))
   `(with-complex-reaction-type-parts ((,lhsvar ,lhs) (,rhsvar ,rhs))
-;     (values ,lhsvar ,rhsvar))))
-     [complex-reaction-type ,lhsvar ,rhsvar])))
-
-
-(defcon reference-pattern (complex-graph-concept :notrace)
-  "Reference patterns are created when reactions are defined; each monomer has a reference number indicating its identity in the context of a complex-reaction-type"
-  (id)
-  (setf .id (ensure-canonical-complex-graph id t)))
-
-
-;;;; (defmethod print-concept ((o reference-pattern) &optional stream)
-;;;;   (let ((graph     o.id))
-;;;;     (print-complex-graph graph stream "[" "]")))
-
-(defcon complex-pattern (reference-pattern :notrace)
-  "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
-  (id)
-  (setf .id (ensure-canonical-complex-graph id nil)))
+     (if (localization-p ,lhsvar)
+         [complex-reaction-type ,.lhsvar.entity ,rhsvar ,.lhsvar.location]
+       [complex-reaction-type ,lhsvar ,rhsvar]))))
 
 (defcon complex-reaction-type ()
   (lhs 
    rhs
-   &property
-   (location-class := compartment))
-  (setf .lhs (canonicalize-complex-reaction-type-argument lhs)
-        .rhs (canonicalize-complex-reaction-type-argument rhs)))
+   &optional
+   (location-class := nil))
+  (let* ((lhs (canonicalize-complex-reaction-type-argument lhs))
+         (rhs (canonicalize-complex-reaction-type-argument rhs))
+         (location-class (determine-complex-reaction-type-location-class location-class lhs rhs)))
+    (setf .lhs lhs
+          .rhs rhs
+          .location-class location-class)))
+
+
+(defun determine-complex-reaction-type-location-class (defined-lclass lhs rhs)
+  (flet ((find-location-class-in-sum-expression (se)
+            (mutils:ifit (find-if #'complex-graph-concept-p (if se se.vars))
+                         it.location-class)))
+    (let* ((lclass (or defined-lclass 
+                       (find-location-class-in-sum-expression lhs)
+                       (find-location-class-in-sum-expression rhs))))
+      (check-complex-reaction-type-argument lhs lclass)
+      (check-complex-reaction-type-argument rhs lclass)
+      lclass)))
+
+(defun check-complex-reaction-type-argument (rt-arg loc-class)
+  (labels ((coef-ok (num)
+             (eq num 1))
+           (check-term (var num)
+             (typecase var
+               (complex-graph-concept   
+                (unless (subtypep var.location-class loc-class)
+                  (b-error "~S.location-class does not match ~S." var loc-class)))
+               (localization
+                (unless var.(is-valid-for loc-class)
+                  (b-error "Invalid reaction-type argument: ~S.  ~
+                            No ~S sublocation in location class ~S." 
+                           var  var.location loc-class)))
+               (t            
+                (b-error "Expecting a complex-pattern or location-requirement, but received ~S." var)))
+             (unless (coef-ok num)
+               (b-error "Invalid stoichiometry (~S) in reaction-type sum-expression ~S" num rt-arg))))
+    (when rt-arg 
+      (unless (sum-expression-p rt-arg)
+        (b-error "Invalid argument to complex-reaction-type: ~S." rt-arg))
+      rt-arg.(map-terms #'check-term))))
 
 (defmethod print-concept ((o complex-reaction-type) &optional stream)
   (if *debug-printing* (call-next-method)
     (print-math-expression o stream t)))
 
-(defmethod print-math-expression ((o complex-reaction-type) &optional (stream *standard-output*) (outer-op t))
+(defmethod print-math-expression 
+           ((o complex-reaction-type)
+            &optional (stream *standard-output*) (outer-op t))
   (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
 
 
-(defun canonicalize-complex-reaction-type-argument (x)
+(defun canonicalize-complex-reaction-type-argument (side)
   (labels ((canonicalize-object (x) 
              (etypecase x 
                (sum-expression (apply #'s+
@@ -83,13 +106,13 @@
                                            (unless (= 1 c) 
                                              (b-error "Coefficient invalid in ~A ~S as complex reaction argument"
                                                       c o))
-                                            (canonicalize-object o)))))
+                                           (canonicalize-object o)))))
                (list           (apply #'s+ (mapcar #'canonicalize-object x)))
                (localization   [localization (canonicalize-object x.entity) x.location])
                (monomer         (eval `[,x.name]))
                (complex-species-type [reference-pattern x.id])
                (reference-pattern x))))
-    {(canonicalize-object x)}))
+    (canonicalize-object side)))
 
 (defmacro with-complex-reaction-type-parts (((lhs lhs-form)
                                         (rhs rhs-form))
@@ -109,7 +132,7 @@
     (list           (loop for elt in x
                           collect elt into rxn-vars
                           collect (typecase elt
-                                    (localization elt.type.id)
+                                    (localization elt.entity.id)
                                     (reference-pattern elt.id)
                                     (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
                           into graphs
@@ -379,188 +402,4 @@
                                                   :remap `((nil ,@(mapcar #'gvertex remove))))))
         ;; and return the distinct complexes resulting from this operation:
         (gtools:unconnected-subgraphs rhs-super-graph)))))
-
-
-;;;;
-;;;;
-;;;; CODE FOR TESTING AND MISC JUNK CODE:
-;;;;
-;;;; ;;;;
-
-;;;; (defun compute-reaction-output (lhs rhs lhs-graphs)
-;;;;   "For testing purposes: Given lhs and rhs pattern graphs, and a set of lhs-graphs, computes the rhs graph"
-;;;;   (multiple-value-bind (lhs-patterns rhs-patterns new-rhs-graph connects disconnects label-changes remove)
-;;;;       (parse-complex-reaction-type2 lhs rhs)
-;;;;     (declare (ignorable rhs-patterns))
-;;;;     (let* ((lhs-graphs   (mapcar #'make-complex-graph lhs-graphs))
-;;;;            (isomorphisms (apply #'mapcar #'vector
-;;;;                                 (mapcar #'gtools:find-subgraph-isomorphisms 
-;;;;                                         lhs-patterns
-;;;;                                         lhs-graphs))))
-;;;;         (loop for isoset in isomorphisms
-;;;;               for rhs-graphs = (compute-rhs-graphs (apply #'vector new-rhs-graph lhs-graphs)
-;;;;                                                    isoset
-;;;;                                                    connects
-;;;;                                                    disconnects 
-;;;;                                                    label-changes 
-;;;;                                                    remove)
-;;;;               collect rhs-graphs))))
-
-;;;; (defcon reversible-complex-reaction-type () 
-;;;;   (lhs rhs)
-;;;;   {.rxns := (order rxns)})
-
-;;;; (defun make-reversible-complex-reaction (lhs rhs)
-;;;;   [reversible-complex-reaction (list [complex-reaction lhs rhs]
-;;;;                                      [complex-reaction rhs lhs])])
-
-
-;;;; (defun plus-op-p (x)
-;;;;   (and (consp x)
-;;;;        (eq (first x) '+op)))
-
-;;;; (defun mult-op-p (x)
-;;;;   (and (consp x)
-;;;;        (eq (first x) '*op)))
-
-;;;; (defun math-op-p (x)
-;;;;   (or (plus-op x) (mult-op x)))
-
-;;;; OLD PARSE-COMPLEX-REACTION2
-;;;; (defun parse-complex-reaction2 (lhs rhs)
-;;;;   "On input, lhs and rhs are patterns (as returned from pattern-from-complex-reaction-argument)"
-;;;;   (mutils:let+
-;;;;       (((lhs-patterns lhs-cnxns) 
-;;;;         (parse-complex-reaction-single-side-pattern lhs))
-;;;;        (*default-site-binding* (lhs-default-site-binding-function lhs-patterns))
-;;;;        ((rhs-patterns rhs-cnxns)
-;;;;         (parse-complex-reaction-single-side-pattern 
-;;;;          (pattern-from-complex-reaction-argument rhs)))
-;;;;        (created-cnxns  (compute-bond-difference rhs-cnxns lhs-cnxns))
-;;;;        (lost-cnxns     (compute-bond-difference lhs-cnxns rhs-cnxns))
-;;;;        (lhs-verticies  (graph-list-labels lhs-patterns))
-;;;;        (rhs-verticies  (graph-list-labels rhs-patterns))
-;;;;        (rhs-new-graph  (compute-rhs-new-graph rhs-patterns lhs-verticies))
-;;;;        (label-changes    (compute-label-changes lhs-verticies rhs-verticies)))
-;;;;     (declare (ignorable rhs-patterns rhs-noffsets))
-;;;;     (labels ((named-vertex->graph-index (label)
-;;;;                ;; converts a named-vertex to a graph index (GNUM . VINDEX)
-;;;;                (or (loop for graph in (list* rhs-new-graph lhs-patterns)
-;;;;                          for gindex = 0 then (1+ gindex)
-;;;;                          for vindex = (position label (gtools:graph-labels graph) 
-;;;;                                                 :test #'named-vertex=)
-;;;;                          when vindex return (cons gindex vindex))
-;;;;                    (error "BUG: LABEL ~S not FOUND" label)))
-;;;;              (map-named-vertex->graph-index (seq)
-;;;;                (map (type-of seq) #'named-vertex->graph-index seq))
-;;;;              (lost-verticies ()
-;;;;               (map-named-vertex->graph-index
-;;;;                 (compute-vertex-set-difference (coerce lhs-verticies 'list)
-;;;;                                                (coerce rhs-verticies 'list)))))
-
-;;;;       (values 
-;;;;        (mapcar #'graph-remove-reference-labels lhs-patterns) ;; lhs-patterns
-;;;;        (mapcar #'graph-remove-reference-labels rhs-patterns) ;; rhs-patterns
-;;;;        (graph-remove-reference-labels rhs-new-graph) ;; new rhs graph new components
-;;;;        (mapcar #'map-named-vertex->graph-index created-cnxns) ;; created cnxns
-;;;;        (mapcar #'map-named-vertex->graph-index lost-cnxns) ;; lost cnxns
-;;;;        (mapcar (lambda (lchange)                           ;; label changes
-;;;;                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
-;;;;                label-changes)
-;;;;        (lost-verticies)))))
-;;;;             
-
-
-
-;;;;        
-
-
-;;;; (defun unpack-complex-reaction-argument (x)
-;;;;   "Returns a list of object forms"
-;;;;   (cond
-;;;;    ((null x) nil)
-;;;;    ((math-form-p x)
-;;;;     (unpack-complex-reaction-argument (math-form-expand x)))
-
-;;;;    ((mult-op-p x)
-;;;;     (let ((num (second x))
-;;;;           (obj (third x)))
-;;;;       (unless (and (numberp num) (plusp num)
-;;;;                    (complex-form-p obj))
-;;;;         (error "Expecting NUMBER OBJECT-PATTERN"))
-;;;;       (unpack-complex-reaction-argument `(+op ,@(make-list num :initial-element obj)))))
-;;;;    ((plus-op-p x)
-;;;;     (mapcan #'unpack-complex-reaction-argument (rest x)))
-;;;;    ((symbolp x)
-;;;;     (unpack-complex-reaction-argument `([[,x]])))
-;;;;    ((object-form-p x)
-;;;;     (if (object-form-p (object-form-object x))
-;;;;         `(,x)
-;;;;       `([,x])))
-;;;;    ((listp x)
-;;;;     (mapcan #'unpack-complex-reaction-argument x))))
-
-
-
-;;;; (defun pattern-from-complex-reaction-argument (x)
-;;;;   "Takes an expression like {ksr + mapk} or {[[ksr.a !1 _][mapk.b !1 *]] + [mek.c _]}
-;;;;    and returns a list of complexes with named monomers:
-;;;;    (((ksr.',(ksr 0) _ _)) ((mapk.',(mapk 0) _ _))) and
-;;;;    (((ksr.a !1 _ _)(mapk.b !1 *)) ((mek.c _ :u)))"
-;;;;   (let ((ref-table (make-hash-table :test #'equal)) ;; the ref table is 
-;;;;         (monomer-table (make-hash-table)))
-;;;;     (labels ((new-monomer-binding (d)
-;;;;                (list d (incf (gethash d monomer-table 0))))
-;;;;              (check-monomer-reference (d)
-;;;;                (let ((r (fld-form-field d)))
-;;;;                  (unless (atom r) (error "Invalid reference ~S - expecting an atom." d))
-;;;;                  (if (gethash r ref-table) 
-;;;;                      (error "Duplicate reference ~A." r)
-;;;;                    (setf (gethash r ref-table) t))
-;;;;                d))
-;;;;              (parse-monomer (d)
-;;;;                (cond
-;;;;                 ((fld-form-p d) (check-monomer-reference d))
-;;;;                 (t              `.d.,(new-monomer-binding d))))
-;;;;              (parse-complex (cplex)
-;;;;                (mapcar (lambda (dform)
-;;;;                          `(,(parse-monomer (object-form-object dform))
-;;;;                            ,@(object-form-args dform)))
-;;;;                        (object-form-body cplex))))
-;;;;       (mapcar #'parse-complex (unpack-complex-reaction-argument x)))))
-
-
-
-;;;; (defun parse-complex-pattern (cplx)
-;;;;   "Given P, a pattern,
-;;;;    Returns: G graph representing the pattern, 
-;;;;                suitable for isomorphism testing
-;;;;             C, a bond list"
-;;;;   (multiple-value-bind (slabels binding-table)
-;;;;       (parse-complex-description cplx t)
-;;;;     (fix-automatic-bond-labels binding-table)
-;;;;     (loop with graph = (build-complex-graph slabels binding-table)
-;;;;           for i from 0 below (gtools:graph-vertex-count graph)
-;;;;           for lab = (gtools:graph-vertex-label graph i)
-;;;;           finally return (values graph
-;;;;                                  (compute-bond-list binding-table slabels)))))
-;;;;     
-;;;; (defun parse-complex-reaction-type-single-side-pattern (arg)
-;;;;   (loop for cplx in arg
-;;;;         for (graph clist)
-;;;;                    = (multiple-value-list (parse-complex-pattern cplx))
-;;;;         collect (gtools:canonical-graph graph) into graphs
-;;;;         append clist into bonds
-;;;;         finally return (values graphs bonds)))
-;;;;                
-
-;;;; (defun compute-site-value-changes (lhs rhs)
-;;;;   "Given two lists of site labels, determines what site values have changed"
-;;;;   (loop for xsite in lhs
-;;;;         for ysite = (find xsite rhs :test #'named-vertex=)
-;;;;         for rhs = (remove ysite rhs)
-;;;;         unless (or (null ysite)
-;;;;                    (equal (site-label-value xsite)
-;;;;                           (site-label-value ysite)))
-;;;;         collect ysite))
 

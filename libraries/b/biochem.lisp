@@ -25,7 +25,7 @@
 ;;; File: core-biochem
 ;;; Description: defines species-type, species, location, 
 
-;;; $Id: biochem.lisp,v 1.2 2007/10/15 12:48:49 amallavarapu Exp $
+;;; $Id: biochem.lisp,v 1.3 2007/10/25 03:57:44 amallavarapu Exp $
 
 (in-package #I@file)
 
@@ -36,7 +36,7 @@
   :description "Includes the core concepts for the biochemistry system.~
                 Note: This file does not contain bindings for dimensionalization - ~
                 use </2-dimensional or </3-dimensional or </non-dimensional instead.  ~
-                $Date: 2007/10/15 12:48:49 $"
+                $Date: 2007/10/25 03:57:44 $"
   :authors "Aneil Mallavarapu"
   :organization "Harvard Medical School")
 
@@ -49,5 +49,7 @@
           @/reaction 
           @/reaction-type
           @/dimensionalization
+          @/enzymatic-reaction
+          @/complex
           ) :expose)
 

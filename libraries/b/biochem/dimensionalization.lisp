@@ -33,17 +33,14 @@
                        :authors ("Aneil Mallavarapu")
                        :organization ("Harvard Medical School"))
 
-(define-var *compartment-size-dimension*)
-(define-var *membrane-size-dimension*)
+(define-var *compartment-dimensionality*)
 
-(define-constant +biochem-dimensionalization-vars+ '(*compartment-size-dimension* *membrane-size-dimension*))
 
 (define-assumption-name :biochem-dimensionalization 
   :requires :dimensionalization
-  :verifier (lambda () (every (lambda (o) (and (boundp o) (dimension-p (symbol-value o))))
-                              +biochem-dimensionalization-vars+))
-  :verify-error (format nil "Each of ~S must be set to a dimension." +biochem-dimensionalization-vars+)
-  :initializer (lambda () (mapc #'makunbound +biochem-dimensionalization-vars+))
+  :verifier (lambda () (boundp '*compartment-dimensionality*))
+  :verify-error (format nil "Biochem compartment dimensionality has not been selected (*compartment-dimensionality* has not been set)")
+  :initializer (lambda () (makunbound '*compartment-dimensionality*))
   :general-error (format nil "Ensure that exactly one biochem dimensionalization regime is loaded.  ~
                               e.g., b/BIOCHEM/2-DIMENSIONAL or ../3-DIMENSIONAL or ../NON-DIMENSIONAL"))
 
