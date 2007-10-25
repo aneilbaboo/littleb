@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: editor-lispworks.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: editor-lispworks.lisp,v 1.2 2007/10/25 20:13:02 amallavarapu Exp $
 
 #+:lispworks
 (in-package editor)
@@ -501,3 +501,5 @@
                       'editor::syntax-table)
           *b-syntax-table*)))
   
+
+(setf dbg:*debug-print-level* 8)

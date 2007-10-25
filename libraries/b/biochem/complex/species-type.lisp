@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.7 2007/10/25 16:04:11 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.8 2007/10/25 20:12:52 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -197,16 +197,31 @@
                               (string< (package-name (symbol-package x))
                                        (package-name (symbol-package y)))
                             (string< (symbol-name x) (symbol-name y))))
+                  (fld-form t)
                   (number nil)
                   (cons   t)))
+               (fld-form
+                (etypecase y
+                  (fld-form (let ((xobj (fld-form-object x))
+                                  (yobj (fld-form-object y))
+                                  (xfld (fld-form-field x))
+                                  (yfld (fld-form-field y)))
+                              (or (complex-graph-label< xobj yobj)
+                                  (and (eq x y)
+                                       (complex-graph-label< xfld yfld)))))
+                  (cons t)
+                  (number t)
+                  (symbol nil)))
                (number   (etypecase y
                            (number (< x y))
+                           (fld-form t)
                            (symbol t)
                            (cons   t)))
                (cons
                 (etypecase y
                   (symbol nil)
                   (number nil)
+                  (fld-form nil)
                   (cons   (or (and (eq (first x) (first y))
                                    (complex-graph-label< (second x) (second y)))
                               (complex-graph-label< (first x) (first y)))))))))
@@ -286,15 +301,16 @@
      (complex-graph-description object.id)))
 
 (defmethod print-concept ((o complex-graph-concept) &optional stream)
-  (let* ((descr o.constructor-description)
-         (complex (> (length descr) 1)))
-    (pprint-logical-block (stream descr
-                                  :prefix (if complex "[" "")
-                                  :suffix (if complex "]" ""))
-      (loop for mdescr = (pprint-pop)
-            do (prin1 `[,@mdescr] stream)
-               (pprint-newline-selectively :linear stream)
-               (pprint-exit-if-list-exhausted)))))
+  (if *debug-printing* (call-next-method)
+    (let* ((descr o.constructor-description)
+           (complex (> (length descr) 1)))
+      (pprint-logical-block (stream descr
+                                    :prefix (if complex "[" "")
+                                    :suffix (if complex "]" ""))
+        (loop for mdescr = (pprint-pop)
+              do (prin1 `[,@mdescr] stream)
+              (pprint-newline-selectively :linear stream)
+              (pprint-exit-if-list-exhausted))))))
 
 
 ;;;

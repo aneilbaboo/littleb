@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.6 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.7 2007/10/25 20:12:52 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -52,7 +52,6 @@
     (setf .lhs lhs
           .rhs rhs
           .location-class location-class)))
-
 
 (defun determine-complex-reaction-type-location-class (defined-lclass lhs rhs)
   (flet ((find-location-class-in-sum-expression (se)
