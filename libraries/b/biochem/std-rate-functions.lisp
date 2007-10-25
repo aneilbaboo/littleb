@@ -26,7 +26,7 @@
 ;;; Description:
 
 
-;;; $Id: std-rate-functions.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: std-rate-functions.lisp,v 1.4 2007/10/25 15:04:08 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -39,9 +39,6 @@
           @>/biochem/ode
           @>/biochem/dimensionalization) :use)
 
-;;;
-
-  
 (define-custom-rate mass-action (constant) 
     (rate-dimension
      dictionary

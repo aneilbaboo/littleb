@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.4 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.5 2007/10/25 15:04:08 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -53,15 +53,15 @@
   (let* ((entities         object.lhs.vars)
          (stoichiometries  (make-list (length entities) :initial-element 1))
          (dimensions       (mapcar #'entity-dimension entities)))
-    (apply fn
-           {(location-class-dimension .location-class)
-            * *molecular-amount-dimension* 
-            / *time-dimension*}
-           .k
-           entities 
-           stoichiometries
-           dimensions
-           args)))
+    (funcall fn
+             args
+             {(location-class-dimension .location-class)
+              * *molecular-amount-dimension* 
+              / *time-dimension*}
+             .k
+             entities 
+             stoichiometries
+             dimensions)))
   
 (defun entity-dimension (e)
   (etypecase e

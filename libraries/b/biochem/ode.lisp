@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.5 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.6 2007/10/25 15:04:08 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -59,17 +59,16 @@
     (setf .rate-calculator (list* fn args)
           .rate-fn         (apply
                             fn
+                            args
                             rate-dimension 
                             .k
-                            (nconc
-                             (apply #'mapcar #'list
-                                    (mapcar (lambda (rtr)
-                                              (list rtr.(localization t)
-                                                    rtr.stoichiometry
+                            (apply #'mapcar #'list
+                                   (mapcar (lambda (rtr)
+                                             (list rtr.(localization t)
+                                                   rtr.stoichiometry
                                                    (location-class-dimension
                                                     rtr.species-type.location-class)))
-                                            .lhs-requirements))
-                             (list args))))))
+                                           .lhs-requirements))))))
 
 ;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
 ;;;     - function of 5 or more arguments which return a math expression expression
@@ -107,7 +106,7 @@
          (defmethod documentation ((o (eql ',name)) (doc-type (eql 'function)))
            ,doc-str)
          (define-function ,name 
-             (,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions ,user-args)
+             (,user-args ,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions)
            (declare (ignorable ,rate-dimension ,dictionary ,entities
                                ,stoichiometries ,dimensions))
                                
