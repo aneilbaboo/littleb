@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.3 2007/10/22 18:50:37 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.4 2007/10/25 03:24:24 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -261,7 +261,14 @@
               ipath-pkg ipath exposure 
               ipath (unless (same-pkg-p) exposure)
               (unless (same-pkg-p) ipath-pkg)
-              (or iipath "Listener"))))))
+              (if (equal iipath "") "Listener" iipath)))
+      
+      (when (member iipath-pkg (and (find-package ipath-pkg)
+                                    (package-use-list ipath-pkg)))
+        (b-error "Circular package dependency: ~A <= ~A <= ~A.  Found during (INCLUDE ~A...) in ~A"
+                 ipath-pkg iipath-pkg ipath-pkg ipath 
+                 (when (and (typep iipath 'sequence) (zerop (length iipath)))
+                   "Listener"))))))
 
 (defun include-funcall (include-path function &rest args)
   (let* ((ipath (include-path include-path)))

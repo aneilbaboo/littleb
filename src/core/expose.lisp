@@ -34,7 +34,7 @@
 ;;;              in package A, and consequently any packages which expose A too.
 ;;;              
 
-;;; $Id: expose.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: expose.lisp,v 1.2 2007/10/25 03:24:24 amallavarapu Exp $
 ;;; $Name:  $
 (in-package b)
 
@@ -157,25 +157,15 @@
     (cons   (safely-remove-conflicting-internal-symbols (pop s) package))
     (null   ())))
 
-(defun remove-package-conflicts (package packages-to-use)
+(defun remove-package-conflicts (package packages-to-use &optional ignore-packages)
   "Removes any external symbols of package-to-use from package (default = current package)"
   (let ((packages-to-use (mapcar #'strict-find-package (ensure-list packages-to-use)))
         (package         (strict-find-package package)))
     (dolist (package-to-use packages-to-use)
       (do-external-symbols (s package-to-use)
         (safely-remove-conflicting-internal-symbols s package)))
-    (dolist (used-by (package-used-by-list package))
-      (remove-package-conflicts used-by packages-to-use))))
-
-;;;; without restart - for debugging purposes
-;;;; (defun expose-symbol (symbols-to-expose &optional (package *package*))
-;;;;   (let ((result ())
-;;;;         (package (strict-find-package package)))
-;;;;     (flet ((expose-all (force)
-;;;;              (dolist (o (ensure-list symbols-to-expose) result)
-;;;;                     (whenit (expose-single-symbol (strict-find-symbol o) package force)
-;;;;                       (push it result)))))
-;;;;       (expose-all nil))))
+    (dolist (used-by (set-difference (package-used-by-list package) ignore-packages))
+      (remove-package-conflicts used-by packages-to-use (cons used-by ignore-packages)))))
 
 (defun expose-single-symbol (s package &optional force)
   "Returns T if the symbol was newly exposed by this call"

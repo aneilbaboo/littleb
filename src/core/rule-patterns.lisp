@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.2 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.3 2007/10/25 03:24:24 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -512,7 +512,8 @@
                         (cdr plist))
                        
                        (t (b-error "invalid property pattern for class ~A with ~A"
-                                 (car plist)))))))
+                                   (car plist)
+                                   (cdr plist)))))))
       
       (loop with iter = plist
             while (setf iter (process-property iter)))
