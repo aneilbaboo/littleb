@@ -26,7 +26,7 @@
 ;;; Description: Defines the unit concept. For supporting Joules, Newtons, etc.
 ;;;              
 
-;;; $Id: unit.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: unit.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -68,7 +68,7 @@
           (dimension  (values .dimension .conversion))
           (null       (values null-dimension 1)))
       (setf .dimension dim
-            .conversion (if (numberp conv) (rationalize conv) conv))))
+            .conversion (simplify-number conv))))
   => 
   (if (numberp .conversion)
       (dimension-add-scale-unit .dimension object)))

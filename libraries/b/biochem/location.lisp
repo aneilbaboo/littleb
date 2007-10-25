@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.4 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.5 2007/10/25 14:44:23 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -42,18 +42,13 @@
 ;;;
 (defcon location (:abstract) 
   (&property 
-   (size :#= [reference-var] :relevance t)))
+   (size :#= (let ((lclass (class-of object)))
+               [[reference-var] :dimension (location-class-dimension lclass)
+                :value (default-location-size lclass)] :relevance t))))
 
+(defun default-location-size (lclass)
+  {1 * (location-class-dimension lclass).unit})
 
-;;;;   ; how we'd like to be able to do this:
-;;;;   ; (query (:and [species ? ?obj]
-;;;;   ;        (eq ?obj object))
-;;;;   ; (but, too slow currently)
-;;;;   ; filthy hack - don't try this at home
-;;;;   (loop for obj being the hash-value in b::+objects+
-;;;;         when (and (species-p obj)
-;;;;                   (eq obj.location object))
-;;;;         collect obj))
 (defun location-class-p (o)
   (subtypep o location))
 
@@ -118,16 +113,12 @@
 ;;;; ;; simple, atomic locations
 (defcon compartment (location)
   (&optional (id := *name*)
-   &property (adjacent-compartments)
-   (size :#= [[reference-var] :dimension *compartment-size-dimension*
-              :value {1 *compartment-size-dimension*.unit}] :relevance t)))
+   &property (adjacent-compartments)))
 
 (defcon membrane (location)
   (&optional (id := *name*)
    &property (c1 (allow compartment) :relevance t)
-             (c2 (allow compartment) :relevance t)
-             (size :#= [[reference-var] :dimension *membrane-size-dimension*
-                        :value {1 *membrane-size-dimension*.unit}] :relevance t)))
+             (c2 (allow compartment) :relevance t)))
     
 (defun membrane-id-inverse-p (id)
   (and (consp id)
@@ -176,6 +167,9 @@
 (defgeneric location-class-dimensionality (lclass)
   (:method ((lc (eql compartment))) *compartment-dimensionality*)
   (:method ((lc (eql membrane))) (1- *compartment-dimensionality*)))
+
+(defun location-dimensionality (o)
+  (location-class-dimensionality (class-of o)))
 
 (define-function location-class-dimension (lclass)
   {*distance-dimension* ^ (location-class-dimensionality lclass) })

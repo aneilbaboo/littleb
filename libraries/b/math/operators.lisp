@@ -25,7 +25,7 @@
 ;;; File: operators
 ;;; Description: 
 
-;;; $Id: operators.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: operators.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -298,7 +298,7 @@
 ;;;
 (defmethod ^op :around (o (p (eql 0)))   1)
 (defmethod ^op :around (o (p (eql 0.0))) 1)  
-(defmethod ^op :around (o (p float))      (call-next-method o (rationalize p)))
+;(defmethod ^op :around (o (p float))      (call-next-method o (rationalize p)))
 
 (defmethod ^op ((e null) p) nil)
 (defmethod ^op ((n1 number) (n2 number)) 

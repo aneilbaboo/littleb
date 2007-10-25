@@ -46,10 +46,8 @@
 (deftype quote-form () '(cons (eql quote) *))
 
 (defun quote-printer (stream quote-form)
-  (cond
-   (*print-pretty*  (princ #\' stream)
-                    (prin1 (second quote-form) stream))
-   (t               (cons-printer stream quote-form))))
+  (princ #\' stream)
+  (prin1 (second quote-form) stream))
 
 ;(set-pprint-dispatch 'quote-form 'quote-printer 1 +top-level-pprint-dispatch-table+)
 
@@ -339,7 +337,7 @@
             (prin1 (cons '*comma-dot* (remove-comma object)) stream)
           (prin1 object stream)))
       (princ #\. stream)
-      (let ((*bq-printer-level* (1+ *bq-printer-level*))
+      (let ((*bq-printer-level* (+ 2 *bq-printer-level*))
             (*printing-fld-form-object* nil))
         (cond 
          ((equal field ''*brace*)

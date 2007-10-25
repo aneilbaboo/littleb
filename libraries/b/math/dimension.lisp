@@ -25,7 +25,7 @@
 ;;; File: 
 ;;; Description: Defines the Dimension concept, part of the quantity system.
 
-;;; $Id: dimension.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: dimension.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -123,7 +123,7 @@ P may be an integer, or :+ (select all positives) or :- (select all negatives)."
            (dimension-select-base-dimensions d :-))))
 
 (defun dimension-element (base &optional (power 1)) 
-  (cons base (rationalize power)))
+  (cons base (simplify-number power)))
 (defun dimension-element-base (de) (car de))
 (defun dimension-element-power (de) (cdr de))
 (defun (setf dimension-element-power) (value de) (setf (cdr de) value))

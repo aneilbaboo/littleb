@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.4 2007/10/25 14:44:23 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -31,15 +31,9 @@
 (include-declaration :use-packages mallavar-utility)
 
 (include @>/util :use)
-(include (@>/biochem/ode
-          @>/units/dimensionalization
-          @>/math 
+(include (@>/biochem
           @>/math/ode-var
-          @folder/species-type
-          @folder/reaction-inference
-          @folder/reaction-type) 
-         :expose
-         :modify b/biochem)
+          @library/biochem/ode))
 
 (include-documentation :description "Provides extensions to the b/biochem package which enable ODE models to be built."
                        :authors ("Aneil Mallavarapu"))
@@ -60,7 +54,9 @@
          (stoichiometries  (make-list (length entities) :initial-element 1))
          (dimensions       (mapcar #'entity-dimension entities)))
     (apply fn
-           rate-dimension
+           {(location-class-dimension .location-class)
+            * *molecular-amount-dimension* 
+            / *time-dimension*}
            .k
            entities 
            stoichiometries

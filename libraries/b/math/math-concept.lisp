@@ -34,7 +34,7 @@
 ;;;              arithmetic-value and any combinations.
 ;;;              
 
-;;; $Id: math-concept.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: math-concept.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
 ;;; $Log $
 
 (in-package b/math)
@@ -75,3 +75,7 @@
 (defmethod fld ((o number) (field (eql :vars)) &rest args)
   (declare (ignorable o field args))
   nil)
+
+(declaim (inline simplify-number))
+(defun simplify-number (x) (if (and (rationalp x) (not (= 1 (denominator x))))
+                               (coerce x 'float) x))

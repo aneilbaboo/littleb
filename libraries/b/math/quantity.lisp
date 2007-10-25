@@ -26,7 +26,7 @@
 ;;; Description: Defines the Quantity concept, a representation of a dimensional
 ;;;              quantity (such as 5 joules).
 
-;;; $Id: quantity.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: quantity.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -44,9 +44,7 @@
     (error "Dimension mismatch ~S does not have same dimension as ~S" object u)))
 
 (defun quantity (magnitude kind)
-  (let* ((mag (if (floatp magnitude) 
-                  (rationalize magnitude)
-                magnitude)))
+  (let* ((mag (simplify-number magnitude)))
     (cond
      ((or (eq kind null-unit)       
           (null kind)    

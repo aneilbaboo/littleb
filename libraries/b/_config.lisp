@@ -19,6 +19,7 @@
         @LIBRARY/util
 	@LIBRARY/biochem @LIBRARY/biochem/basic-ode-modelling
 	@LIBRARY/biochem/multisided-cell @LIBRARY/biochem/multisided-cell/flat-lattice
+        @LIBRARY/biochem/complex
 	@LIBRARY/matlab/ode-translation
         ;#+:lispworks @LIBRARY/gui
 	;#+:lispworks @LIBRARY/gui/file-browser

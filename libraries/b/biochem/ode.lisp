@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.4 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.5 2007/10/25 14:44:23 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -57,19 +57,19 @@
                          * *molecular-amount-dimension* 
                          / *time-dimension*}))
     (setf .rate-calculator (list* fn args)
-          .rate-fn         (funcall
+          .rate-fn         (apply
                             fn
                             rate-dimension 
-                            .k 
+                            .k
                             (nconc
                              (apply #'mapcar #'list
                                     (mapcar (lambda (rtr)
                                               (list rtr.(localization t)
                                                     rtr.stoichiometry
-                                                    (location-class-dimension
-                                                     rtr.species-type.location-class)))
+                                                   (location-class-dimension
+                                                    rtr.species-type.location-class)))
                                             .lhs-requirements))
-                             args)))))
+                             (list args))))))
 
 ;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
 ;;;     - function of 5 or more arguments which return a math expression expression
