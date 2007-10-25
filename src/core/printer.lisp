@@ -332,7 +332,8 @@
                   (t field))))
 
     (with-bq-printers
-      (let ((*printing-fld-form-object* t)) 
+      (let ((*printing-fld-form-object* t)
+            (*print-level* (if *print-level* (1+ *print-level*))))
         (if (comma-form-p object)
             (prin1 (cons '*comma-dot* (remove-comma object)) stream)
           (prin1 object stream)))
