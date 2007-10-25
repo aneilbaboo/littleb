@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.8 2007/10/25 20:12:52 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.9 2007/10/25 22:01:42 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -47,7 +47,7 @@
   (mutils:let+ (((symbol lclass) (etypecase name-lclass
                                    (symbol (values name-lclass 'compartment))
                                    (cons   (values (first name-lclass) (second name-lclass)))))
-                ((doc sites) (if (stringp #1=(first (last def))) (values #1# (butlast def))
+                ((doc sites) (if (stringp #1=(first def)) (values #1# (rest def))
                                (values nil def))))
     `(port:dspec (defmonomer ,symbol)
        (define ,symbol [[monomer] 
