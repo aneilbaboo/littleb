@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.5 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.6 2007/10/25 20:48:45 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -44,7 +44,8 @@
   (&property 
    (size :#= (let ((lclass (class-of object)))
                [[reference-var] :dimension (location-class-dimension lclass)
-                :value (default-location-size lclass)] :relevance t))))
+                :value (default-location-size lclass)])
+         :relevance t)))
 
 (defun default-location-size (lclass)
   {1 * (location-class-dimension lclass).unit})
@@ -164,7 +165,7 @@
 ;;;
 ;;; LOCATION DIMENSIONALITY:  compartment size dimensionality 
 ;;;
-(defgeneric location-class-dimensionality (lclass)
+(define-generic location-class-dimensionality (lclass)
   (:method ((lc (eql compartment))) *compartment-dimensionality*)
   (:method ((lc (eql membrane))) (1- *compartment-dimensionality*)))
 
