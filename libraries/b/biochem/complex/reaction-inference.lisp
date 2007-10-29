@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.5 2007/10/25 22:00:21 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.6 2007/10/29 14:21:46 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -49,7 +49,7 @@
             RULE-LHS
             RULE-RHS"
   (multiple-value-bind (bonds lost-bonds relabels deletions lhs-patterns rhs-patterns rhs-new-graph
-                              lhs-requirements)
+                              crt-lhs-entities rhs-monomer-locs)
       (compute-complex-reaction-type-changes cr)
     (declare (ignorable rhs-patterns))
     (loop for p in lhs-patterns
@@ -63,32 +63,57 @@
                                  `(:and ,@rule-pattern)
                                  `(create-reaction-type-from-complex-reaction-type
                                    ,cr                  ; complex reaction
-                                   ',lhs-requirements   ; list of localization or complex-pattern objects
+                                   ',crt-lhs-entities   ; list of localization or reference-pattern objects
                                    (list ,@lhs-cstypes) ; LHS complex-species-types in new reaction-type 
                                    ,rhs-new-graph       ; the new rhs-graphs
                                    (vector ,@ivars)     ; isomorphisms
                                    ',bonds              ; bonds to create
                                    ',lost-bonds         ; bonds to delete
                                    ',relabels           ; relabellings
-                                   ',deletions)))))     ; verticies to delete
+                                   ',deletions          ; verticies to delete
+                                   ',rhs-monomer-locs)  ; 
+                                 ))))     
 
 (defcon complex-reaction-inference (:notrace)
   ((type complex-reaction-type)
    (instance reaction-type) 
    requirements))
   
+(defun make-localized-complex-species-type (graph)
+  "Given a graph containing localizations, returns a complex-species-type or a localization object"
+  (loop for i from 0 below (gtools:graph-vertex-count graph)
+        for lab = (gtools:graph-vertex-label graph i)
+        when (localization-p lab)
+        do (setf (gtools:graph-vertex-label graph i)
+                 lab.entity)
+        and collect lab.location into sublocations
+        finally return 
+        (cond
+         ((position nil sublocations) [complex-species-type graph])
+         ((> (length (remove-duplicates sublocations)) 1)
+          (b-error "Cannot create complex-species-type - multiple sublocations specified: ~S"
+                   (remove-duplicates sublocations)))
+         (t {[complex-species-type graph] @ (first sublocations)}))))
+
 (defun create-reaction-type-from-complex-reaction-type 
-       (cr lhs-requirements lhs-cplxes rhs-new-graph isomorphisms bonds lost-bonds relabels deletions)
-  (let* ((lhs-graphs (mapcar ?.id lhs-cplxes))
-         (rtype      [reaction-type 
-                      lhs-cplxes
-                      (make-complexes
-                       (compute-rhs-graphs (apply #'vector
-                                                  rhs-new-graph
-                                                  lhs-graphs)
-                                           isomorphisms
-                                           bonds
-                                           lost-bonds
-                                           relabels
-                                           deletions))]))
-    [complex-reaction-inference cr rtype (mapcar #'cons lhs-requirements lhs-cplxes)]))
+       (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms bonds lost-bonds relabels deletions
+           rhs-monomer-localizations)
+  (flet ((copy-localization-to-complex-species-type (lcp cst)
+           (if (localization-p lcp) {cst @ lcp.location}
+             cst)))
+    (let* ((lhs-graphs (mapcar ?.id lhs-species-types))
+           (localized-lhs-csts (mapcar #'copy-localization-to-complex-species-type
+                                       crt-lhs-entities lhs-species-types))
+           (rtype      [reaction-type 
+                        localized-lhs-csts
+                        (mapcar #'make-localized-complex-species-type
+                         (compute-rhs-graphs (apply #'vector
+                                                    rhs-new-graph
+                                                    lhs-graphs)
+                                             isomorphisms
+                                             bonds
+                                             lost-bonds
+                                             relabels
+                                             deletions
+                                             rhs-monomer-localizations))]))
+      [complex-reaction-inference cr rtype (mapcar #'cons crt-lhs-entities localized-lhs-csts)])))

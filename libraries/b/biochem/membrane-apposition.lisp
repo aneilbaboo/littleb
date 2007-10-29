@@ -32,8 +32,8 @@
   ((m1 membrane)
    (m2 membrane)
    &property 
-   (c1 (allow compartment) := .m1.c2)
-   (c2 (allow compartment) := .m2.c2)
+   (c1 (allow compartment) := .m1.inner)
+   (c2 (allow compartment) := .m2.inner)
    (ic (allow compartment) :#= [compartment])
    (inverse))
   =>

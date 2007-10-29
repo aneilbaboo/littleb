@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.7 2007/10/25 20:12:52 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.8 2007/10/29 14:21:46 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -95,7 +95,6 @@
             &optional (stream *standard-output*) (outer-op t))
   (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
 
-
 (defun canonicalize-complex-reaction-type-argument (side)
   (labels ((canonicalize-object (x) 
              (etypecase x 
@@ -131,8 +130,8 @@
     (list           (loop for elt in x
                           collect elt into rxn-vars
                           collect (typecase elt
-                                    (localization elt.entity.id)
-                                    (reference-pattern elt.id)
+                                    (reference-pattern elt.id) ;; IN MAIN LOCATION
+                                    (localization elt.entity.id) ;; IN SUBLOCATION
                                     (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
                           into graphs
                          finally return (values graphs rxn-vars)))
@@ -196,7 +195,6 @@
   (set-difference (binarize-bonds x) (binarize-bonds y)
                   :test #'named-vertex=))
 
-
 (defun automatic-bond-label-p (x)
   (and (bond-label-p x)
        (null (symbol-package x))))
@@ -208,8 +206,7 @@
         for cnxns being the hash-value in binding-table
         when (eq (length cnxns) 1)
         do (push (first cnxns) (gethash v binding-table))))
-   
-           
+
 (defun named-vertex-to-graph-offset (nvert named-offsets)
   (cdr (assoc nvert named-offsets :test #'named-vertex=)))
 
@@ -296,13 +293,7 @@
                      (mutils:mapatoms (lambda (i)
                                         (gtools:graph-vertex-label g i))
                                       (gtools:graph-edges g)))))
-
-
-(defun make-complexes (graphs)
-  (mapcar (lambda (g)
-            [complex-species-type g])
-          graphs))
-
+          
 (defun graph-remove-reference-labels (g)
   "Returns a copy of the complex graph by stripping any reference labels"
   (labels ((extract-true-label (lab)
@@ -316,23 +307,32 @@
                 (gtools:graph-labels g))
       gcopy)))
   
+(defun graph-monomers (g)
+  (remove-if-not #'monomer-symbol-ref-p (gtools:graph-labels g)))
 
-(defield reaction-type.changes ()
-  "Returns:  NEW-BONDS, LOST-BONDS, LABEL-CHANGES, LOST-VERTICIES, LHS-PATTERNS, RHS-PATTERNS, NEW-RHS-PATTERN"
-  (multiple-value-bind (bonds lost-bonds label-changes lhs-patterns rhs-patterns new-rhs-graph)
-      (compute-complex-reaction-type-changes object)
-    (values bonds lost-bonds label-changes 
-            [complex-pattern lhs-patterns]
-            [complex-pattern rhs-patterns]
-            [complex-pattern new-rhs-graph])))
+(defun monomer-localizations (rxn-var)
+  "Given a localization or reference-pattern, returns an assoc list mapping monomer-ref-symbols to localizations (MREF . SUBLOC)"
+  (multiple-value-bind (graph subloc)
+      (if (localization-p rxn-var)
+          (values rxn-var.entity.id rxn-var.location)
+        (values rxn-var.id nil))
+    (map 'list (lambda (msymbol) (cons msymbol subloc))
+         (graph-monomers graph))))
+      
 
+
+;;;;
+;;;; COMPUTE-COMPLEX-REACTION-TYPE-CHANGES
+;;;; THIS IS A THE MAIN WORKHORSE FUNCTION WHICH COMPUTES ALL THE CHANGES DESCRIBED BY A REACTION
+;;;;
 (defun compute-complex-reaction-type-changes (cr)
-  "Returns:  NEW-BONDS, LOST-BONDS, LABEL-CHANGES, LOST-VERTICIES, LHS-PATTERN GRAPHS, RHS-PATTERN GRAPHS, NEW-RHS-PATTERN GRAPH"
+  "Returns:  NEW-BONDS, LOST-BONDS, LABEL-CHANGES, LOST-VERTICIES, LHS-PATTERN GRAPHS, RHS-PATTERN GRAPHS, NEW-RHS-PATTERN GRAPH, LHS RXN ENTITIES, RHS MONOMER VERTEX LOCALIZATIONS"
   (mutils:let+
       (((lhs-patterns deref-lhs-patterns lhs-rxn-vars)
                          (extract-canonical-graphs-from-expression cr.lhs))
-       ((rhs-patterns deref-rhs-patterns)
+       ((rhs-patterns deref-rhs-patterns rhs-rxn-vars)
                          (extract-canonical-graphs-from-expression cr.rhs))
+       (rhs-monomer-locs (mapcan #'monomer-localizations rhs-rxn-vars)) ; an assoc list of rhs monomers to sublocations
        (lhs-cnxns        (mapcan #'compute-complex-graph-bonds lhs-patterns))
        (rhs-cnxns        (mapcan #'compute-complex-graph-bonds rhs-patterns))
        (created-cnxns    (compute-bond-set-difference rhs-cnxns lhs-cnxns))
@@ -357,7 +357,10 @@
              (lost-verticies ()
               (map-named-vertex->graph-index
                 (compute-vertex-set-difference (coerce lhs-verticies 'list)
-                                               (coerce rhs-verticies 'list)))))
+                                               (coerce rhs-verticies 'list))))
+             (named-localization->graph-index-localization (nl)
+               (cons (named-vertex->graph-index (car nl))
+                     (cdr nl))))
 
       (values 
        (mapcar #'map-named-vertex->graph-index created-cnxns) ;; new bonds
@@ -369,18 +372,52 @@
        deref-lhs-patterns
        deref-rhs-patterns
        deref-rhs-new
-       lhs-rxn-vars))))
+       lhs-rxn-vars
+       (mapcar #'named-localization->graph-index-localization rhs-monomer-locs)))))
 
-(defun compute-rhs-graphs (lhs-graphs isomorphisms bonds disbonds relabels remove)
-  (let* ((lhs-graphs (map 'simple-vector #'gtools:copy-graph lhs-graphs)))
-    (labels ((graph (n) (svref lhs-graphs n))
-             (vertex (g i) (case g
-                             (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
-                             (t (svref (svref isomorphisms (1- g)) i))))
-             (gvertex (gi) (let ((g (car gi)))
+(defun compute-rhs-graphs (input-graphs isomorphisms bonds disbonds relabels remove 
+                                        sublocations)
+  "Returns: RHS-GRAPHS, RHS-LOCALIZATIONS
+   Where RHS-GRAPHS is a list of complex-graph objects
+         RHS-LOCALIZATIONS is a list of symbols representing sublocalizations
+         INPUT-GRAPHS is a sequence of complex-graph objects.  The first element is
+                      a graph representing all of new monomers appearing on the RHS of the reaction
+                      the rest represent graphs matched on the LHS of the reaction.
+         ISOMORPHISMS is a vector of isomorphisms, corresponding to one for each INPUT-GRAPH
+         Graph indicies used below are cons pairs (G . I), 
+           where G is the 0-based index into INPUT-GRAPHS,
+             and I is the 0-based vertex in that graph
+         BONDS - bonds to be created (a list of graph index pairs)
+         DISBONDS - bonds to be destroyed (a list of graph index pairs)
+         RELABELS - relabellings (representing state site value changes
+                    (a list of the form (GI OLD-LABEL NEW-LABEL))
+         REMOVE   - verticies to be deleted from the output
+                    (a list of graph indicies)
+         SUBLOCATIONS - sublocations of some verticies (representing the monomers); 
+                    each output graph will contain one or more denoted verticies.  
+                    Each represents the sublocation that monomer should go to on the RHS.
+                    Note that more than one denoted monomer may be in a complex.  If 
+                    these monomers do not share the same sublocation, we have a problem.
+                    This is resolved in favor of the NIL sublocation if that is present; 
+                    otherwise, an error occurs (currently - fail to generate rxn in future?)."
+  (let* ((input-graphs (map 'simple-vector #'gtools:copy-graph input-graphs)))
+    (labels ((graph (n) (svref input-graphs n))
+             (vertex (g i) ;; using the isomorphisms, gets the true vertex i of graph g
+               (case g
+                 (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
+                 (t (svref (svref isomorphisms (1- g)) i))))
+             (gvertex (gi) (let ((g (car gi))) ; converts graph-index using isomorphisms
                              (cons g (vertex g (cdr gi)))))
-             (bond (c) (mapcar #'gvertex c)))
-      
+             (bond (b) (mapcar #'gvertex b))) ; converts a bond using isomorphisms
+
+      ;; label monomer sublocations
+      (loop for ((gnum . v) subloc) in sublocations
+            for graph = (graph gnum)
+            for vertex = (vertex gnum v)
+            do (setf (gtools:graph-vertex-label graph vertex)
+                     #[localization (gtools:graph-vertex-label graph vertex)
+                                    subloc]))
+
       ;; disconnect edges
       (loop for ((gnum . v1) (nil . v2)) in disbonds
             do (setf (gtools:graph-vertex-edge-p (graph gnum) 
@@ -396,9 +433,10 @@
                      to))
 
       ;; merge the graphs, connect edges between them
-      (let ((rhs-super-graph (gtools:merge-graphs (coerce lhs-graphs 'list) 
+      (let* ((rhs-super-graph (gtools:merge-graphs (coerce input-graphs 'list) 
                                                   :edges (mapcar #'bond bonds)
                                                   :remap `((nil ,@(mapcar #'gvertex remove))))))
+
         ;; and return the distinct complexes resulting from this operation:
         (gtools:unconnected-subgraphs rhs-super-graph)))))
 

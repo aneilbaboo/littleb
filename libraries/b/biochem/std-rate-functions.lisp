@@ -26,7 +26,7 @@
 ;;; Description:
 
 
-;;; $Id: std-rate-functions.lisp,v 1.4 2007/10/25 15:04:08 amallavarapu Exp $
+;;; $Id: std-rate-functions.lisp,v 1.5 2007/10/29 14:21:46 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -40,11 +40,11 @@
           @>/biochem/dimensionalization) :use)
 
 (define-custom-rate mass-action (constant) 
-    (rate-dimension
-     dictionary
-     entities
-     stoichiometries
-     dimensions)
+    (:rate-dimension rate-dimension
+     :dictionary dictionary
+     :entities entities
+     :stoichiometries stoichiometries
+     :dimensions dimensions)
   (let ((mass-action-term 1) ;; initialize the mass-action term and 
         (constant-dimension rate-dimension)) ;; expected dimension of the constant
 
@@ -74,26 +74,21 @@
     {:mass-action * mass-action-term}))
 
 (define-custom-rate custom-rate (expr &rest constants)
-    (rate-dimension dictionary entities stoichiometries dimensions)
+    (:dictionary d)
   "USAGE: X.(set-rate-function 'custom-rate {mathematical-expression} :const1-name const1 :const2-name const2) where X is an object which supports has a SET-RATE-FUNCTION field"
-  (declare (ignorable stoichiometries entities dimensions rate-dimension))
+
   ;; stuff the constants in the dictionary
   (do () ((null constants))
     (let ((key (pop constants))
           (val (pop constants)))
-    {dictionary.,key 
-                :#=
-                (ensure-reference-var val)}))
+    {d.,key :#= (ensure-reference-var val)}))
   expr)
-;;;;   expr.(map-substitution (lambda (o) 
-;;;;                            (or dictionary.(_try-key o) o))))
 
 (define-custom-rate hill-function (species &key (kd 1) (hill 1))
-    (rate-dimension dictionary)
-  (declare (ignorable rate-dimension))
+    (:dictionary d)
   ;; NEED TO WRITE DIMENSION CHECKING CODE
-  (setf dictionary.kd (ensure-reference-var kd)
-        dictionary.hill (ensure-reference-var hill))
+  (setf d.kd (ensure-reference-var kd)
+        d.hill (ensure-reference-var hill))
   {species ^ :hill / {species ^ :hill + :kd ^ :hill}})
   
 

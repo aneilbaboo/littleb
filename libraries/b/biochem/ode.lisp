@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.6 2007/10/25 15:04:08 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.7 2007/10/29 14:21:46 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -88,7 +88,7 @@
 ;;;
 (define-macro define-custom-rate 
     (name (&rest lambda-list)
-          (&optional rate-dimension dictionary entities stoichiometries dimensions)
+          (&key rate-dimension dictionary entities stoichiometries dimensions)
           &body body)
   (let ((rate-dimension  (or rate-dimension '#:rate-dimension))
         (dictionary      (or dictionary  '#:dictionary))

@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.6 2007/10/25 20:48:45 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.7 2007/10/29 14:21:46 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -118,9 +118,25 @@
 
 (defcon membrane (location)
   (&optional (id := *name*)
-   &property (c1 (allow compartment) :relevance t)
-             (c2 (allow compartment) :relevance t)))
-    
+   &property (outer (allow compartment) :relevance t)
+             (inner (allow compartment) :relevance t)))
+
+(defield membrane.c1 () 
+  (b-warn "~S.c1: MEMBRANE.C1 is deprecated use MEMBRANE.OUTER instead." object)
+  .outer)
+
+(defield (setf membrane.c1) (value) 
+  (b-warn "~S.c1: MEMBRANE.C1 is deprecated use MEMBRANE.INNER instead." object)
+  (setf .INNER value))
+
+(defield membrane.c2 () 
+  (b-warn "~S.c2: MEMBRANE.C2 is deprecated use MEMBRANE.INNER instead." object)
+  .INNER)
+
+(defield (setf membrane.c2) (value) 
+  (b-warn "~S.c2: MEMBRANE.C2 is deprecated use MEMBRANE.INNER instead." object)
+  (setf .INNER value))
+
 (defun membrane-id-inverse-p (id)
   (and (consp id)
        (eq (first id) :inverse)))
