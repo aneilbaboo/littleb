@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.8 2007/11/01 09:44:16 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.9 2007/11/01 09:52:38 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -147,23 +147,23 @@
 (defield membrane.inverse ()
   (if (membrane-id-inverse-p .id)
       (second .id)
-    (let ((c1 .c1)
-          (c2 .c2))
+    (let ((outer .outer)
+          (inner .inner))
       {object.inverse :#
        [[membrane (list :inverse object)]
-        :c2 c1 :c1 c2]})))
+        :inner inner :outer outer]})))
       
 
 (defcon membrane-enclosure ()
   (&optional (inner :#= [compartment])
              (membrane :#= [membrane]))
-  (with-relevance t {.membrane.c2 := .inner}))
+  (with-relevance t {.membrane.inner := .inner}))
 
 (defield (setf membrane-enclosure.outer) (value)
-  {.membrane.c1 := value})
+  {.membrane.outer := value})
 
 (defield membrane-enclosure.outer ()
-  .membrane.c1)
+  .membrane.outer)
 
 (defcon spherical-cell (membrane-enclosure)
   (&optional (inner :#= [compartment])
