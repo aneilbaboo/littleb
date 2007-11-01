@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.9 2007/10/25 22:01:42 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.10 2007/11/01 09:44:16 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -145,35 +145,35 @@
     (symbol (intern (symbol-name x) :keyword))
     (t      x)))
 
-(defun make-site-info (tags &rest args &key value default connector sublocation index)
+(defun make-site-info (tags &rest args &key states default connector sublocation index)
   (declare (ignorable args))
   (let* ((tags      (mapcar #'keywordify
                             (if (listp tags) tags (list tags))))
          (name      (first tags))
-         (connector (or connector (not (or value default))))
-         (value     (or value (and (not connector) (not sublocation))))
+         (connector (or connector (not (or states default))))
+         (states     (or states (and (not connector) (not sublocation))))
          (default    (or default 
-                        (and (member-type-p value)
-                             (second value)))))
+                         (and (member-type-p states)
+                              (second states)))))
     (cond
 
-     ;; attempt to provide both connector and value definitions:
-     ((and value connector)
-      (error "Ambiguous site definition ~S - value site or a connector site?"))
+     ;; attempt to provide both connector and states definitions:
+     ((and states connector)
+      (error "Ambiguous site definition ~S - state site or a connector site?"))
 
-     ;; when it's a not a connector, check default value is valid
+     ;; when it's a not a connector, check default state is valid
      ((not (or connector
-               (typep default value)))
-      (error "Default value ~S is not of type ~S in site ~S"
-             default value name))
+               (typep default states)))
+      (error "Default state ~S is not of type ~S in site ~S"
+             default states name))
 
     
-     (value (make-state-site-info :tags tags :type value :default default :index index))
+     (states (make-state-site-info :tags tags :type states :default default :index index))
 
-     (t     (make-bond-site-info :tags tags
-                                 :index index
-                                 :type connector
-                                 :sublocation sublocation)))))
+     (t      (make-bond-site-info :tags tags
+                                  :index index
+                                  :type connector
+                                  :sublocation sublocation)))))
 
 
 (defun ensure-canonical-complex-graph (x &optional force-pattern)

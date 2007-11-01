@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.7 2007/10/29 14:21:46 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.8 2007/11/01 09:44:16 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -126,16 +126,16 @@
   .outer)
 
 (defield (setf membrane.c1) (value) 
-  (b-warn "~S.c1: MEMBRANE.C1 is deprecated use MEMBRANE.INNER instead." object)
-  (setf .INNER value))
+  (b-warn "~S.c1: MEMBRANE.C1 is deprecated use MEMBRANE.OUTER instead." object)
+  (setf .outer value))
 
 (defield membrane.c2 () 
   (b-warn "~S.c2: MEMBRANE.C2 is deprecated use MEMBRANE.INNER instead." object)
-  .INNER)
+  .inner)
 
 (defield (setf membrane.c2) (value) 
   (b-warn "~S.c2: MEMBRANE.C2 is deprecated use MEMBRANE.INNER instead." object)
-  (setf .INNER value))
+  (setf .inner value))
 
 (defun membrane-id-inverse-p (id)
   (and (consp id)
