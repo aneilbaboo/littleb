@@ -26,7 +26,7 @@
 ;;; Description:
 
 
-;;; $Id: std-rate-functions.lisp,v 1.5 2007/10/29 14:21:46 amallavarapu Exp $
+;;; $Id: std-rate-functions.lisp,v 1.6 2007/11/05 18:48:04 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -41,7 +41,6 @@
 
 (define-custom-rate mass-action (constant) 
     (:rate-dimension rate-dimension
-     :dictionary dictionary
      :entities entities
      :stoichiometries stoichiometries
      :dimensions dimensions)
@@ -69,26 +68,23 @@
        (t (b-error "Invalid units used for ~S.mass-action.  Expecting ~S."
                    dictionary constant-dimension.unit))))
     
-    (setf constant {dictionary.mass-action :#= (ensure-reference-var constant)})
+    (store-parameter :mass-action constant)
 
     {:mass-action * mass-action-term}))
 
-(define-custom-rate custom-rate (expr &rest constants)
-    (:dictionary d)
+(define-custom-rate custom-rate (expr &rest constants) ()
   "USAGE: X.(set-rate-function 'custom-rate {mathematical-expression} :const1-name const1 :const2-name const2) where X is an object which supports has a SET-RATE-FUNCTION field"
-
   ;; stuff the constants in the dictionary
   (do () ((null constants))
     (let ((key (pop constants))
           (val (pop constants)))
-    {d.,key :#= (ensure-reference-var val)}))
+      (store-parameter key val)))
   expr)
 
-(define-custom-rate hill-function (species &key (kd 1) (hill 1))
-    (:dictionary d)
+(define-custom-rate hill-function (species &key (kd 1) (hill 1)) ()
   ;; NEED TO WRITE DIMENSION CHECKING CODE
-  (setf d.kd (ensure-reference-var kd)
-        d.hill (ensure-reference-var hill))
+  (store-parameter :kd kd)
+  (store-parameter :hill hill)
   {species ^ :hill / {species ^ :hill + :kd ^ :hill}})
   
 

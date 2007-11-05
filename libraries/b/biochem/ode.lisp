@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.7 2007/10/29 14:21:46 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.8 2007/11/05 18:48:04 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -88,20 +88,21 @@
 ;;;
 (define-macro define-custom-rate 
     (name (&rest lambda-list)
-          (&key rate-dimension dictionary entities stoichiometries dimensions)
+          (&key rate-dimension entities stoichiometries dimensions)
           &body body)
   (let ((rate-dimension  (or rate-dimension '#:rate-dimension))
-        (dictionary      (or dictionary  '#:dictionary))
+        (dictionary      '#:dictionary)
         (entities        (or entities '#:entities))
         (stoichiometries (or stoichiometries '#:stoichiometries))
-        (dimensions      (or dimensions '#:dimensions)))
+        (dimensions      (or dimensions '#:dimensions))
+        (param-name      '#:param-name)
+        (param-value     '#:param-value))
     (mutils:let+ 
         (((user-doc body) (if (stringp (first body)) (values (first body) (rest body))
                             (values nil body)))
          (doc-str         (format nil "USAGE: x.(set-rate-function '~S ,@lambda-list).~@[  ~A~]"
                                   name user-doc))
          (user-args       '#:user-args))
-      
       `(progn
          (defmethod documentation ((o (eql ',name)) (doc-type (eql 'function)))
            ,doc-str)
@@ -109,9 +110,11 @@
              (,user-args ,rate-dimension ,dictionary ,entities ,stoichiometries ,dimensions)
            (declare (ignorable ,rate-dimension ,dictionary ,entities
                                ,stoichiometries ,dimensions))
-                               
-           (destructuring-bind ,lambda-list ,user-args
-             ,@body))))))
+           (flet ((,(intern "STORE-PARAMETER") (,param-name ,param-value)
+                    {dictionary.,param-name :#= (ensure-reference-var ,param-value)}
+                    ,param-name))
+             (destructuring-bind ,lambda-list ,user-args
+               ,@body)))))))
 
 (defprop reaction.%precomputed-rate (:= nil))
 
