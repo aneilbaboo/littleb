@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.9 2007/11/07 21:17:12 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.10 2007/11/07 21:24:51 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -111,7 +111,7 @@
            (declare (ignorable ,rate-dimension ,dictionary ,entities
                                ,stoichiometries ,dimensions))
            (flet ((,(intern "STORE-PARAMETER") (,param-name ,param-value)
-                    {,dictionary.,param-name :#= (ensure-reference-var ,param-value)}
+                    {,.dictionary.,param-name :#= (ensure-reference-var ,param-value)}
                     ,param-name))
              (destructuring-bind ,lambda-list ,user-args
                ,@body)))))))
