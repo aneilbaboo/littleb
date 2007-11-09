@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: editor-lispworks.lisp,v 1.2 2007/10/25 20:13:02 amallavarapu Exp $
+;;; $Id: editor-lispworks.lisp,v 1.3 2007/11/09 22:32:44 amallavarapu Exp $
 
 #+:lispworks
 (in-package editor)
@@ -412,8 +412,8 @@
   (let ((emulation  #+mac :mac #-mac :pc))
     (bind-key "B Complete Token" "Ctrl-." :global emulation)
     (bind-key "B Edit" "Control-y" :global emulation)    
-    (bind-key "B Evaluate Buffer" "F6" :global emulation)
-    (bind-key "B Evaluate Region" "F7" :global emulation)
+    (bind-key "B Evaluate Buffer" "F7" :global emulation)
+    (bind-key "B Evaluate Region" "F8" :global emulation)
     (bind-key "B Insert Space and Show Arglist" #\Space :mode "Lisp" ) 
     (bind-key "B Insert Space and Show Arglist" #\Space :mode "Execute")
     (bind-key "B Insert Dot and Show Fields" #\. :mode "Lisp" ) 
