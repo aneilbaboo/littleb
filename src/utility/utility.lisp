@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.2 2007/11/09 23:58:10 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -43,7 +43,7 @@
   (let ((used-by (package-used-by-list p)))
     (mapcar #'delete-package-tree used-by)
     (do-symbols (s p)
-      (unintern 's p))
+      (unintern s p))
     (delete-package p)))
 
 
@@ -217,7 +217,7 @@ immediately following the replacement, or NIL if no substitution was made."
   (loop for (newseq pos) = (multiple-value-list (find-and-replace old new seq)) then
                            (multiple-value-list (find-and-replace old new newseq :start pos))
         while pos
-        finally return newseq))
+        finally (return newseq)))
 
 (defmacro ifit (test then &optional else)
   "Anaphoric if - the symbol 'it' may be used to refer to the result."
@@ -533,8 +533,8 @@ returned value in the final list)"
 
 (defun maphash-to-list (fn ht)
   "ht is a hash-table, list-form may be one of :assoc-list :plist :keys :values"
-  (loop for k being the hash-key of ht
-        for v being the hash-value of ht
+  (loop for k being the hash-keys of ht
+        for v being the hash-values of ht
         collect (funcall fn k v)))
 
 (defun mapp (fn list)

@@ -213,8 +213,3 @@ initargs for all slots are returned, otherwise only the slots with
   (hcl:class-direct-subclasses class)
   #-Lispworks
   (clos:class-direct-subclasses class))
-
-
-;;;
-;;; FUNCALLABLE IMPLEMENTATION
-;;;

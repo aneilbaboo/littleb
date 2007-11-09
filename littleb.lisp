@@ -25,7 +25,7 @@
 ;;; File: littleb.lisp
 ;;; Description: Loads the little b language.
 
-;;; $Id: littleb.lisp,v 1.1 2007/09/25 17:53:55 amallavarapu Exp $
+;;; $Id: littleb.lisp,v 1.2 2007/11/09 23:58:04 amallavarapu Exp $
 ;;; $Name:  $
 
 #-:asdf+ (load (merge-pathnames "asdf/asdf+.lisp" *load-truename*))
@@ -35,7 +35,8 @@
 
 #+:clisp (setf custom:*suppress-check-redefinition* t)
 
-(asdf:load-system :b1)
+#+:clisp (ext:without-package-lock () (asdf:load-system :b1))
+#-:clisp (asdf:load-system :b1)
 
 (let ((init-file (b:get-b-path :root "init.lisp")))
   (unless (probe-file init-file)
@@ -51,3 +52,4 @@
 
 #+:lispworks (b::enable-b-key-bindings)
 
+#-(or :allegro :lispworks) (princ "Change to package B-USER: (IN-PACKAGE :B-USER)")

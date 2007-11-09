@@ -26,7 +26,7 @@
 ;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.3 2007/11/03 22:21:19 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.4 2007/11/09 23:58:04 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -60,7 +60,7 @@
                  (ignore-errors (pathname-match-p x y))))
 
 (defsystem :b1
-  :source-extension 	"lisp"	
+  #-:clisp :source-extension 	#-:clisp "lisp"	
   :depends-on           (:lisa :graph-tools)
   :pathname             *b-source-path*      
   :serial t
