@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.10 2007/11/01 09:44:16 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.11 2007/11/12 15:06:05 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -47,7 +47,8 @@
   (mutils:let+ (((symbol lclass) (etypecase name-lclass
                                    (symbol (values name-lclass 'compartment))
                                    (cons   (values (first name-lclass) (second name-lclass)))))
-                ((doc sites) (if (stringp #1=(first def)) (values #1# (rest def))
+                (firstdef    (first def))
+                ((doc sites) (if (stringp firstdef) (values firstdef (rest def))
                                (values nil def))))
     `(port:dspec (defmonomer ,symbol)
        (define ,symbol [[monomer] 
@@ -69,11 +70,12 @@
                               (apply #'make-site-info (append (if (listp sspec) sspec (list sspec))
                                                               (list :index (incf sindex)))))
                     value))
-        (slist (coerce sites 'list)))
-   (when #1=(set-difference slist
-                            (remove-duplicates slist :key #'site-info-name))
+        (slist (coerce sites 'list))
+        (setdif (set-difference slist
+                            (remove-duplicates slist :key #'site-info-name))))
+   (when setdif
      (b-error "Duplicate site name (~S) in ~S" object 
-              (site-info-name (first #1#))))
+              (site-info-name (first setdif))))
    sites))
      
 
@@ -292,7 +294,7 @@
              (when (< m-dim lclass-dim)
                (setf lclass-dim m-dim
                      lclass m-lclass)))
-        finally return lclass))
+        finally (return lclass)))
               
         
 
@@ -461,8 +463,8 @@
 ;;;
 (defun build-complex-graph (site-labels binding-table)
   "Takes a list of site-labels, value-labels and a table describing how they should be connected, and returns a non-canonical complex-graph"
-  (loop for var being the hash-key of binding-table
-        for bindings being the hash-value of binding-table
+  (loop for var being the hash-keys of binding-table
+        for bindings being the hash-values of binding-table
 
         if (bond-label-p var) ;; bond vars:
         nconc (case (length bindings)
@@ -478,11 +480,11 @@
                    ;; in future, maybe do a check here to ensure that all
                    ;; connector sites can support this many bonds
                    (maplist #'identity bindings))) into especs
-        finally return 
-        (gtools:make-labelled-graph (nconc especs (gethash '|monomer-edges| binding-table))
-                                    site-labels
-                                    nil
-                                    '%make-complex-graph)))
+        finally (return 
+                 (gtools:make-labelled-graph (nconc especs (gethash '|monomer-edges| binding-table))
+                                             site-labels
+                                             nil
+                                             '%make-complex-graph))))
 
 (defvar *var-counter*
   "A counter for automatically generated bond vars") 
@@ -511,10 +513,10 @@
                 monomer bindings binding-table offset patternp))
         do (if is-pattern-p (setf pattern-detected-p t))
         append site-labels into all-site-labels
-        finally return (values
-                        all-site-labels 
-                        binding-table
-                        pattern-detected-p)))
+        finally (return (values
+                         all-site-labels 
+                         binding-table
+                         pattern-detected-p))))
 
 ;;;
 ;;; PARSE-MONOMER-DESCRIPTION - figures out whether a pattern or concrete monomer is being described
@@ -693,8 +695,8 @@
             for site-label = (record-binding  binding i)
             when site-label 
             collect site-label into site-labels
-            finally return (values (list* monomer site-labels)
-                                   pattern-detected-p)))))
+            finally (return (values (list* monomer site-labels)
+                                    pattern-detected-p))))))
 
 (defun unkeywordify-fld-form-field (f)
   (let ((field (fld-form-field f)))
@@ -743,8 +745,8 @@
          ;; [* label-test] - a wildcard pattern with a label-test only (cnxns unspecified)
          else collect (make-label i binding) into site-labels
               
-         finally return (values (list* monomer site-labels)
-                              (1+ i)))))
+         finally (return (values (list* monomer site-labels)
+                                 (1+ i))))))
 
 (defun normalize-test (x &optional (logical-op 'and))
   (labels ((keywordify-logical-test (x)
@@ -841,7 +843,7 @@
 
 (defun reset-reference-labels ()
   "Used to reset the counters on automatically determined reference labels"
-  (loop for k being the hash-key in *reference-labels*
+  (loop for k being the hash-keys of *reference-labels*
         when (monomer-symbol-p k)
         do (remhash k *reference-labels*)))
 
@@ -900,16 +902,13 @@
          (or (fld-form-p head)
              (some (lambda (x) (eq x '*)) x)))))
 
-
 (defun firsthash (keys hash-table &optional default)
-  "Returns the hash-value of a key in keys, otherwise default"
+  "Returns the hash-values of a key in keys, otherwise default"
   (or (loop for k in keys
             for v = (gethash k hash-table #1='#:nohash)
             unless (eq v #1#)
             return v)
       default))
-
-
 
 (defun complex-graph-description (graph)
   (let* ((mvertexes (complex-graph-monomer-vertexes graph))
@@ -921,7 +920,7 @@
                    (loop with new-var = (incf cnxn-num)
                          for c in cnxns
                          do (setf (gethash c var-table) new-var)
-                         finally return new-var)))
+                         finally (return new-var))))
              (calculate-bond-label (mindex sindex)               
                (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
                  (cond
@@ -1078,51 +1077,3 @@ Returns the vertexes representing sites in the correct order."
                             ,cst-graph nil))))))))))
 
 (add-pattern-expander 'complex-pattern-expander)
-
-
-;;;; (defun print-complex-graph (graph &optional 
-;;;;                                   (stream *standard-output*)
-;;;;                                   (prefix "[") 
-;;;;                                   (suffix "]"))
-;;;;   (let* ((mvertexes (complex-graph-monomer-vertexes graph))
-;;;;         (multi     (> (length mvertexes) 1))
-;;;;         (cnxn-num  0)
-;;;;         (var-table (make-hash-table :test #'equal)))
-;;;;     (flet ((add-bond (cnxns)
-;;;;              (or (firsthash cnxns var-table)
-;;;;                  (loop with new-var = (incf cnxn-num)
-;;;;                        for c in cnxns
-;;;;                        do (setf (gethash c var-table) new-var)
-;;;;                        finally return new-var))))
-;;;;       (pprint-logical-block (stream mvertexes
-;;;;                                     :prefix (if multi prefix "")
-;;;;                                     :suffix (if multi suffix ""))
-;;;;         (loop 
-;;;;          with labels = (gtools:graph-labels graph)
-;;;;          for mindex = 0 then (1+ mindex)
-;;;;          for mvertex in mvertexes
-;;;;          for monomer = (elt labels mvertex)
-;;;;          for sinfos = (if (wildcard-monomer-symbol-p monomer) nil (monomer-sites monomer))
-;;;;          do (pprint-logical-block (stream () :prefix prefix :suffix suffix)
-;;;;               (prin1 monomer stream)
-;;;;               (loop for sindex from 0 below (length sinfos)
-;;;;                     do (princ #\space stream)
-;;;;                     (cond
-;;;;                      ((state-site-info-p (svref sinfos sindex))
-;;;;                       (prin1 (site-label-value
-;;;;                               (gtools:graph-vertex-label
-;;;;                                graph 
-;;;;                                (complex-graph-mindex-sindex-to-vertex graph mindex sindex)))
-;;;;                              stream))
-
-;;;;                      ;; connector sites
-;;;;                      (t
-;;;;                       (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
-;;;;                         (cond
-;;;;                          ((null cnxns) (princ #\* stream))
-;;;;                          ((equal cnxns `((,mindex ,sindex)))  ; connected to self = empty
-;;;;                           (princ #\_ stream))
-;;;;                          (t  
-;;;;                           (princ (add-bond (list* (list mindex sindex) cnxns))
-;;;;                                  stream)))))))
-;;;;               (pprint-newline :linear stream)))))))

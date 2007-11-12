@@ -64,11 +64,11 @@
   .appositions.,(list cellnum1 cellnum2))
 
 (defield flat-lattice.do-cells (fn)
-  (loop for cell being the hash-value of .cells
+  (loop for cell being the hash-values of .cells
         collect (funcall fn cell)))
 
 (defield flat-lattice.do-appositions (fn)
-  (loop for app being the hash-value of .appositions
+  (loop for app being the hash-values of .appositions
         collect (funcall fn app)))
 
 ;;;

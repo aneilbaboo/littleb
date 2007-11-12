@@ -273,8 +273,8 @@
   (let* ((name (matlab-model-kvars-name mm))
          (kvars-table (matlab-model-kvars mm))
          (kvars  (make-array (1- (hash-table-count kvars-table)))))
-    (loop for kvar being the hash-key of kvars-table
-          for i being the hash-value of kvars-table
+    (loop for kvar being the hash-keys of kvars-table
+          for i being the hash-values of kvars-table
           unless (eq kvar :last-index)
           do (setf (svref kvars (1- i)) kvar))
     (format file "~A= [...~%" name)

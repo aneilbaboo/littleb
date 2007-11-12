@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.4 2007/10/25 03:24:24 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.5 2007/11/12 15:06:08 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -96,7 +96,7 @@
                                       (force *include-force*)
                                       (verbose *include-verbose*)
                                       (modify *include-suppress-modify-package-warning*))
-  (when (find +b-user-package+ (package-use-list #.(find-package "CL-USER")))
+ (when (find +b-user-package+ (package-use-list #.(find-package "CL-USER")))
     (assert nil () "BUG: CL-USER USES B-USER - (unuse-package :B-USER :CL-USER) AND TRY AGAIN."))
   (let ((*include-verbose*     verbose)
         (*include-suppress-modify-package-warning* modify))
@@ -203,23 +203,26 @@
 
 #+:clisp
 (defun platform-load-file (file type)
-  ;; this horrible kludge is necessary because the little b readtable
-  ;; interferes with CLISP .FAS files (!!!), which are composed of S-expressions
-  ;; read using what seems to be a modified version of the current readtable.
+  ;; this horrible kludge is necessary because
+  ;; 1) the little b readtable interferes with CLISP .FAS files (!!!), 
+  ;; which are composed of S-expressions read using what seems to be a
+  ;; modified version of the current readtable.
   ;; The little b readtable defines the alpha chars as macro characters, and this
   ;; appears to cause difficulties.  Don't know why. 
   ;; This code checks whether the current file being loaded is binary; if so,
   ;; it swaps the substitute readtable.
+  ;; 2) reloading definitions (even from the same file) causes a warning to be issued.
   ;; AM 9/06
-  (let* ((binaryp (eq type :binary))
-         (subst-readtable-p (not (eq *readtable* *working-readtable*)))
-         (new-readtable (cond 
-                         ((and binaryp subst-readtable-p) nil)
-                         (binaryp (copy-readtable +b-standard-tokens-readtable+))
-                         (subst-readtable-p *working-readtable*))))
-    (cond
-     (new-readtable (let ((*readtable* new-readtable)) (load file :verbose nil)))
-     (t             (load file :verbose nil)))))
+  (port:allowing-redefinitions
+    (let* ((binaryp (eq type :binary))
+           (subst-readtable-p (not (eq *readtable* *working-readtable*)))
+           (new-readtable (cond 
+                           ((and binaryp subst-readtable-p) nil)
+                           (binaryp (copy-readtable +b-standard-tokens-readtable+))
+                           (subst-readtable-p *working-readtable*))))
+      (cond
+       (new-readtable (let ((*readtable* new-readtable)) (load file :verbose nil)))
+       (t             (load file :verbose nil))))))
 
 ;;;
 ;;; SANITY CHECKS:

@@ -32,7 +32,8 @@
 ;;;
 (in-package :b)
 
-;(defconstant +top-level-pprint-dispatch-table+ (with-standard-io-syntax (copy-pprint-dispatch)))
+;; +top-level-pprint-dispatch-table+ is needed for correct CLISP printing
+(defconstant +top-level-pprint-dispatch-table+ (with-standard-io-syntax (copy-pprint-dispatch)))
 
 ;;;
 ;;; PRINT METHODS
@@ -49,7 +50,7 @@
   (princ #\' stream)
   (prin1 (second quote-form) stream))
 
-;(set-pprint-dispatch 'quote-form 'quote-printer 1 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'quote-form 'quote-printer 1 +top-level-pprint-dispatch-table+)
 
 ;;;
 ;;; COMMA-PRINTERS
@@ -129,8 +130,8 @@
              (eql bq-append)
              (eql bq-vector)) *))
 
-;(set-pprint-dispatch 'bq-lists-form
-;                     'bq-printer 1 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'bq-lists-form
+                     'bq-printer 1 +top-level-pprint-dispatch-table+)
 
 
 ;;;
@@ -151,7 +152,7 @@
       (princ #\` stream))
     (prin1 true-form stream)))
 
-;(set-pprint-dispatch 'backquote-fld-form 'bq-fld-printer 2 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'backquote-fld-form 'bq-fld-printer 2 +top-level-pprint-dispatch-table+)
 
 
 ;;;
@@ -249,7 +250,7 @@
   (defmethod print-object ((s symbol) stream)
     (symbol-printer stream s)))
 
-;(set-pprint-dispatch 'symbol 'symbol-printer 1 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'symbol 'symbol-printer 1 +top-level-pprint-dispatch-table+)
 
 ;;;
 ;;; CONS PRINTER
@@ -279,24 +280,24 @@
               when (not (listp (cdr iter)))
               do   (princ ". " stream)
               (prin1 (cdr iter) stream)))))))
-;(set-pprint-dispatch 'cons 'cons-printer 1 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'cons 'cons-printer 1 +top-level-pprint-dispatch-table+)
 
 ;;; 
-;;; SIMPLE-VECTOR-PRINTER
+;;; VECTOR-PRINTER
 ;;;
-(defun simple-vector-printer (stream vector)
+(defun vector-printer (stream vector)
   (cons-printer stream (coerce vector 'list) "#("))
-;(set-pprint-dispatch 'simple-vector 'simple-vector-printer 1 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'simple-vector 'vector-printer 1 +top-level-pprint-dispatch-table+)
 (port:allowing-redefinitions
-  (defmethod print-object ((v simple-vector) stream)
-    (simple-vector-printer stream v))) 
+  (defmethod print-object ((v vector) stream)
+    (vector-printer stream v))) 
 
 ;;; 
 ;;; OBJECT FORM PRINTER
 ;;;
 (defun object-form-printer (stream oform)
   (cons-printer stream (rest oform) "[" "]"))
-;(set-pprint-dispatch 'object-form 'object-form-printer 2 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'object-form 'object-form-printer 2 +top-level-pprint-dispatch-table+)
 
 ;;; 
 ;;; MATH FORM PRINTER
@@ -304,8 +305,7 @@
 (defun math-form-printer (stream oform)
   (let ((*print-context* oform))
     (cons-printer stream (rest oform) "{" "}")))
-    ;(cons-printer stream oform)))
-;(set-pprint-dispatch 'math-form 'math-form-printer 2 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'math-form 'math-form-printer 2 +top-level-pprint-dispatch-table+)
 
 
 ;;;
@@ -379,7 +379,7 @@
   (or (and (symbolp x) (not (keywordp x)))
        (and (not (atom x))
             (unreadable-constantp x))))
-;(set-pprint-dispatch 'fld-form 'fld-form-printer 2 +top-level-pprint-dispatch-table+)
+(set-pprint-dispatch 'fld-form 'fld-form-printer 2 +top-level-pprint-dispatch-table+)
 
 
 ;;;

@@ -25,7 +25,7 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.3 2007/11/12 15:00:29 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.1 2007/11/12 15:06:07 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)

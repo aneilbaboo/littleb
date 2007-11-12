@@ -27,7 +27,7 @@
 ;;;              Provides an object that has fields which are flexibly added.
 ;;;
 
-;;; $Id: dictionary.lisp,v 1.3 2007/10/25 20:12:57 amallavarapu Exp $
+;;; $Id: dictionary.lisp,v 1.4 2007/11/12 15:06:06 amallavarapu Exp $
 (in-package b/util)
 
 (include-declaration :expose-packages (mallavar-utility)
@@ -86,7 +86,7 @@
         collect (funcall fn k v)))
 
 (defield dictionary._keys ()
-  (loop for k being the hash-keys in ( |DICTIONARY._HASH-TABLE| object)
+  (loop for k being the hash-keys of ( |DICTIONARY._HASH-TABLE| object)
         collect k))
 
 (defield dictionary._try-key (key)
@@ -111,8 +111,8 @@ KEY is contained in the dictionary."
   "Copies the keys & values from another dictionary, d"
   (loop with ht = (|DICTIONARY._HASH-TABLE| d)
         with object-ht = ._hash-table
-        for k being the hash-key of ht
-        for v being the hash-value of ht
+        for k being the hash-keys of ht
+        for v being the hash-values of ht
         do (setf (gethash k object-ht) v)))
 
 (defmethod describe-object ((d dictionary) stream)
@@ -120,6 +120,6 @@ KEY is contained in the dictionary."
   (princ #\newline stream)
   (with-print-context d
     (loop with ht = ( |DICTIONARY._HASH-TABLE| d)
-          for k being the hash-keys in ht
-          for v being the hash-values in ht
+          for k being the hash-keys of ht
+          for v being the hash-values of ht
           do (format stream  "~%~50S~S" k v stream))))

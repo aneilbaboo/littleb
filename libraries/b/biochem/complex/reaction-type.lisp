@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.8 2007/10/29 14:21:46 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.9 2007/11/12 15:06:05 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -134,7 +134,7 @@
                                     (localization elt.entity.id) ;; IN SUBLOCATION
                                     (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
                           into graphs
-                         finally return (values graphs rxn-vars)))
+                          finally (return (values graphs rxn-vars))))
     (sum-expression (graphs-in-expression x.vars))
     (t              (graphs-in-expression (list x)))))
                            
@@ -146,7 +146,7 @@
           for rg = (gtools:reorder-graph g r)
           collect cg into dereferenced-graphs
           collect rg into reference-graphs
-          finally return (values reference-graphs dereferenced-graphs rxn-vars))))
+          finally (return (values reference-graphs dereferenced-graphs rxn-vars)))))
 
 
 ;;;
@@ -157,8 +157,8 @@
 (defun compute-bond-list (binding-table site-labels)
   "Returns a list of sites and a list of "
   (loop with sites = (apply #'vector site-labels)
-        for k being the hash-key in binding-table
-        for v being the hash-value in binding-table
+        for k being the hash-keys of binding-table
+        for v being the hash-values of binding-table
         ;; a bond
         if (bond-label-p k)
         collect (mapcar (lambda (i) (svref sites i)) v)))
@@ -202,8 +202,8 @@
 (defun fix-automatic-bond-labels (binding-table)
   "If we have generated auto-generated bonds vars which have only one bond side,
    convert these to self-bond (_) bonds."
-  (loop for v being the hash-key in binding-table
-        for cnxns being the hash-value in binding-table
+  (loop for v being the hash-keys of binding-table
+        for cnxns being the hash-values of binding-table
         when (eq (length cnxns) 1)
         do (push (first cnxns) (gethash v binding-table))))
 

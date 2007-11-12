@@ -25,16 +25,16 @@
 ;;; File: token-reader
 ;;; Description: 
 
-;;; $Id: token-reader.lisp,v 1.3 2007/10/18 00:13:46 amallavarapu Exp $
+;;; $Id: token-reader.lisp,v 1.4 2007/11/12 15:06:09 amallavarapu Exp $
 (in-package b)
 
 (defun token-reader (stream char &optional (object-package *package*))
   (let* ((tok  (read-token-string (prepend-stream (make-string 1 :initial-element char) stream)
                                   #'dot-or-terminator-p))
          (next (peek-char nil stream nil nil t))
-         (head (with-standard-readtable
-                 (let ((*package* object-package))
-                   (carefully-read-from-string-representing-stream tok stream)))))
+         (head (let ((*readtable* +standard-readtable+)
+                     (*package* object-package))
+                 (carefully-read-from-string-representing-stream tok stream))))
     (labels ((float-from-string (str stream) ;; reads a float from a string
                (read-with-fields (with-standard-readtable                                    
                                      (read-from-string str))
@@ -49,10 +49,21 @@
        ((maybe-float?)           (read-float-or-fld-form head tok stream))
        (t                        (read-with-fields head stream))))))
       
+#+:clisp
+(progn
+(defun uninterned-reader (stream char n)
+  (declare (ignore char n))
+  (let* ((tok    (read-token-string (prepend-stream "#:" stream)
+                                 #'dot-or-terminator-p))
+         (*readtable* +standard-readtable+))
+      (values (read-from-string tok))))
+(set-dispatch-macro-character #\# #\: 'uninterned-reader +b-readtable+))
+
 (defun keyword-reader (stream char)
   (declare (ignorable char))
   (read-with-fields (let ((*readtable* +standard-readtable+))
-                      (read-from-string (read-token-string (prepend-stream ":" stream) #'dot-or-terminator-p)))
+                      (read-from-string (read-token-string (prepend-stream ":" stream)
+                                                           #'dot-or-terminator-p)))
                     stream))
 
 (defun carefully-read-from-string-representing-stream (str stream)

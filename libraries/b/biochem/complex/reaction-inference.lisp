@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.6 2007/10/29 14:21:46 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.7 2007/11/12 15:06:05 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -59,20 +59,20 @@
           collect `[complex-pattern-match ,[complex-pattern p] ,cstype ,ivar] into rule-pattern
           collect cstype into lhs-cstypes
           collect ivar into ivars
-          finally return (values lhs-patterns
-                                 `(:and ,@rule-pattern)
-                                 `(create-reaction-type-from-complex-reaction-type
-                                   ,cr                  ; complex reaction
-                                   ',crt-lhs-entities   ; list of localization or reference-pattern objects
-                                   (list ,@lhs-cstypes) ; LHS complex-species-types in new reaction-type 
-                                   ,rhs-new-graph       ; the new rhs-graphs
-                                   (vector ,@ivars)     ; isomorphisms
-                                   ',bonds              ; bonds to create
-                                   ',lost-bonds         ; bonds to delete
-                                   ',relabels           ; relabellings
-                                   ',deletions          ; verticies to delete
-                                   ',rhs-monomer-locs)  ; 
-                                 ))))     
+          finally (return (values lhs-patterns
+                                  `(:and ,@rule-pattern)
+                                  `(create-reaction-type-from-complex-reaction-type
+                                    ,cr                  ; complex reaction
+                                    ',crt-lhs-entities   ; list of localization or reference-pattern objects
+                                    (list ,@lhs-cstypes) ; LHS complex-species-types in new reaction-type 
+                                    ,rhs-new-graph       ; the new rhs-graphs
+                                    (vector ,@ivars)     ; isomorphisms
+                                    ',bonds              ; bonds to create
+                                    ',lost-bonds         ; bonds to delete
+                                    ',relabels           ; relabellings
+                                    ',deletions          ; verticies to delete
+                                    ',rhs-monomer-locs)  ; 
+                                  )))))
 
 (defcon complex-reaction-inference (:notrace)
   ((type complex-reaction-type)
@@ -87,13 +87,13 @@
         do (setf (gtools:graph-vertex-label graph i)
                  lab.entity)
         and collect lab.location into sublocations
-        finally return 
-        (cond
-         ((position nil sublocations) [complex-species-type graph])
-         ((> (length (remove-duplicates sublocations)) 1)
-          (b-error "Cannot create complex-species-type - multiple sublocations specified: ~S"
-                   (remove-duplicates sublocations)))
-         (t {[complex-species-type graph] @ (first sublocations)}))))
+        finally (return 
+                 (cond
+                  ((position nil sublocations) [complex-species-type graph])
+                  ((> (length (remove-duplicates sublocations)) 1)
+                   (b-error "Cannot create complex-species-type - multiple sublocations specified: ~S"
+                            (remove-duplicates sublocations)))
+                  (t {[complex-species-type graph] @ (first sublocations)})))))
 
 (defun create-reaction-type-from-complex-reaction-type 
        (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms bonds lost-bonds relabels deletions

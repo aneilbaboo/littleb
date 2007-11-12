@@ -25,7 +25,7 @@
 ;;; File: fieldinfo
 ;;; Description: fieldinfo structures record arguments & type of a field
 
-;;; $Id: fieldinfo.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: fieldinfo.lisp,v 1.2 2007/11/12 15:06:07 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -238,14 +238,19 @@
 ;;; FIELDINFO fields:
 ;;; 
 (defmethod fld ((f fieldinfo) (field (eql :symbol)) &rest args)
+  (declare (ignore args))
   (fieldinfo-symbol f))
 (defmethod fld ((f fieldinfo) (field (eql :kind)) &rest args)
+  (declare (ignore args))
   (fieldinfo-kind f))
 (defmethod fld ((f fieldinfo) (field (eql :args)) &rest args)
+  (declare (ignore args))
   (fieldinfo-args f))
 (defmethod fld ((f fieldinfo) (field (eql :type)) &rest args)
+  (declare (ignore args))
   (fieldinfo-type f))
 (defmethod fld ((f fieldinfo) (field (eql :matchable)) &rest args)
+  (declare (ignore args))
   (fieldinfo-matchable f))
 
 ;;;

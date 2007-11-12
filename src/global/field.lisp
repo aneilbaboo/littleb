@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.5 2007/10/23 17:16:49 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.6 2007/11/12 15:06:07 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -171,7 +171,6 @@
     (when export (export name))
     name))
       
-
 (defun compute-field-def-forms1 (class type field setfp args 
                                        qualifiers doc-decl code )
   (declare (ignorable type))
@@ -220,7 +219,7 @@
   (dolist (a args)
     (assert (not (consp a)) ()
       "Invalid argument ~S - specializer arguments not allowed." a)))
-    
+
 #+:|LISPWORKS5.0| (defvar *call-next-method* nil)
 (defun compute-field-def-forms2 (fn-name field fn-args code method-name method-args
                                          qualifiers doc-decl apply-args)
@@ -369,7 +368,7 @@
    (setfp  :initarg :setfp  :reader field-method-not-defined-setfp))
   (:default-initargs :format-string "Attempt to ~A ~A.  ~A"))
 
-
+#+:clisp (clos:finalize-inheritance (find-class 'field-method-not-defined-error))
 (defmethod print-object ((e field-method-not-defined-error) stream)
   (declare (ignorable stream))
   (with-slots (id setfp format-arguments) e
@@ -406,24 +405,6 @@
          :id `(fld ,obj ,field ,@args)
          :setfp setfp))
 
-;;;; (define-condition field-method-not-defined-error (b-error)
-;;;;   ((object :initarg :object :reader field-method-not-defined-object)
-;;;;    (field  :initarg :field  :reader field-method-not-defined-field)
-;;;;    (args   :initarg :args   :reader field-method-not-defined-args)
-;;;;    (setfp  :initarg :setfp  :reader field-method-not-defined-setfp))
-;;;;   (:default-initargs :format-string "~S.~[~;(~]~A~{ ~S~}~[~;)~] ~A."))
-;         :object object :field field :args args :setfp setfp))
-
-
-;;;; (defmethod print-object ((e field-method-not-defined-error) stream)
-;;;;   (with-slots (object field args setfp format-arguments) e
-;;;;     (with-print-context t
-;;;;       (setf format-arguments
-;;;;             (list object 
-;;;;                   (if args 1 0) field args (if args 1 0)
-;;;;                    (if setfp "may not be set" 
-;;;;                      "may not be accessed"))))
-;;;;     (call-next-method)))  
 ;;;
 ;;; FIELD EXPRESSIONS - are lists of the form (FIELD o f a1 a2.. an) or (FIELD o f) 
 ;;;                                           where o, f and a? are lisp expressions
@@ -606,12 +587,12 @@
   (destructuring-bind (index) indexes
     (setf (elt o index) value)))
 
-(defmethod fld ((o simple-vector) (field (eql '*bracket*)) &rest indexes)
+(defmethod fld ((o vector) (field (eql '*bracket*)) &rest indexes)
   "Accesses the 0-based element of a vector"
   (destructuring-bind (index) indexes
     (svref o index)))
 
-(defmethod (setf fld) (value (o simple-vector) (field (eql '*bracket*)) &rest indexes)
+(defmethod (setf fld) (value (o vector) (field (eql '*bracket*)) &rest indexes)
   "Accesses the 0-based element of a vector"
   (destructuring-bind (index) indexes
     (setf (svref o index) value)))

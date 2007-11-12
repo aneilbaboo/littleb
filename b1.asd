@@ -26,7 +26,7 @@
 ;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.4 2007/11/09 23:58:04 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.5 2007/11/12 15:06:04 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -96,6 +96,7 @@
     :components ((:file "constants")
                  (:file "global")
                  (:file "object" :depends-on ("constants"))
+                 (:file "error")
                  (:file "fieldinfo")
                  (:file "field" :depends-on ("constants"))
                  (:file "name" :depends-on ("field"))
@@ -128,7 +129,7 @@
                  (:file "lisa-extensions")
                  (:file "order")
                  (:file "printer")
-                 (:file "error")
+                 ;(:file "error")
                  (:file "query")
                  (:file "kb")
                  (:file "expose"))

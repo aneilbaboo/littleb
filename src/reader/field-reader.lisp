@@ -28,7 +28,7 @@
 ;;;                     [x ...].y
 ;;;                     {...}.y, etc.
 
-;;; $Id: field-reader.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: field-reader.lisp,v 1.2 2007/11/12 15:06:09 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -118,6 +118,6 @@ it will be converted to a field expression.  form.X => (FLD form :X)"
         for code from 0 to 255
         for char = (code-char code)
         for fn = (get-dispatch-macro-character disp-char char std-table)
-        when (and fn (not (member char '(#\+ #\-))))
+        when (and fn (not (member char '(#\+ #\- #\: #\# #\=))))
         do (set-dispatch-macro-character disp-char char (dispatch-field-reader fn) +b-readtable+))))
 (enable-fields-on-dispatch-chars)

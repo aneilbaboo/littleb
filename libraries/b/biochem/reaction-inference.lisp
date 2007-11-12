@@ -26,7 +26,7 @@
 ;;; Description:  when included, this rule infers which species and reactions
 ;;;               are implied by an initial set of species and reactions.
 
-;;; $Id: reaction-inference.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.3 2007/11/12 15:06:06 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -72,12 +72,12 @@
             for location-var = (get-location-var req.sublocation)
             collect `(,species-var [species ,stype ,location-var]) into species-patterns
             collect `(cons ,req.(localization t) ,species-var) into substitutions
-            finally return 
-            (values (list* :and
-                           (nconc (nreverse (mapcar #'third location-patterns))
-                                  species-patterns))
-                    
-                    `(list ,@substitutions))))))
+            finally (return 
+                     (values (list* :and
+                                    (nconc (nreverse (mapcar #'third location-patterns))
+                                           species-patterns))
+                             
+                             `(list ,@substitutions)))))))
             
         
 

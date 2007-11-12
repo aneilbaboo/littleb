@@ -22,10 +22,12 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
+
 (in-package portable)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (use-package 'mallavar-utility))
-
+#-:clisp 
+(progn
 #-lispworks
 (declaim (inline class-slots))
 
@@ -155,7 +157,8 @@ initargs for all slots are returned, otherwise only the slots with
   (remove-if #'is-standard-classp (clos::class-direct-superclasses class))
   #-clisp
   (remove-if #'is-standard-classp (clos:class-direct-superclasses class)))
-             
+   
+          
 (defun class-all-superclasses (class-or-symbol)
   (labels ((find-superclasses (class-list superclass-list)
              (let ((class (first class-list)))
@@ -184,6 +187,9 @@ initargs for all slots are returned, otherwise only the slots with
   "Maps a unary function fn over the class and superclasses.  Fn must return a list or nil.  The results are returned as a flat list (not a list containing lists)."
   (remove-if #'null (mapclass fn class)))
 
+(defmethod class-direct-subclasses ((class symbol))
+  (class-direct-subclasses (class-of class)))
+
 (defmethod class-direct-subclasses ((class standard-class))
   #+Lispworks
   (hcl:class-direct-subclasses class)
@@ -195,9 +201,6 @@ initargs for all slots are returned, otherwise only the slots with
   (hcl:class-direct-superclasses class)
   #-Lispworks
   (clos:class-direct-superclasses class))
-
-(defmethod class-direct-subclasses ((class symbol))
-  (class-direct-subclasses (class-of class)))
 
 (defmethod class-direct-superclasses ((class symbol))
   (class-direct-superclasses (class-of class)))
@@ -213,3 +216,12 @@ initargs for all slots are returned, otherwise only the slots with
   (hcl:class-direct-subclasses class)
   #-Lispworks
   (clos:class-direct-subclasses class))
+)
+
+#+:clisp
+(setf (symbol-function 'class-direct-superclasses)
+      #'clos:class-direct-superclasses
+      (symbol-function 'class-direct-subclasses)
+      #'clos:class-direct-subclasses)
+
+        

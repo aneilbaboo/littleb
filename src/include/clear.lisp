@@ -191,7 +191,7 @@ the file."
 ;;;; ;;; CLEAR STACK
 ;;;; ;;;
 ;;;; (defun compute-clear-stack ()
-;;;;   (loop  for v being the hash-value of *clearables*
+;;;;   (loop  for v being the hash-values of *clearables*
 ;;;;          when v collect v into items
 ;;;;          if (include-path-p v) sum 1 into ipath
 ;;;;          else if (packagep v) sum 1 into package

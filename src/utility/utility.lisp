@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.2 2007/11/09 23:58:10 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.3 2007/11/12 15:06:09 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -213,6 +213,7 @@ immediately following the replacement, or NIL if no substitution was made."
                      (- (+ pos (length new)) lenold))))
      (t    (values seq nil)))))
 
+
 (defun find-and-replace-all (old new seq)
   (loop for (newseq pos) = (multiple-value-list (find-and-replace old new seq)) then
                            (multiple-value-list (find-and-replace old new newseq :start pos))
@@ -221,12 +222,9 @@ immediately following the replacement, or NIL if no substitution was made."
 
 (defmacro ifit (test then &optional else)
   "Anaphoric if - the symbol 'it' may be used to refer to the result."
-  (let ((it (intern "IT")))
-    `(let ((,it ,test))
-       (symbol-macrolet ((mutils:it ,it)) ;; for backwards compatibility; previously,
-                                          ;; the MUTILS:IT symbol had to be ref'ed explicitly
-         (declare (ignorable ,it))
-         (if ,it ,then ,else)))))
+  `(let ((it ,test))
+     (declare (ignorable it))
+     (if it ,then ,else)))
 
 (defmacro whenit (test &body body)
   `(ifit ,test
@@ -347,6 +345,10 @@ immediately following the replacement, or NIL if no substitution was made."
                      :name (pathname-name relative)
                      :type (pathname-type relative)))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+(defun declare-form-p (o)
+  (and (consp o) (eq (first o) 'declare))))
+
 (defmacro let+ (bindings &body body)
   "Like LET*, but also allows bindings to be multiple-value-bindings. 
 E.g., (let+ ((a     1) 
@@ -413,8 +415,6 @@ E.g., (let+ ((a     1)
           for n = (read-sequence buffer in) 
           until (= n 0) 
           do (write-sequence buffer out :end n))))) 
-
-
 
 (defmacro print-class-unreadably (type)
   (let ((o (gensym "OBJ"))
@@ -581,12 +581,11 @@ returned value in the final list)"
 
 (defmacro pushnew-first (item place &key (test '#'equalp) (key '#'identity))
   `(setf ,place (add-new-elt-first ,item ,place :test ,test :key ,key)))
- 
+
 (defun add-new-elt-first (item list &key (test 'equalp) (key 'identity))
   (ifit (position (funcall key item) list :test test :key key)
       (cons item (remove-position it list))
     (cons item list)))
-
 ;;;; (defun tok (token sequence)
 ;;;;   "Separates sequence into subsequences separated by tok."
 ;;;;   (let ((p (append (list -1) (positions token sequence))))
@@ -852,10 +851,6 @@ TEST is a binary test function (default is EQL)."
        ,(loop for fn in (reverse fns)
             for ret-val = `(apply ,fn ,args) then `(funcall ,fn ,ret-val)
             finally (return ret-val)))))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-(defun declare-form-p (o)
-  (and (consp o) (eq (first o) 'declare))))
 
 (defun parse-fun-declarations (forms)
   (let* ((decl-pos (position-if-not #'stringp forms))
@@ -1169,7 +1164,7 @@ to the function returned by testform if INVERT is nil.  Otherwise, KEYFORM is th
         if (and max (>= count max))
           append (rest rest) into newlist
           and do (loop-finish)
-        finally return (values (if from-end (nreverse newlist) newlist) count)))
+        finally (return (values (if from-end (nreverse newlist) newlist) count))))
 
 ;;;; (defun ninsert-after-if (predicate item list &key (key 'identity) from-end)
 ;;;;   (loop for rest on (if from-end (reverse list) list)

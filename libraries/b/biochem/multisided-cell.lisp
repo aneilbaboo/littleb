@@ -26,7 +26,7 @@
 
 ;;; Description: 
 ;;;
-;;; $Id: multisided-cell.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: multisided-cell.lisp,v 1.4 2007/11/12 15:06:06 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 (include-declaration :use-packages (mallavar-utility))
@@ -102,7 +102,7 @@
 (defield multisided-cell.in-all-apposed-membranes (stype &optional (X ?.moles))
   "Retrieves the total X of a species type in all the apposed membranes of a cell. Where X = .moles by default."
   (loop with total = (quantity 0 *molecular-amount-dimension*)
-        for m being the hash-value of .membranes._hash-table
+        for m being the hash-values of .membranes._hash-table
         for apposition = m.apposition
         for sp = (if apposition stype.(in apposition.m2))
         when sp
@@ -112,7 +112,7 @@
 (defield multisided-cell.in-all-membranes (stype &optional (X ?.moles))
   "Retrieves the total X of stype in all the membranes of a cell. Where X = .moles by default."
   (loop with total = (quantity 0 *molecular-amount-dimension*)
-        for m being the hash-value of .membranes._hash-table
+        for m being the hash-values of .membranes._hash-table
         for sp = stype.(in m)
         when sp
         do (setf total (s+ total (funcall x sp)))
