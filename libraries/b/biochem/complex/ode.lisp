@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.7 2007/10/25 20:12:52 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.8 2007/11/15 00:47:30 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -74,7 +74,6 @@
   (:and [complex-reaction-inference ?cr ?rtype ?matches]
    (?rate-fn ?cr.rate-fn))
   =>
-  (format t "SETTING ~S.RATE-FN from ~S.RATE-FN" ?rtype ?cr)
   ?rtype.k.(_copy-from ?cr.k)
   (dolist (match ?matches)
     {?rtype.k.,(car match) := (cdr match)})
