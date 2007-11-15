@@ -25,7 +25,7 @@
 ;;; File: property-class
 ;;; Description: defines the metaclass of property.
 
-;;; $Id: property-class.lisp,v 1.1 2007/09/25 17:54:10 amallavarapu Exp $
+;;; $Id: property-class.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -47,12 +47,16 @@
    (static-instance    :accessor pclass-static-instance))) 
 
 (defmethod fld ((object property-class) (f (eql :field-symbol)) &rest args)
+  (declare (ignore args))
   (pclass-field-symbol object))
 (defmethod fld ((object property-class) (f (eql :parent-class)) &rest args)
+  (declare (ignore args))
   (pclass-parent-cclass object))
 (defmethod fld ((object property-class) (f (eql :type)) &rest args)
+  (declare (ignore args))
   (pclass-type object))
 (defmethod fld ((object property-class) (f (eql :default-relevance)) &rest args)
+  (declare (ignore args))
   (pclass-default-relevance object))
 
 (define-global-const property-class (find-class 'property-class))

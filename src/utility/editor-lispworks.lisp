@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: editor-lispworks.lisp,v 1.4 2007/11/09 22:34:02 amallavarapu Exp $
+;;; $Id: editor-lispworks.lisp,v 1.5 2007/11/15 01:57:37 amallavarapu Exp $
 
 #+:lispworks
 (in-package editor)
@@ -111,6 +111,15 @@
      "Evaluates a buffer, creating the package, if necessary."
      "Evaluates a buffer, creating the package, if necessary."
   (declare (ignorable p))
+  (operate-on-buffer #'region-eval))
+
+(defcommand "B Compile Buffer" (p)
+     "Compiles the buffer, creating the package, if necessary."
+     "Compiles the buffer, creating the package, if necessary."
+  (declare (ignorable p))
+  (operate-on-buffer #'region-compile))
+
+(defun operate-on-buffer (fn)
   (let* ((b        (current-buffer))
          (b-path   (buffer-pathname b)))
     (mutils:with-load-path b-path
@@ -121,7 +130,7 @@
           (b:include-path-package ipath t))
  
         (editor:with-point ((end (buffer-point b)))
-          (region-eval b (buffer-start (buffer-point b)) (buffer-end end)
+          (funcall fn b (buffer-start (buffer-point b)) (buffer-end end)
                    :after-function
                    (lambda (&rest args) (declare (ignorable args))
                      (when src
@@ -138,9 +147,17 @@
 (defcommand "B Evaluate Region" (p) 
      "Evaluates a region of a buffer, creating the package if necessary."
      "Evaluates a region of a buffer, creating the package if necessary."
- (let* ((b        (current-buffer))
-        (b-path   (buffer-pathname b))
-        (pane     (buffer-editor-pane b)))
+  (operate-on-region p #'evaluate-defun-command #'evaluate-region-command))
+
+(defcommand "B Compile Region" (p)
+     "Compiles a region of a buffer, creating the package if necessary."
+     "Compiles a region of a buffer, creating the package if necessary."
+  (operate-on-region p #'compile-defun-command #'compile-region-command))
+
+(defun operate-on-region (p point-fn region-fn)
+  (let* ((b        (current-buffer))
+         (b-path   (buffer-pathname b))
+         (pane     (buffer-editor-pane b)))
     (mutils:with-load-path b-path
       (let* ((pkg-name (find-package-name-for-point b :point p))
              (ipath    (b:include-path pkg-name))
@@ -150,8 +167,8 @@
         (if src
             (b:include-path-package ipath t))
         (if (capi:editor-pane-selected-text pane)
-            (evaluate-region-command  pane)
-          (evaluate-defun-command pane))))))
+            (funcall region-fn  pane)
+          (funcall point-fn pane))))))
 
 
 ;; 19 Aug 1994, AA - only display progress messages if we aren't in
@@ -412,9 +429,12 @@
   (let ((emulation  #+mac :mac #-mac :pc))
     (bind-key "B Complete Token" "Ctrl-." :global emulation)
     (bind-key "B Edit" "Control-y" :global emulation)    
-    (bind-key "B Evaluate Buffer" "F7" :global emulation)
-    (bind-key "B Evaluate Region" "F8" :global emulation)
-    (bind-key "B Evaluate Region" "F6" :global emulation)
+    (bind-key "B Evaluate Buffer" "F6" :global emulation)
+    (bind-key "B Compile Buffer" "Ctrl-F6" :global emulation)
+    (bind-key "B Evaluate Region" "F7" :global emulation)
+    (bind-key "B Compile Region" "Ctrl-F7" :global emulation)
+    (bind-key "B Evaluate Buffer" "F8" :global emulation)
+    (bind-key "B Compile Buffer" "Ctrl-F7" :global emulation)    
     (bind-key "B Insert Space and Show Arglist" #\Space :mode "Lisp" ) 
     (bind-key "B Insert Space and Show Arglist" #\Space :mode "Execute")
     (bind-key "B Insert Dot and Show Fields" #\. :mode "Lisp" ) 

@@ -27,7 +27,7 @@
 ;;;              *ID* when generating new objects.  The object returned by the
 ;;;              form takes (id S) as its ID.
 
-;;; $Id: library.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: library.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
 ;;;
 
 ;;;;
@@ -112,15 +112,17 @@
 
 (defun find-all-libraries ()
   (nconc
-   (maphash-to-list (lambda (k v) 
+   (maphash-to-list *library-info*
+                    (lambda (k v) 
                       (declare (ignorable k))
-                      (library-info-pathname v)) *library-info*)
+                      (library-info-pathname v)))
    (mapcan (lambda (spath)
              (loop for p in (directory spath)
                    when (and (pathname-directory-p p)
                              (not (find-existing-library p)))
                    collect p))
            *library-search-paths*)))
+           
                   
 (defun invalid-library-pathname-error (pathname)
   (let* ((pathdir (pathname-directory pathname))
@@ -281,6 +283,7 @@ may be a string, symbol, pathname or library-info structure"
             
 (defun library-bin-dir (lib)
   "Where to put compiled dirs for each implementation."
+  (if (symbolp lib) (setf lib (find-library lib)))
   (normalize-pathname (make-pathname :defaults lib
                                      :directory (append (pathname-directory lib)
                                                         (list "_bin")))))

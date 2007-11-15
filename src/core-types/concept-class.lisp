@@ -25,7 +25,7 @@
 ;;; File: concept-class
 ;;; Description: Defines the meta-class CONCEPT-CLASS. 
 
-;;; $Id: concept-class.lisp,v 1.3 2007/10/15 12:48:50 amallavarapu Exp $
+;;; $Id: concept-class.lisp,v 1.4 2007/11/15 01:57:37 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -40,7 +40,7 @@
   (:method (object) (declare (ignorable object)) nil))
 
 (defgeneric (setf kb-object-hashkey) (key object)
-  (:method (key object) (declare (ignorable object)) nil))
+  (:method (key object) (declare (ignorable key object)) nil))
 
 #+allegro
 (defmethod make-load-form ((o kb-class) &optional env)
@@ -114,13 +114,20 @@
 (define-global-const concept-class (find-class 'concept-class))
 
 (defmethod fld :around ((o concept-class) (field (eql :_name)) &rest args)
+  (declare (ignore args))
   (class-name o))
 
 (defmethod fld ((o concept-class) (field (eql :_abstract)) &rest args)
+  (declare (ignore args))
   (cclass-abstract-p o))
 
 (defmethod fld ((o concept-class) (field (eql :_exposure)) &rest args)
+  (declare (ignore args))
   (cclass-exposure o))
+
+(defmethod fld ((o concept-class) (field (eql :_properties)) &rest args)
+  (declare (ignore args))
+  (cclass-properties o))
 
 ;;;
 ;;; lambda list
@@ -163,13 +170,29 @@
      (pclass pclass)
      (errorp (error "Property ~A is not defined in ~S" field (class-name cclass))))))
 
+;;;; (defun check-x-props ()
+;;;;   (let ((xclass (find-class 'b-user::x nil)))
+;;;;     (when xclass
+;;;;       (format t "~&X.PROPERTIES = ~S~%" 
+;;;;               (cclass-properties xclass)))))
 (defun (setf cclass-property) (pclass cclass)
+  ;; (format t "~&BEGIN (SETF (CCLASS-PROPERTY ~S) ~S)~%" cclass pclass)
+  ;; (check-x-props)
   (let* ((props    (cclass-properties cclass))
          (existing (find (pclass-field-symbol pclass) props :key #'pclass-field-symbol)))
     (if existing 
         (setf (cclass-properties cclass) (nsubstitute pclass existing props))
       (pushend pclass (cclass-properties cclass)))))
+      ;; (format t "~&END (SETF (CCLASS-PROPERTY ~S) ~S)~%" cclass pclass)
+      ;;(check-x-props))))
        
+(defmacro tracing (x)
+  (let ((result '#:result))
+  `(progn (format t "~&> ~S~%" ',x *standard-output*)
+     (let ((,result ,x))
+       (format t "~&  => ~S~%"  ,result)
+       ,result))))
+
 (defun cclass-init-from-superclasses (cclass)
   (loop for super in (portable:class-direct-superclasses cclass)
         when (cclassp super)
@@ -180,7 +203,7 @@
                                             (cclass-properties super)
                                             :key #'pclass-field-symbol)))
                
-               (setf properties (nconc existing super-props))))))
+               (setf properties (append existing (copy-list super-props)))))))
 
 (defun cclass-check-id-fieldinfos (cclass)
   "Ensures that the def-class of each id-fieldinfo is the same as cclass"
@@ -337,7 +360,7 @@
   object)
 
 (defgeneric concept-implication (object))
-(defmethod concept-implication (object))
+(defmethod concept-implication (object) (declare (ignore object)) nil)
 
 
 ;;;

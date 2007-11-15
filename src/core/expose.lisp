@@ -34,7 +34,7 @@
 ;;;              in package A, and consequently any packages which expose A too.
 ;;;              
 
-;;; $Id: expose.lisp,v 1.2 2007/10/25 03:24:24 amallavarapu Exp $
+;;; $Id: expose.lisp,v 1.3 2007/11/15 01:57:37 amallavarapu Exp $
 ;;; $Name:  $
 (in-package b)
 
@@ -275,6 +275,7 @@ The UNINTERN argument may be
   (error 'expose-symbol-error :symbol symbol :package package :error error))
 
 (defmethod print-object ((e expose-symbol-error) stream)
+  (declare (ignore stream))
   (with-slots (format-arguments symbol package error) e
     (setf format-arguments (list symbol package error))
     (call-next-method)))

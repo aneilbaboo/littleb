@@ -25,7 +25,7 @@
 ;;; File: concept
 ;;; Description: defines the base class, CONCEPT
 
-;;; $Id: concept.lisp,v 1.2 2007/10/23 17:16:49 amallavarapu Exp $
+;;; $Id: concept.lisp,v 1.3 2007/11/15 01:57:37 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -69,8 +69,10 @@
   (documentation (class-of object) doc-type))
 
 (defmethod fld  ((object concept) (field (eql :documentation)) &rest args)
+  (declare (ignore args))
   (concept-doc object))
 (defmethod (setf fld)  (value (object concept) (field (eql :documentation)) &rest args)
+  (declare (ignore args))
   (setf (concept-doc object) value))
 
 (define-global-const concept (the concept-class (find-class 'concept)))

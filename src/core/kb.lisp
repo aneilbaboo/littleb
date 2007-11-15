@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -51,7 +51,7 @@
 
 (Defun kb-unwind-object (hashkey object)
   (remhash hashkey +objects+)
-  (setf *kb-command-queue* (delete object :key #'cdr)))
+  (setf *kb-command-queue* (delete object *kb-command-queue* :key #'cdr)))
 
 (defun kb-request-run ()
   (unless *kb-command-queue*
@@ -74,8 +74,9 @@
     (loop while *kb-command-queue*
           do (setf transaction (nreverse *kb-command-queue*)
                    *kb-command-queue* nil)
-          sum (loop while transaction
-                    for cmd = (pop transaction)
+          when transaction
+          sum (loop for cmd = (pop transaction)
+                    while transaction
                     do (kb-do-command cmd)
                     sum (lisa:run)))))
 
@@ -113,7 +114,6 @@
         (id-vals  (rest hashkey)))
     (cclass-create-instance
      cclass
-     hashkey
      (loop for id-fld in (cclass-id-field-order cclass)
            for val    in id-vals
            nconc (list id-fld val)))))

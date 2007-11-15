@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.3 2007/11/12 15:06:09 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.4 2007/11/15 01:57:37 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -312,14 +312,18 @@ immediately following the replacement, or NIL if no substitution was made."
   "Deletes the pathname, and optionally all contained files and folders"
   (handler-case 
       (progn (when recursive
-               (let ((subpaths (mapcar #'normalize-pathname (directory (merge-pathnames "*.*" pathname)))))
+               (let ((subpaths (nconc (mapcar #'normalize-pathname 
+                                              (directory (merge-pathnames "*.*" pathname)))
+                                      #+:clisp (directory (merge-pathnames "*/" pathname))
+                                      #-:clisp nil)))
                  (loop for path in subpaths
                        if (pathname-directory-p path)
                        do (delete-directory path t)
                        else
                        do (delete-file path))))
-        #+Lispworks(lw:delete-directory pathname)
-        #-Lispworks(delete-file pathname)
+        #+:lispworks (lw:delete-directory pathname)
+        #+:clisp     (ext:delete-dir pathname)
+        #-(:or :clisp :lispworks)  (delete-file pathname); hope for the best
         t)
     (error (e) (if error (error e)))))
 
@@ -531,9 +535,10 @@ returned value in the final list)"
                     (reverse (cdr assoc))))
             assoc-list)))
 
-(defun maphash-to-list (fn ht)
+(defun maphash-to-list (ht &optional fn)
   "ht is a hash-table, list-form may be one of :assoc-list :plist :keys :values"
-  (loop for k being the hash-keys of ht
+  (loop with fn = (or fn (lambda (k v) (cons k v)))
+        for k being the hash-keys of ht
         for v being the hash-values of ht
         collect (funcall fn k v)))
 

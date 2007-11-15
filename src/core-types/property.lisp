@@ -25,7 +25,7 @@
 ;;; File: property
 ;;; Description: Defines property objects
 
-;;; $Id: property.lisp,v 1.1 2007/09/25 17:54:10 amallavarapu Exp $
+;;; $Id: property.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
 ;;;
 
 (in-package b)
@@ -46,7 +46,7 @@
 
 (setf (slot-value concept 'base-property) property)
 
-(defmethod property ((o property) &optional field-list)
+(defmethod property ((o property))
   (property-value o))
   
 (defun relevance (obj field)

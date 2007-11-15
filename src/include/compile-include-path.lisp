@@ -120,19 +120,13 @@
            (unless (currently-compiled-p ipath)
              (ensure-directories-exist dest)
              (clear-include-path-source-signature ipath)
-             (let ((*package* +b-user-package+)) (when (compile-file src :output-file dest)
+             (let ((*package* +b-user-package+)) (when (platform-compile-file src dest)
                                                    (setf (include-path-compiled-signature ipath)
                                                          (include-path-source-signature ipath))))
              (setf (currently-compiled-p ipath) t))))
     (when (needs-compile-p ipath force nil)
       (compile-destination))))
-;;;;       (ecase force
-;;;;         ((nil)       (unless (probe-file dest)
-;;;;                        (compile-destination)))
-;;;;         ((:changed)  (when (needs-com (and (probe-file dest)
-;;;;                                   (equalp (include-path-source-signature src) dest-sig))
-;;;;                        (compile-destination)))
-;;;;         ((t)         (compile-destination)))))
+
 
 (defun process-include-path-compile-operation (op compile-force load-force)
  (case (first op)
@@ -327,6 +321,68 @@ symbols in the correct package."
                                    :compile-verbose compile-verbose
                                    :load-verbose load-verbose)))))))))
 
+(defun delete-library-binaries (&optional (lib :all))
+  (typecase lib
+    ((eql :all)     (dolist (lib (find-all-libraries))
+                      (delete-library-binaries lib)))
+    (pathname       (assert (pathname-directory-p lib))
+                    (delete-directory (library-bin-dir lib) t t))
+    (t              (delete-library-binaries (find-library lib)))))
+
+
+;;;;
+;;;; COMPILE SUPPORT FOR DIFFERENT PLATFORMS:
+;;;;
+(defun platform-compile-file (src dest)
+  #-:clisp (compile-file src :output-file dest)
+  ;; special handling for clisp, since the clisp binaries require standard-io-syntax:
+  #+:clisp (compile-file-with-standard-io-syntax src :output-file dest))
+
+#+:clisp
+(progn
+(defun compile-file-with-standard-io-syntax (src &rest args 
+                                                 &key (output-file (compile-file-pathname src)))
+  "Translates little b code to standard lisp before compiling"
+  (let ((std-file (make-pathname :type "tmp" :defaults src))
+        (forms    (read-littleb-file src)))
+    (unwind-protect
+        (progn
+          (write-standard-lisp-file forms std-file)
+          (ext:execute "C:/bin/clisp/clisp.exe" 
+                       (format nil "-c \"~A\" -o \"~S\""
+                               src output-file)))
+      (delete-file std-file))))
+    
+(defun read-littleb-file (file)
+  (with-open-file (stream file :direction :input)
+    (let ((*compile-file-truename* (pathname file))
+          (*compile-file-pathname* *compile-file-truename*)
+          (*load-truename* *compile-file-truename*)
+          (*load-pathname* *compile-file-truename*))
+      (read-forms stream))))
+      
+(defun write-standard-lisp-file (forms file)
+  (with-standard-io-syntax
+    (setf *print-pretty* t) ; use the pretty printer (override the print-object methods)
+    (with-open-file (stream file :direction :output :if-does-not-exist :create)
+      (write-forms forms stream))))
+
+(defun write-forms (forms stream)
+  (loop with *package* = *package* ;; introduce a binding
+        for form in forms
+        when (in-package-form-p form)
+        do (eval form)
+        do (prin1 form stream)))
+        
+(defun read-forms (stream)
+  (loop with *package* = *package* ;; introduce a binding
+        for form = (read stream nil #1='#:eof nil)
+        until (eq form #1#)
+        when (in-package-form-p form)
+        do (eval form)
+        collect form))
+); #+:clisp
+    
 ;;;; (defun compile-include-path (ipath &key (recursive t)
 ;;;;                                    (compile-verbose *compile-verbose*)
 ;;;;                                    (compile-force *include-force*)

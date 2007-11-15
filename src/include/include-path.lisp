@@ -76,7 +76,7 @@
 ;;;    #3spec => source file pathname
 ;;;    #4spec => compiled file pathname
 ;;;
-;;; $Id: include-path.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: include-path.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
 ;;;
 
 
@@ -269,7 +269,8 @@ Returns 2 values - the package (or nil), created (bool representing whether it w
   (labels ((libpath-from-spath (spath)
              (merge-pathnames (make-pathname :directory `(:relative ,(nth (length (pathname-directory spath))
                                                                           (pathname-directory pathname))))
-                              spath)))
+                              spath
+                              nil)))
 
     ;; look for a match in search paths
     (loop with p-dir-len = (length (pathname-directory pathname))
@@ -278,10 +279,10 @@ Returns 2 values - the package (or nil), created (bool representing whether it w
                                                         (length (pathname-directory spath))))
                                                   *library-search-paths*)
           for libspath in filtered-search-paths
-          for src-libpath = (merge-pathnames #P"*/" libspath)
+          for src-libpath = (merge-pathnames #P"*/" libspath nil)
           for cpl-libpath = (library-compiled-dir src-libpath)
-          for src-wildpath = (merge-pathnames #P"**/*.*" src-libpath)
-          for cpl-wildpath = (merge-pathnames #P"**/*.*" cpl-libpath)
+          for src-wildpath = (merge-pathnames #P"**/*.*" src-libpath nil)
+          for cpl-wildpath = (merge-pathnames #P"**/*.*" cpl-libpath nil)
           when (pathname-match-p pathname cpl-wildpath)
           do (return (__ipath-from-pathname-return-values pathname (libpath-from-spath libspath) cpl-libpath preserve-type))
           when (pathname-match-p pathname src-wildpath)
