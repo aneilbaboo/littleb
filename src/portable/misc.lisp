@@ -24,7 +24,7 @@
 
 (in-package portable)
 
-#+clisp
+#+(and :clisp :win32)
 (progn
 (ffi:default-foreign-language :stdc )
 
@@ -61,17 +61,18 @@
 )
       
 (defun user-documents-folder ()   
-  #+(and lispworks win32)
+  #+(and :lispworks :win32)
   (multiple-value-bind (ret dir)  
       (win32::sh-get-folder-path 
        0 (cdr (assoc :my-documents win32::*type-csidl-pairs*)) 0 0)
     (declare (ignorable ret))
     (pathname (concatenate 'string dir "\\")))
 
-  #+(and clisp win32)
+  #+(and :clisp :win32)
   (pathname (get-win32-special-folder-location 5))
   
-  #-(and lispworks win32)
+  #-(or (and :lispworks :win32)
+        (and :clisp :win32))
   (merge-pathnames #+win32 #P"My Documents/" 
                    #-win32 #P"" 
                    (user-homedir-pathname)))
