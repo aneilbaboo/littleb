@@ -1,5 +1,5 @@
 ;;; This is asdf+ some useful extensions to ASDF (Another System Definition Facility).  
-;;; $Revision: 1.3 $
+;;; $Revision: 1.4 $
 
 ;;; You may load this file instead of ASDF.lisp, provided that either ASDF.lisp has
 ;;; already been loaded or is present in the same folder as this file.
@@ -90,7 +90,7 @@ be used to generate directory names for example to store different platform FASL
      (feature-select '(:allegro :clisp :lispworks :sbcl :cmucl)
                      (lisp-implementation-type))
      #+:allegro EXCL::*COMMON-LISP-VERSION-NUMBER* 
-     #+(and :clisp (not :unix)) (posix:version-major (posix:version))
+     #+(and :clisp :win32) (posix:version-major (posix:version))
      #+:lispworks system::*major-version-number*
      #-(or :allegro :lispworks :clisp) (lisp-implementation-version)
      (feature-select '(:mswindows :win32 :windows :mac :macos 
