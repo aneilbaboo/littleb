@@ -114,7 +114,7 @@
   (loop with new = (make-instance (type-of o))
         for slot in (class-slots (class-of o))
         do (setf (slot-value new slot) (slot-value o slot))
-        finally return new))
+        finally (return new)))
 
 (defun class-slot-initargs (class &optional (all t))
   "Return the list of initargs of a CLASS.
