@@ -27,7 +27,7 @@
 ;;;              *ID* when generating new objects.  The object returned by the
 ;;;              form takes (id S) as its ID.
 
-;;; $Id: library.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: library.lisp,v 1.3 2007/11/19 00:36:21 amallavarapu Exp $
 ;;;
 
 ;;;;
@@ -198,14 +198,14 @@ may be a string, symbol, pathname or library-info structure"
   (let ((dir (or *load-truename* *compile-file-truename*)))
     (if dir (if (pathname-directory-p dir) dir (pathname-parent dir)))))
 
-(defun ignore-paths (&optional (dir (current-directory)  dirp))
+(defun ignore-paths (&optional (dir (current-directory)))
   (let+ ((dir              (if dir (pathname dir)))
          ((node ancestors) (mtrie:find-trie-node dir *ignore-paths*))
          (all              (nconc (if node (list node))                                 
                                   ancestors)))
     (apply #'nconc (delete-if #'null (map-into all #'mtrie:trie-node-value all)))))
 
-(defun (setf ignore-paths) (value &optional (dir (current-directory) dirp))
+(defun (setf ignore-paths) (value &optional (dir (current-directory)))
   (let* ((dir   (if dir (pathname dir)))
          (*default-pathname-defaults* (or dir #P"/")))
     (setf (mtrie:trie-node-value (mtrie:find-trie-node dir *ignore-paths* t))

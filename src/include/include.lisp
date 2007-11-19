@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.5 2007/11/12 15:06:08 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.6 2007/11/19 00:36:21 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -213,8 +213,12 @@
   ;; it swaps the substitute readtable.
   ;; 2) reloading definitions (even from the same file) causes a warning to be issued.
   ;; AM 9/06
+  ;; 3) CLISP loves to warn about everything, including defining methods after a GF
+  ;; is used.  This makes a mess when reloading little b files
   (port:allowing-redefinitions
-    (let* ((binaryp (eq type :binary))
+    (let* ((custom:*suppress-check-redefinition* t)
+           (clos::*gf-warn-on-replacing-method* nil)
+           (binaryp (eq type :binary))
            (subst-readtable-p (not (eq *readtable* *working-readtable*)))
            (new-readtable (cond 
                            ((and binaryp subst-readtable-p) nil)

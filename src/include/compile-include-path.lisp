@@ -360,7 +360,7 @@ symbols in the correct package."
           (*load-truename* *compile-file-truename*)
           (*load-pathname* *compile-file-truename*))
       (read-forms stream))))
-      
+
 (defun write-standard-lisp-file (forms file)
   (with-standard-io-syntax
     (setf *print-pretty* t) ; use the pretty printer (override the print-object methods)
