@@ -160,40 +160,11 @@ Returns the value of rhs."
 
 
 
-;;;; (defun print-name (i &optional (stream *standard-output*) fields-remain)
-;;;;     (cond 
-;;;;      (i (with-print-context t
-;;;;           (let ((field (fld i :field))
-;;;;                 (args  (fld i :args))
-;;;;                 (obj   (fld i :object)))
-;;;;             (let ((fields-remain (not (missingp field))))
-;;;;               (print-name-obj obj stream fields-remain))
-;;;;             (let ((*print-case* :downcase));(if (name-p (first *print-context*)) :upcase :downcase)))
-;;;;  
-;;;;               (when (not (missingp field))
-;;;;                 (princ #\. stream)
-;;;;                 (when args (princ #\( stream))
-;;;;                 (cond
-;;;;                  ((symbolp field)                     (print-field-when-symbol field stream))
-;;;;        
-;;;;                  ((numberp field)                     (prin1 field stream))
-;;;;        
-;;;;                  (t                                   (when (or args fields-remain) (princ #\( stream))
-;;;;                                                       (princ "," stream)
-;;;;                                                       (prin1 field stream)
-;;;;                                                       (when (or args fields-remain) (princ #\) stream))))
-;;;;                 (with-print-context obj 
-;;;;                   (loop for a in args
-;;;;                         do (princ #\space stream)
-;;;;                         (print-value a stream)))
-;;;;                 (when args (princ #\) stream)))))))
-;;;;      (t (princ "?" stream))))
 
-
-(defun print-name-obj (o stream fields-remain)
+(defun print-name-obj (o stream)
   (typecase o
     (symbol (print-symbol-name o stream))
-    (name     (print-name o stream fields-remain))
+    (name     (print-name o stream))
     (t      (prin1 o stream))))
          
 
@@ -226,33 +197,3 @@ Returns the value of rhs."
                  spackage))
               (fld o :_fields)))))
 
-
-;;;; (defvar *fields-remain* nil)
-
-;;;; (defun print-name (i &optional (stream *standard-output*))
-;;;; ;  (let ((*print-case* :downcase));(if (name-p (first *print-context*)) :upcase :downcase)))
-;;;;     (cond 
-;;;;      (i (with-print-context t
-;;;;           (let ((field (fld i :field))
-;;;;                 (args  (fld i :args))
-;;;;                 (obj   (fld i :object)))
-;;;;             (let ((*fields-remain* (not (missingp field))))
-;;;;               (print-name-obj obj stream))
-;;;;             (when (not (missingp field))
-;;;;               (princ #\. stream)
-;;;;               (when args (princ #\( stream))
-;;;;               (cond
-;;;;                ((symbolp field)                     (print-field-when-symbol field stream))
-;;;;        
-;;;;                ((numberp field)                     (prin1 field stream))
-;;;;        
-;;;;                (t                                   (when (or args *fields-remain*) (princ #\( stream))
-;;;;                                                     (princ "," stream)
-;;;;                                                     (prin1 field stream)
-;;;;                                                     (when (or args *fields-remain*) (princ #\) stream))))
-;;;;               (with-print-context obj 
-;;;;                 (loop for a in args
-;;;;                       do (princ #\space stream)
-;;;;                          (print-value a stream)))
-;;;;               (when args (princ #\) stream))))))
-;;;;      (t (princ "?" stream))))
