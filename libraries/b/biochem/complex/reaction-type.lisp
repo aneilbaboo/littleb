@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.9 2007/11/12 15:06:05 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.10 2007/11/20 18:23:15 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -234,13 +234,14 @@
 (defun named-verticies-from-noffsets (noffsets)
   (mapcar #'car (apply #'append noffsets)))
 
+(defconstant +empty-graph+ (make-complex-graph ()))
 (defun lhs-default-site-binding-function (lhs-graphs)
   (let* ((rev-table (make-hash-table :test #'equal)) ; a table from site-labels to 
          (lhs-graph (case (length lhs-graphs)
-                      (0 #.(gtools:make-labelled-graph ()()))
+                      (0 +empty-graph+)
                       (1 (first lhs-graphs))
                       (t (gtools:merge-graphs
-                          (list* #.(gtools:make-labelled-graph ()()) lhs-graphs)))))
+                          (list* +empty-graph+ lhs-graphs)))))
          (labels    (graph-list-labels lhs-graphs)))
     (lambda (monomer site-num binding)
       (cond

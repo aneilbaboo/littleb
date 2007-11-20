@@ -343,16 +343,18 @@ symbols in the correct package."
 (defun compile-file-with-standard-io-syntax (src &rest args 
                                                  &key (output-file (compile-file-pathname src)))
   "Translates little b code to standard lisp before compiling"
+  (declare (ignorable output-file args))
   (let ((std-file (make-pathname :type "tmp" :defaults src))
         (forms    (read-littleb-file src)))
     (unwind-protect
         (progn
           (write-standard-lisp-file forms std-file)
-          (ext:execute "C:/bin/clisp/clisp.exe" 
-                       (format nil "-c \"~A\" -o \"~S\""
-                               src output-file)))
+          (let ((*readtable* (with-standard-io-syntax *readtable*))
+                (*print-pprint-dispatch* '(*print-pprint-dispatch*))
+                (*print-readably* nil))
+            (apply #'compile-file std-file args)))
       (delete-file std-file))))
-    
+     
 (defun read-littleb-file (file)
   (with-open-file (stream file :direction :input)
     (let ((*compile-file-truename* (pathname file))

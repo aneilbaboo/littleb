@@ -389,31 +389,36 @@
             (unreadable-constantp x))))
 
 
+;;;
+;;; 
+;;;
 
 ;;;
 ;;; BASE CONCEPT-PRINTER
 ;;; 
 (defmethod print-object :around ((o concept) stream)
   (let ((*print-case*  :downcase))
-    (call-next-method)))
+    (with-platform-printing-environment
+      (call-next-method))))
 
 (defmethod print-object ((o concept) stream)
-  (let* ((*print-depth* (1+ *print-depth*))
-         (id            (object-name o)))
-    (cond
-     ((and *print-context* id)
-      (pprint-logical-block (stream ())
-        (prin1 id stream)))
+  (with-platform-printing-environment
+    (let* ((*print-depth* (1+ *print-depth*))
+           (id            (object-name o)))
+      (cond
+       ((and *print-context* id)
+        (pprint-logical-block (stream ())
+          (prin1 id stream)))
 
-     ;; top-level-printing:
-     (t 
-      (pprint-logical-block (stream () :prefix (if id "{" "") :suffix (if id "}" ""))
-        (when id 
-          (let ((*print-context* o)) 
-            (prin1 id stream))
-          #-clisp (pprint-newline-selectively :linear stream)
-          (princ " :# " stream))
-        (print-concept o stream))))))
+       ;; top-level-printing:
+       (t 
+        (pprint-logical-block (stream () :prefix (if id "{" "") :suffix (if id "}" ""))
+          (when id 
+            (let ((*print-context* o)) 
+              (prin1 id stream))
+            #-clisp (pprint-newline-selectively :linear stream)
+            (princ " :# " stream))
+          (print-concept o stream)))))))
 
 (defgeneric print-concept (o &optional stream)
   (:documentation "Prints the data structure representation of a concept using print-eval consistency")
@@ -424,56 +429,55 @@
    (base-print-concept o stream)))
 
 (defun base-print-concept (o stream)
-  (with-platform-printing-environment
-    (let* ((cclass         (class-of o))
-           (first-slot     nil)
-           (*print-case*  :downcase))
-      (flet ((print-value (o stream)
-               (prin1 (self-evalify o) stream)))
-        (with-print-context o
+  (let* ((cclass         (class-of o))
+         (first-slot     nil)
+         (*print-case*  :downcase))
+    (flet ((print-value (o stream)
+             (prin1 (self-evalify o) stream)))
+      (with-print-context o
     ;(format stream "~&CONTEXT-LENGTH: ~S~%" (length *print-context*))
-          (pprint-logical-block (stream nil :prefix "[" :suffix "]")
-            (prin1 cclass stream)
-            (pprint-logical-block (stream nil)
-              (loop for fld in (cclass-id-field-order cclass)
-                    do             ;  (pprint-newline :linear stream)
-                    (let* ((fldinfo (class-fieldinfo cclass fld))
-                           (ls  (fieldinfo-lambda-switch fldinfo))
-                           (sym (fieldinfo-symbol fldinfo))
-                           (val (fld o sym)))
-                      (if first-slot 
-                          (pprint-newline-selectively :linear stream)
-                        (setf first-slot t))
-                      (cond 
-                       ((and (member ls '(&optional &key)) ;; ignore slots which are         
-                             (null val)            ;; optional, NIL and have default=NIL
-                             (null (fieldinfo-default fldinfo))))
+        (pprint-logical-block (stream nil :prefix "[" :suffix "]")
+          (prin1 cclass stream)
+          (pprint-logical-block (stream nil)
+            (loop for fld in (cclass-id-field-order cclass)
+                  do             ;  (pprint-newline :linear stream)
+                  (let* ((fldinfo (class-fieldinfo cclass fld))
+                         (ls  (fieldinfo-lambda-switch fldinfo))
+                         (sym (fieldinfo-symbol fldinfo))
+                         (val (fld o sym)))
+                    (if first-slot 
+                        (pprint-newline-selectively :linear stream)
+                      (setf first-slot t))
+                    (cond 
+                     ((and (member ls '(&optional &key)) ;; ignore slots which are         
+                           (null val)            ;; optional, NIL and have default=NIL
+                           (null (fieldinfo-default fldinfo))))
                    
-                       ((or (null ls)
-                            (eq ls '&optional))
+                     ((or (null ls)
+                          (eq ls '&optional))
+                      (princ #\Space stream)
+                      (print-value val stream))
+                   
+                     ((eq ls '&key)                     
+                      (pprint-logical-block (stream nil)
                         (princ #\Space stream)
-                        (print-value val stream))
+                        (let ((*print-case* :upcase)) (prin1 (key sym) stream))
+                        (pprint-newline-selectively :linear stream)
+                        (princ #\Space stream)
+                        (print-value val stream)))
                    
-                       ((eq ls '&key)                     
-                        (pprint-logical-block (stream nil)
-                          (princ #\Space stream)
-                          (let ((*print-case* :upcase)) (prin1 (key sym) stream))
-                          (pprint-newline-selectively :linear stream)
-                          (princ #\Space stream)
-                          (print-value val stream)))
-                   
-                       ((member ls '(&rest &body))
-                        (let ((printed-first nil))
-                          (mapcar (lambda (o)
-                                    (if printed-first
-                                        (pprint-newline-selectively :linear stream)
-                                      (setf printed-first t))                                   
-                                    (princ #\Space stream)
-                                    (print-value o stream))
-                                  val)))
+                     ((member ls '(&rest &body))
+                      (let ((printed-first nil))
+                        (mapcar (lambda (o)
+                                  (if printed-first
+                                      (pprint-newline-selectively :linear stream)
+                                    (setf printed-first t))                                   
+                                  (princ #\Space stream)
+                                  (print-value o stream))
+                                val)))
 
-                       (t (error "Invalid slot lambda switch ~S" ls)))))))
-          o)))))
+                     (t (error "Invalid slot lambda switch ~S" ls)))))))
+        o))))
 
 ;;;
 ;;; HELPERS for CONCEPT PRINTING:

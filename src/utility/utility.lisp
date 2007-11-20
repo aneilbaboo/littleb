@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.4 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.5 2007/11/20 18:23:21 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -222,9 +222,14 @@ immediately following the replacement, or NIL if no substitution was made."
 
 (defmacro ifit (test then &optional else)
   "Anaphoric if - the symbol 'it' may be used to refer to the result."
-  `(let ((it ,test))
-     (declare (ignorable it))
-     (if it ,then ,else)))
+  (let ((itvar (intern "IT")))
+  `(let* ((,itvar ,test))
+     (symbol-macrolet 
+         ,(unless (eq (symbol-package itvar)
+                     #.*package*)
+            `((it ,itvar)))
+       (declare (ignorable ,itvar))
+       (if ,itvar ,then ,else)))))
 
 (defmacro whenit (test &body body)
   `(ifit ,test

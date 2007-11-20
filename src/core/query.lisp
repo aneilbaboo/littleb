@@ -44,7 +44,7 @@
 ;;;              (query [x ?a ?b]) == (query (?a ?b) [x ?a ?b]) ; pattern vars in order encountered
 ;;;              
 
-;;; $Id: query.lisp,v 1.3 2007/10/18 18:49:59 amallavarapu Exp $
+;;; $Id: query.lisp,v 1.4 2007/11/20 18:23:21 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -92,14 +92,14 @@
 
 (defun assert-class-instances (classes)  
   (let ((rtype-expr `(or ,@(mapcar #'class-name classes))))
-    (loop for obj being the hash-values in +objects+
+    (loop for obj being the hash-values of +objects+
       ;for type = (type-of obj)
       when (typep obj rtype-expr) ;(some (lambda (rtype) (subtypep rtype type)) rule-types)
       do (lisa:assert-instance obj)
 
       ;; now, check all of the properties of this object...
       when (conceptp obj)
-      do  (loop for prop being the hash-value in (concept-properties obj)
+      do  (loop for prop being the hash-values of (concept-properties obj)
            when (typep prop rtype-expr) ;; if this property matches type...
            do (lisa:assert-instance prop))))) ;; assert it
            
