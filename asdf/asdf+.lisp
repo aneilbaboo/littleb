@@ -1,5 +1,5 @@
 ;;; This is asdf+ some useful extensions to ASDF (Another System Definition Facility).  
-;;; $Revision: 1.5 $
+;;; $Revision: 1.6 $
 
 ;;; You may load this file instead of ASDF.lisp, provided that either ASDF.lisp has
 ;;; already been loaded or is present in the same folder as this file.
@@ -156,15 +156,14 @@ be used to generate directory names for example to store different platform FASL
          (components   (components-in-system system))
          (fasls        (mapcan (lambda (c)
                                  (output-files op c))
-                               components))
-         (count        0))
-    (dolist (fasl fasls count)
-      (when (and fasl (probe-file fasl))
-        (if error
-            (delete-file fasl)
-          (ignore-errors
-            (delete-file fasl)))
-        (incf count)))))
+                               components)))
+    (loop for fasl in fasls 
+          when (and fasl (probe-file fasl))
+          do (if error
+                 (delete-file fasl)
+               (ignore-errors
+                 (delete-file fasl)))
+          and collect fasl)))
 
 ;;;
 ;;; SYNTACTIC SUGAR: ASDF:LOAD-SYSTEM
