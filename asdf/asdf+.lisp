@@ -1,5 +1,5 @@
 ;;; This is asdf+ some useful extensions to ASDF (Another System Definition Facility).  
-;;; $Revision: 1.4 $
+;;; $Revision: 1.5 $
 
 ;;; You may load this file instead of ASDF.lisp, provided that either ASDF.lisp has
 ;;; already been loaded or is present in the same folder as this file.
@@ -31,16 +31,18 @@
 
 ;;;
 ;;; This file contains some handy extensions to ASDF.
-;;;
+;;;  
+;;; EXPORTED FUNCTIONS:
 ;;;  LOAD-SYSTEM: syntactic sugar for (asdf:oos 'asdf:load-op __)
 ;;;  FILES-IN-SYSTEM: analogous to same fn name in MK-DEFSYSTEM, returns all files
+;;;  DELETE-BINARIES: deletes all the fasl files of a system (leaves directories alone)
+;;;  SYSTEM-BIN-DIRECTORY: redirects compiler output for a particular system 
+;;;
 ;;;  SYSDEF-CENTRAL-REGISTRY-SUBSEARCH: enables automatic search of central registry
 ;;;    subdirs, based on name of system. 
 ;;;           E.g., (asdf:load-system 'mysys) finds and loads 
 ;;;                      "/a/central/registry/path/mysys/mysys.asd"
-;;;  SYSTEM-BIN-DIRECTORY: redirects compiler output for a particular system 
-;;;            
-;;;                                    
+;;;    NOTE: ASDF+ adds this fn to the ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS* 
 ;;;                                     
 ;;;
 ;;;
@@ -53,12 +55,17 @@
 
 (export 'files-in-system)
 (defun files-in-system (system)
-  (remove-duplicates 
-   (loop for (op . component) in (traverse (make-instance 'operation)
+  (mapcar #'component-pathname (components-in-system system)))
+
+(defun components-in-system (system)
+ (remove-duplicates 
+   (loop for (nil . component) in (traverse (make-instance 'operation)
                                            (find-system system))
          when (and (typep component 'component)
                    (stringp (pathname-name (component-pathname component))))
-         collect (component-pathname component)) :test #'equalp))
+         collect component)
+   :key #'component-pathname
+   :test #'pathname-match-p))
 
 (defun sysdef-central-registry-subsearch (name)
   "Looks in each *central-registry* folder for NAME.asd or system.asd in 
@@ -89,9 +96,9 @@ be used to generate directory names for example to store different platform FASL
     (make-safe-dir-name
      (feature-select '(:allegro :clisp :lispworks :sbcl :cmucl)
                      (lisp-implementation-type))
-     #+:allegro EXCL::*COMMON-LISP-VERSION-NUMBER* 
-     #+(and :clisp :win32) (posix:version-major (posix:version))
-     #+:lispworks system::*major-version-number*
+     #+allegro EXCL::*COMMON-LISP-VERSION-NUMBER* 
+     #+clisp (posix:version-major (posix:version))
+     #+lispworks system::*major-version-number*
      #-(or :allegro :lispworks :clisp) (lisp-implementation-version)
      (feature-select '(:mswindows :win32 :windows :mac :macos 
                        :macosx :linux :bsd :sgi :irix :unix)
@@ -141,6 +148,23 @@ be used to generate directory names for example to store different platform FASL
                                               sys-bin-dir)))
                           paths))
      (t           paths))))
+
+(export 'delete-binaries)
+(defun delete-binaries (system &optional (error t))
+  "Deletes binary files for the system; does not delete directories"
+  (let* ((op           (make-instance 'compile-op))
+         (components   (components-in-system system))
+         (fasls        (mapcan (lambda (c)
+                                 (output-files op c))
+                               components))
+         (count        0))
+    (dolist (fasl fasls count)
+      (when (and fasl (probe-file fasl))
+        (if error
+            (delete-file fasl)
+          (ignore-errors
+            (delete-file fasl)))
+        (incf count)))))
 
 ;;;
 ;;; SYNTACTIC SUGAR: ASDF:LOAD-SYSTEM
