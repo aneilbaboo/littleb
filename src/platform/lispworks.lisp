@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.1 2007/11/19 23:38:11 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.2 2007/11/20 17:53:44 amallavarapu Exp $
 
 #+:lispworks
 (in-package editor)
@@ -129,8 +129,9 @@
         (if src          
           (b:include-path-package ipath t))
  
-        (editor:with-point ((end (buffer-point b)))
-          (funcall fn b (buffer-start (buffer-point b)) (buffer-end end)
+        (editor:with-point ((end   (buffer-point b))
+                            (start (buffer-point b)))
+          (funcall fn b (buffer-start start) (buffer-end end)
                    :after-function
                    (lambda (&rest args) (declare (ignorable args))
                      (when src
