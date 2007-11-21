@@ -25,7 +25,7 @@
 ;;; File: 
 ;;; Description: Defines the Dimension concept, part of the quantity system.
 
-;;; $Id: dimension.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: dimension.lisp,v 1.3 2007/11/21 07:10:56 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -271,9 +271,10 @@ of base units, where the first is scaled appropriately"
             (reduce #'*op units)
           (first units)))))
 
-(defmethod magnitude-of ((d dimension) &optional u) null-dimension)
+(defmethod magnitude-of ((d dimension) &optional u) (declare (ignore u)) null-dimension)
 (defmethod dimension-of ((n number)) null-dimension)
 (defmethod dimension-of ((d dimension)) null-dimension)
 (defmethod dimension-of ((o t)) null-dimension)
-(defmethod fld ((o number) (field (eql :dimension)) &rest args) null-dimension)
+(defmethod fld ((o number) (field (eql :dimension)) &rest args)
+  (declare (ignore field args)) null-dimension)
 

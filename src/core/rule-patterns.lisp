@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.3 2007/10/25 03:24:24 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.4 2007/11/21 07:10:57 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -682,7 +682,7 @@
 
 (defun add-rule (pattern function)
   (dolist (lisa-pattern (rule-parse-lisa-patterns (make-rule-parse pattern)))
-    (lisa::define-rule (gensym) lisa-rule)))
+    (lisa::define-rule (gensym) (list lisa-pattern 'lisa:=> function))))
 
 
 ;;;

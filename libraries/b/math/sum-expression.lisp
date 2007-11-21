@@ -212,5 +212,6 @@ is the numeric component."
   (map-subst object (lambda (o)
                       (or (second (assoc o subs :test test)) o))))
 (defmethod fld ((o number) (field (eql :sub)) &rest args)
+  (declare (ignore field args))
   o)
   

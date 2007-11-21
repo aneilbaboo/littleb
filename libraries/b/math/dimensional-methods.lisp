@@ -25,7 +25,7 @@
 ;;; File: dimensional-methods
 ;;; Description: 
 
-;;; $Id: dimensional-methods.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: dimensional-methods.lisp,v 1.2 2007/11/21 07:10:56 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -42,7 +42,7 @@
       (error "Attempt to determine magnitude of ~S in units of a different dimension (~S)."
              q u))
   (call-next-method))
-(defmethod magnitude-of ((n number) &optional u)  n)
+(defmethod magnitude-of ((n number) &optional u) (declare (ignore u)) n)
 (defmethod magnitude-of ((u unit) &optional units)
   (let ((u-in-base (convert-to-unit 1 u t)))
     (if units
@@ -60,7 +60,8 @@
 ;;;; for want of a better place to put these methods:
 ;;;;
 
-(def-multitype-method get-math-expression-vars ((o number numeric-concept dimension unit))  nil)
+(def-multitype-method get-math-expression-vars ((o number numeric-concept dimension unit))
+  (declare (ignore o)) nil)
 
 (defmethod get-math-expression-vars (o) (list o))
 

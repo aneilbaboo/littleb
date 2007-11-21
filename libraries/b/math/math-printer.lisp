@@ -101,6 +101,7 @@ If stream is NIL, a string representation of the math object is returned."
   (nth-value 1 (positive-value o)))
 
 (defmethod print-math-expression ((o ratio) &optional (stream *standard-output*) left-op)
+  (declare (ignore left-op))
   (cond
    ((= (Rationalize (coerce o 'float)) o)
     (let ((str1 (with-output-to-string (s) (prin1 (coerce o 'float) s)))

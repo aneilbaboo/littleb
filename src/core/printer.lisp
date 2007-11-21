@@ -256,6 +256,7 @@
 	(print-escaped-name name stream)
 	symbol)))
 
+#-:clisp
 (port:allowing-redefinitions 
  (defmethod print-object ((s symbol) stream)
    (symbol-printer stream s)))
@@ -272,12 +273,12 @@
 (defun cons-printer (stream cons &optional (prefix "(") (suffix ")") 
                             (*current-print-depth* (new-print-depth t)))
   (with-platform-printing-environment
-      (let ((*print-context* cons))
-	(cond
-	  ((eql *current-print-depth* 0) (princ #\# stream))
-	  (t
-	   (pprint-logical-block (stream nil :prefix prefix :suffix suffix)
-	     (loop for iter = cons then (cdr iter)
+    (let ((*print-context* cons))
+      (cond
+       ((eql *current-print-depth* 0) (princ #\# stream))
+       (t
+        (pprint-logical-block (stream nil :prefix prefix :suffix suffix)
+          (loop for iter = cons then (cdr iter)
 		for length-limit = *print-length* then (if length-limit (1- length-limit))
 		until (not (consp iter))
 		when (eql length-limit 0)
@@ -285,10 +286,10 @@
 		do (prin1 (first iter) stream)
 		when  (cdr iter)
 		do (princ #\space stream)
-		  (pprint-newline-selectively :linear stream)
+                (pprint-newline-selectively :linear stream)
 		when (not (listp (cdr iter)))
 		do   (princ ". " stream)
-		  (prin1 (cdr iter) stream))))))))
+                (prin1 (cdr iter) stream))))))))
 
 (def-pprint-dispatcher cons-pprinter (cons 1) (stream cons)
   (cons-printer stream cons))
@@ -299,6 +300,7 @@
 (def-pprint-dispatcher vector-printer (simple-vector 1) (stream vector)
   (cons-printer stream (coerce vector 'list) "#("))
 
+#-:clisp
 (port:allowing-redefinitions
   (defmethod print-object ((v vector) stream)
     (vector-printer stream v))) 
@@ -313,8 +315,7 @@
 ;;; MATH FORM PRINTER
 ;;;
 (def-pprint-dispatcher math-form-printer (math-form 2) (stream oform)
-  (let ((*print-context* oform))
-    (cons-printer stream (rest oform) "{" "}")))
+  (cons-printer stream (rest oform) "{" "}"))
 
 ;;;
 ;;; FLD FORM PRINTER
@@ -359,6 +360,7 @@
           (cons-printer stream (list* pfield args)))
          (t    (prin1 pfield stream)))))))
 
+#-:clisp
 (port:allowing-redefinitions
   (defmethod print-object ((o cons) stream)
     (typecase o
@@ -397,6 +399,7 @@
 ;;; BASE CONCEPT-PRINTER
 ;;; 
 (defmethod print-object :around ((o concept) stream)
+  (declare (ignore o stream))
   (let ((*print-case*  :downcase))
     (with-platform-printing-environment
       (call-next-method))))

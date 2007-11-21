@@ -25,7 +25,7 @@
 ;;; File: field-pattern
 ;;; Description: enables definition of field-pattern expressions (for use in rules)
 
-;;; $Id: field-pattern.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: field-pattern.lisp,v 1.2 2007/11/21 07:10:56 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package :b)
@@ -46,6 +46,7 @@
          (type-param   (gensym "TYPE"))
          (field-param   (gensym "FIELD"))
          (args-param   (gensym "ARGS")))
+    (declare (ignorable doc))
     (assert (matching-lambda-lists-p llist s-llist) ()
       "Expecting lambda list ~S to match stored lambda list ~S." llist s-llist)
     `(progn

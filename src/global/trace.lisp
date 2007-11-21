@@ -25,7 +25,7 @@
 ;;; File: trace
 ;;; Description: support for tracing events in the knowledge base
 
-;;; $Id: trace.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: trace.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
 
 ;;;
 (in-package b)
@@ -65,7 +65,8 @@
                 :delete *kb-trace-delete-objects*
                 :update *kb-trace-update-objects*
                 :rules *kb-trace-rules*))
-      (error (e) (error "Invalid input to trace-objects ~S - expecting T, NIL or :VERBOSE, or a keyword list containing any of :NEW :DELETE :UPDATE :RULES" opts)))))
+      (error (e) (declare (ignore e))
+        (error "Invalid input to trace-objects ~S - expecting T, NIL or :VERBOSE, or a keyword list containing any of :NEW :DELETE :UPDATE :RULES" opts)))))
 
 (defun add-trace-info (ti)
   (push ti (first *trace-stack-location*)))

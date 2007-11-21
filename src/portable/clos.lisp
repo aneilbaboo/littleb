@@ -175,8 +175,6 @@ initargs for all slots are returned, otherwise only the slots with
              class-or-symbol)))
       (nreverse (find-superclasses (find-direct-superclasses class) nil)))))
 
-
-
 (defun mapclass (fn class)
   "Maps a unary function fn over the class and all of its superclasses."
   (let* ((all-classes   (cons class

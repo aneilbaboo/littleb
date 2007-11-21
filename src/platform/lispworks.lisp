@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.2 2007/11/20 17:53:44 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.3 2007/11/21 07:10:58 amallavarapu Exp $
 
 #+:lispworks
 (in-package editor)
@@ -525,3 +525,6 @@
   
 
 (setf dbg:*debug-print-level* 8)
+
+(import 'lispworks:quit 'b)
+(export 'lispworks:quit 'b)

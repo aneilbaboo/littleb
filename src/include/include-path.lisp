@@ -76,7 +76,7 @@
 ;;;    #3spec => source file pathname
 ;;;    #4spec => compiled file pathname
 ;;;
-;;; $Id: include-path.lisp,v 1.3 2007/11/19 00:36:21 amallavarapu Exp $
+;;; $Id: include-path.lisp,v 1.4 2007/11/21 07:10:58 amallavarapu Exp $
 ;;;
 
 
@@ -596,8 +596,7 @@ Returns 2 values - the package (or nil), created (bool representing whether it w
     (labels ((listener-error (&optional e) 
                (error "Cannot determine include path specifier ~A in Listener~@[: ~A~] " (spec) e))
              (cur () (handler-case (compute-current-include-path)
-                       (error (e)
-                         (declare (ignore e)) (listener-error a))))
+                       (error (e) (listener-error e))))
              (cur-path () (or *load-truename* *compile-file-truename*
                               (listener-error)))
              (relipath (ipath sub)

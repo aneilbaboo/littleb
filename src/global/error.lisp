@@ -25,13 +25,14 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.1 2007/11/12 15:06:07 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)
 
 (defun b-format (stream string &rest args)
   (let ((*math-print-function* 'default-math-printer))
+    (declare (ignorable *math-print-function*))
     (apply #'format stream string args)))
 
 (define-condition b-error (error)

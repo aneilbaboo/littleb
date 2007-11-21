@@ -26,7 +26,7 @@
 ;;; Description: defcon, the definer of concepts 
 ;;;
 
-;;; $Id: defcon.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: defcon.lisp,v 1.2 2007/11/21 07:10:58 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -157,8 +157,10 @@
   (mapcar (lambda (fi)
             (let* ((field            (fieldinfo-symbol fi))
                    (reader           (field-accessor-fn-name name field))
-                   (doc              (ifit (fieldinfo-documentation fi) (list it))))
-              `(defmethod fld ((object ,name) (?field (eql ,field)) &rest args)
+                   (doc              (ifit (fieldinfo-documentation fi) (list it)))
+                   (args             '#:args))
+              `(defmethod fld ((object ,name) (?field (eql ,field)) &rest ,args)
+                 (declare (ignore ,args))
                  ,@doc
                  (,reader object))))
           id-fieldinfos))
@@ -204,7 +206,8 @@
       `(defun ,name ,lambda-list
          (let ((,id-values   (list ,@default-args))
                (,prop-values ()))
-           (flet ((,super (&rest ,args) (apply (cclass-ctor-args-fn ,superclass) ,args)))
+           (flet ((,super (&rest ,args) (declare (ignorable ,args))
+                    (apply (cclass-ctor-args-fn ,superclass) ,args)))
              (macrolet ((fields (&rest ,args) (fields-form-error ,args)))
                (symbol-macrolet ,smlets
                  (declare (ignorable ,@smlet-bindings))

@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.4 2007/10/18 18:49:59 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.5 2007/11/21 07:10:57 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -51,9 +51,9 @@ A list of initializers is of the form:
                       (if (initializer-setf-name-signal-p o) 1 0)))))
     (loop for iter = i
               then (cdr iter)
-          while iter
           for 1st = (car iter)
           for 2nd = (cadr iter)
+          while iter
           if (initializer-setf-name-signal-p 1st)
           collect `(setf-name ,(field-symbol-from-signal 1st)
                           ,2nd)

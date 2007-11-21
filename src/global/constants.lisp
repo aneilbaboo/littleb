@@ -26,7 +26,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.4 2007/10/25 14:44:31 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.5 2007/11/21 07:10:57 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -34,7 +34,8 @@
 (defconstant +b-user-package+ (find-package "B-USER"))
 
 (defconstant +cl-expander+ (handler-case (symbol-value '+cl-expander+)
-                             (error (e) *macroexpand-hook*)))
+                             (error (e)
+                               (declare (ignore e)) *macroexpand-hook*)))
 ;;; PRINTER VARS
 (defparameter *print-context* nil) ; nil at top-level, otherwise, 
 

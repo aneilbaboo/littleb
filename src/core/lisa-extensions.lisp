@@ -26,13 +26,13 @@
 ;;; Description: alteration & extension of the LISA engine
 ;;;
 
-;;; $Id: lisa-extensions.lisp,v 1.1 2007/09/25 17:54:11 amallavarapu Exp $
+;;; $Id: lisa-extensions.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
 ;;; $Name:  $
 (in-package lisa)
 
 
 
-(let (#+Lispworks (*handle-warn-on-redefinition* nil))
+(portable:allowing-redefinitions 
 
 (setf *allow-duplicate-facts* t)
 
@@ -70,6 +70,7 @@
   (b::fld obj field))
 
 (defmethod (setf slot-value-of-instance) (value (obj b::concept) field)
+  (declare (ignore value obj field))
   (error "Not implemented"))
 
 (lisa:clear)

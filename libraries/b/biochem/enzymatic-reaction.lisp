@@ -27,7 +27,7 @@
 ;;;              this is a meta-reaction which implicates 
 ;;;              reaction-types and enzyme substrate complexes
 
-;;; $Id: enzymatic-reaction.lisp,v 1.3 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: enzymatic-reaction.lisp,v 1.4 2007/11/21 07:10:56 amallavarapu Exp $
 ;;;
 ;;;
 (in-package #I@folder)
@@ -87,6 +87,7 @@
          (p            e-rxn.p)
          (loc-class    e-rxn.location-class))
     (flet ((compute-rhs (lhs n) ;; computes the RHS of the rxn at step n from lhs
+             (declare (ignore lhs))
              (kb-transaction {e-rxn.es.,n :#= (funcall e-rxn.complex-formation e-rxn n)}))
            (compute-rxn-step (lhs rhs n descr)
              (assert (member descr '(:reversible :irreversible)) ()

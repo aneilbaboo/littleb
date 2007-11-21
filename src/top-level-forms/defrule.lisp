@@ -26,7 +26,7 @@
 ;;; Description: defrule, defines b rules
 ;;;
 
-;;; $Id: defrule.lisp,v 1.3 2007/10/22 18:53:18 amallavarapu Exp $
+;;; $Id: defrule.lisp,v 1.4 2007/11/21 07:12:53 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -61,7 +61,7 @@
          (rule-parse      (make-rule-parse patterns))
          (rhs-fn-symbol   (sym name "-RHS-FN"))
          (lambda-list     (rule-parse-rhs-lambda-list rule-parse))
-         (rhs-code        `(,rhs-fn-symbol ,@(rule-parse-rhs-apply-args rule-parse)))
+         (rhs-code        `(funcall ',rhs-fn-symbol ,@(rule-parse-rhs-apply-args rule-parse)))
          (lisa-defs       (rule-parse-lisa-rule-definitions rule-parse name rhs-code))
          (cvar            (gensym "CLASS")))
     (unless (and name (symbolp name)) 

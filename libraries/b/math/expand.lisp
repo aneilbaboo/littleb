@@ -35,7 +35,7 @@
 (defparameter *expansion-steps* t)
 
 (defun multiply-through (s &rest factors)
-  (declare (sum-expression x))
+  (declare (type sum-expression x))
   (loop for total = (apply #'s* (|SUM-EXPRESSION.NUMERIC| s) factors)
                then (+op total (apply #'s* var coef factors))
         for se in (|SUM-EXPRESSION.VARIABLE| s)

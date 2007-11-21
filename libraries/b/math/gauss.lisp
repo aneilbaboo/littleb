@@ -35,6 +35,7 @@
 
 (defmethod dimension-of ((g gauss)) null-dimension)
 (defmethod magnitude-of ((g gauss) &optional u)
+  (declare (ignore u))
   g.mean)
 
 (defield gauss.random-value ()

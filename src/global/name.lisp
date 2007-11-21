@@ -82,7 +82,7 @@ E.g.,  (setf-name P F) is syntactic sugar for (let ((Z (has-name P F)))
  
 
 
-(defmacro has-name (name rhs &environment env)
+ (defmacro has-name (name rhs &environment env)
   "Defines evaluates rhs in the context of an name, which is generated from NAME.  
 The name will be assigned as the object-name of the value returned by rhs. 
 Returns the value of rhs."
@@ -125,19 +125,17 @@ Returns the value of rhs."
 (defun dereference-name (name)
  (ignore-errors (eval name)))
 
-;;;;  (if (atom name)  (eval name)
-;;;;     (apply (first name) (rest name)))))
 
 (defun (setf object-name) (name object)
-;;;;   (assert (name-p name) ()
-;;;;     "Cannot set OBJECT-NAME of ~S - ~S is not of type NAME." object name)
   (setf (gethash object +NAMES+) name))
 
 
 (defmethod fld :around (o (field (eql :_name)) &rest args)
+  (declare (ignore field args))
   (object-name o))
 
 (defmethod (setf fld) :around (name o (field (eql :_name)) &rest args)
+  (declare (ignore field args))
   (setf (object-name o) name))
 
 
@@ -156,9 +154,6 @@ Returns the value of rhs."
 ;;;;     (princ "{_name " stream)
 ;;;;     (print-name i stream)
 ;;;;     (princ #\} stream)))
-
-
-
 
 
 (defun print-name-obj (o stream)
@@ -183,6 +178,7 @@ Returns the value of rhs."
     (princ (string-downcase name) stream)))
 
 (defsetf object (&rest args) (x)
+  (declare (ignore x))
   (b-error "Cannot assign value to ~A.  An object is not a valid SETF place."
            `(object ,@args)))
   

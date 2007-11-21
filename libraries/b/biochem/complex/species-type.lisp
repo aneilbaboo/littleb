@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.11 2007/11/12 15:06:05 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.12 2007/11/21 07:10:56 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -311,6 +311,7 @@
                                     :suffix (if complex "]" ""))
         (loop for mdescr = (pprint-pop)
               do (prin1 `[,@mdescr] stream)
+               
               (pprint-newline-selectively :linear stream)
               (pprint-exit-if-list-exhausted))))))
 

@@ -27,7 +27,7 @@
 ;;;              Provides an object that has fields which are flexibly added.
 ;;;
 
-;;; $Id: dictionary.lisp,v 1.4 2007/11/12 15:06:06 amallavarapu Exp $
+;;; $Id: dictionary.lisp,v 1.5 2007/11/21 07:10:56 amallavarapu Exp $
 (in-package b/util)
 
 (include-declaration :expose-packages (mallavar-utility)
@@ -46,10 +46,12 @@
                                               :size +dictionary-default-size+))))
 
 (defmethod fld ((object hash-table) (field (eql :_list)) &rest args)
+  (declare (ignore field args))
   (loop for v being the hash-values of object
         collect v))
 
 (defmethod fld ((object hash-table) (field (eql :_map)) &rest args)
+  (declare (ignore field))
   (loop with fn = (first args)
         for v being the hash-values of object
         collect (funcall fn v)))

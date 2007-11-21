@@ -25,7 +25,7 @@
 ;;; File: reader-core
 ;;; Description: 
 
-;;; $Id: reader-core.lisp,v 1.1 2007/09/25 17:54:12 amallavarapu Exp $
+;;; $Id: reader-core.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
 
 (in-package b)
 
@@ -52,7 +52,8 @@
     
 
 (defconstant +whitespace-chars+
-  `#(#\Space #\Return #\Linefeed #\Tab #\Newline #\Rubout #\Page ,+no-break-space-char+))
+  (remove-duplicates `#(#\Space #\Return #\Linefeed #\Tab #\Newline #\Rubout #\Page ,+no-break-space-char+)
+                     :test #'char=))
 
 (defvar *terminator-chars*
   (concatenate 'list +whitespace-chars+ '(#\( #\) #\{ #\} #\[ #\] #\; #\' #\` #\,)))

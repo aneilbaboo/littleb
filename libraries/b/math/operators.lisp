@@ -25,11 +25,9 @@
 ;;; File: operators
 ;;; Description: 
 
-;;; $Id: operators.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: operators.lisp,v 1.3 2007/11/21 07:10:56 amallavarapu Exp $
 ;;;
 (in-package b/math)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defconstant +op-precedence-expt+  200)
 (defconstant +op-precedence-muldiv+  400)
@@ -119,7 +117,7 @@
 ;;;
 ;;; +OP
 ;;;
-(defmethod +op ((lhs null) rhs)  (as-math-arg rhs))
+(defmethod +op ((lhs null) rhs) (declare (ignore lhs)) (as-math-arg rhs))
 
 (def-commutative-operator-method +op :around ((n null) o) (as-math-arg o))
 
@@ -296,11 +294,11 @@
 ;;;
 ;;; ^OP
 ;;;
-(defmethod ^op :around (o (p (eql 0)))   1)
-(defmethod ^op :around (o (p (eql 0.0))) 1)  
+(defmethod ^op :around (o (p (eql 0))) (declare (ignore o p))  1)
+(defmethod ^op :around (o (p (eql 0.0))) (declare (ignore o p)) 1)
 ;(defmethod ^op :around (o (p float))      (call-next-method o (rationalize p)))
 
-(defmethod ^op ((e null) p) nil)
+(defmethod ^op ((e null) p) (declare (ignore e p)) nil)
 (defmethod ^op ((n1 number) (n2 number)) 
   (careful-expt n1 n2)) ; explored the idea of returning a product-expression
 
@@ -339,6 +337,7 @@
             (^op (|QUANTITY.DIMENSION| q) p)))
 
 (defmethod ^op ((n (eql null-dimension)) p)
+  (declare (ignore p))
   null-dimension)
 
 (defmethod ^op ((d dimension) p)
@@ -421,4 +420,3 @@
   (<= q1.base-magnitude q2.base-magnitude))
 
 
-)
