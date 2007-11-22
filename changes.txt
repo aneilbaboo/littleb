@@ -1,0 +1,95 @@
+This file contains notes for the little b source code.  If you are
+interested in getting started right away with using little b to build
+models, it may be easier to download the GUI application from the 
+little b website: http://littleb.org/download.html.
+
+Little b is a Lisp-based language designed to allow the user to 
+build models from shared libraries.  It was written and designed by 
+Aneil Mallavarapu at the Harvard Medical School Department of Systems 
+Biology in Boston.  
+
+Libraries have been developed for building ODE models of molecular networks 
+in multi-compartment systems such as cellular epithelia.  As of version 1.5
+it includes a graph-based method for representing molecular complexes.
+
+The language contains mechanisms for rule-based reasoning, symbolic mathematics 
+and object-oriented definitions. The syntax is designed to be terse and 
+human-readable to facilitate communication. Since little b is based in Lisp,
+the environment is both interactive and compilable.
+
+The source code works on Windows XP and Linux.  Mac OS support is under 
+development.  Little b runs on these ANSI Common Lisp implementations:
+
+  * Lispworks 4.x and 5.x, commercial Lisp IDE w/ in line debugger
+        - little b does not run on the Free Personal Edition 
+                    because of memory restrictions
+  * Allegro 8.x, another high quality, fast CL implementation
+  * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
+          (I recommend using it with Emacs and SLIME)
+	
+Others may work too.  We'd be happy to hear about it.
+
+To run the source code, you'll need a Lisp interpreter, and an editor.  Any 
+of the above will do.  If you use CLisp, you should consider using Emacs 
+with SLIME, an editor mode that provides a Lisp command line and syntax
+highlighting.
+
+More information at: http://littleb.org
+
+--------------------------------------------------------------------------------
+Changes:
+1.5.4 (2007-11-20)
+=================
+
+Many thanks to Carlos Lopez for providing the impetus for getting things working with CLisp, and his work in discovering numerous bugs and problems.
+
+<< User-visible changes >>
+
+* New functionality:
+  + Complexes now work in multiple locations
+  + Added the notion of dimensionality 
+
+* File changes:
+  + b-user/non-dimensional-ode-biochemistry is deprecated (warning is issued)
+    include b-user/ode-biochem instead
+  + b-user/3d-ode-biochemistry is deprecated 
+    include b-user/3d-ode-biochem instead
+
+* Portability:
+  + Support for CLISP 2.42
+    - little b now loads, compiles and provides a working compile-library function 
+      on CLISP (tested on Linux & Windows XP)
+	
+* Numerous bug fixes
+
+<< Internal changes >>
+
+* New Functionality:
+  + ASDF+ includes DELETE-BINARIES, which deletes the binaries files 
+    (not directories of an ASDF system)  
+    USAGE: (DELETE-BINARIES system-name)
+
+* Source tree
+  + Moved platform specific code to the platform directory, 
+    - removed editor-lispworks.lisp from utility dir
+    - now lispworks.lisp and clisp.lisp in platform dir
+
+* Compliance
+  + Placement of LOOP UNTIL/WHEN keywords now fixed for CLISP
+    (always appear after FOR now)
+  + DECLARE IGNORE directives added all over
+
+* Bug Fixes
+  + fixed reader functions work with CLISP
+
+* Misc Changes
+  + introduced +top-level-pprint-dispatch+ (needed for correct printing in CLisp)
+    - a bug in CLisp 2.42 pprint-logical-block causes the pprint-dispatch table
+      to be ignored.  Reported & fixed; Will be in Clisp 2.44 release.
+
+
+
+
+
+
+
