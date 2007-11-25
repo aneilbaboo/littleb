@@ -44,4 +44,12 @@ shc-egfr-binding.(set-rate-function 'mass-action 2)
 
 sc.membrane.(contains [egfr])
 sc.outer.(contains [egf])
-sc.inner.(contains
+
+;;;
+;;; SET INITIAL CONDITIONS:
+;;;
+{[egfr].(in sc.membrane).t0 := .02}
+{[egf].(in sc.outer).t0 := .1}
+
+(create-ode-model "egfr-complex")
+
