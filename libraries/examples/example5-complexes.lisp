@@ -48,8 +48,8 @@ sc.outer.(contains [egf])
 ;;;
 ;;; SET INITIAL CONDITIONS:
 ;;;
-{[egfr].(in sc.membrane).t0 := .02}
-{[egf].(in sc.outer).t0 := .1}
+{[egfr].(in sc.membrane).conc.t0 := .02}
+{[egf].(in sc.outer).conc.t0 := .1}
 
 (create-ode-model "egfr-complex")
 
