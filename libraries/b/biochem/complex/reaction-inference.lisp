@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.8 2007/11/29 17:36:58 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.9 2007/11/29 22:41:18 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -87,7 +87,7 @@
         and collect lab.location into sublocations
         finally (return 
                  (cond
-                  ((position nil sublocations) [complex-species-type graph])
+                  ((position nil sublocations) [complex-species-type (gtools:canonical-graph graph)])
                   ((> (length (remove-duplicates sublocations)) 1)
                    (b-error "Cannot create complex-species-type - multiple sublocations specified: ~S"
                             (remove-duplicates sublocations)))
