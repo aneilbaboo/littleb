@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Revision: 1.2 $
+# $Revision: 1.3 $
 set -e
 trap "kill 0" 2
 
@@ -177,15 +177,15 @@ fi
 #
 run mkdir output
 
-run tar -cf ${outputName}.tar output/b1
+run tar
 
 checkOk `echo Making output/${outputName}.tar`
 
-run gzip output/${outputName}.tar
+run gzip output/${outputName}.tar 
 
 checkOk `echo Making output/${outputName}.tar.gz`
 
-run zip -q -r ${outputName}.zip output/b1
+run zip -q -r output/${outputName}.zip b1
 
 checkOk `echo Making output/${outputName}.zip`
 
