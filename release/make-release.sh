@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Revision: 1.4 $
+# $Revision: 1.5 $
 set -e
 trap "kill 0" 2
 
@@ -177,7 +177,7 @@ fi
 #
 run mkdir output
 
-run tar output/${outputName}.tar b1
+run tar -cf output/${outputName}.tar b1
 
 checkOk `echo Making output/${outputName}.tar`
 
