@@ -2,6 +2,10 @@
 (in-package :cl-user)
 
 #-:asdf+ (load "../asdf/asdf+.lisp")
+(push (make-pathname :name nil :type nil 
+                     :defaults 
+										(or *load-truename* *compile-truename*))
+			asdf:*central-registry*)
 
 (asdf:delete-binaries :b1)
 (asdf:delete-binaries :lisa)

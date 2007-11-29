@@ -1,47 +1,77 @@
 #!/bin/bash
+# $Revision: 1.2 $
+set -e
 trap "kill 0" 2
 
 function usage()
 {
-	echo "USAGE: make-release -e -t cvsTag -o name -l lisp"
-  echo " -e         export files (without CVS info)"
-	echo " -u         update the release only (do not remove directories)"
- 	echo "              if current files were exported, no update action occurs"
-	echo " -t tag     get files associated with the CVS tag (default=HEAD)"
-	echo " -l lisp    path to the Lisp interpreter which will run compile-all.lisp "    
-	echo " -o name    output file base name (default=littleb-src-TAG)"
-	echo " -h help    this output"
+	echo "USAGE: make-release [-euh] [-o name -t btag \\"
+  echo "                            --littleb btag --littleb broot \\"
+  echo "                            --lisatag ltag --lisa lroot \\"
+	echo "                            -l lisp]"
+	echo " -o name       output file base name (default=littleb-src-TAG)"
+  echo " -e            export files (no CVS info)"
+	echo " -u            update the release only (do not remove directories)"
+ 	echo "                 if current files were exported, no update action occurs"
+	echo " -t tag        get files associated with the CVS tag (default=$littlebTag)"
+  echo " --btag tag    (same as -t)"
+  echo " --littleb     cvsroot to littleb repository"
+	echo " --lisatag tag uses lisa referenced by this tag (default=$lisaTag)"  
+	echo " --lisa        cvsroot to lisa repository"
+	echo " -l lisp       Lisp interpreter which will run compile-all.lisp "    
+	echo " -q            quiet (hides program output)"
+	echo " -Q            really quiet (hides even messages from this script)"
+	echo " -h help       this output"
+}
+
+function msg () 
+{ if $showMessages; then echo "${*}";	fi; }
+
+function errorMsg () { echo "${*}" ; }
+
+function run ()
+{ 
+	msg "${*}";
+	echo ${*}
+	if $showProgramOutput
+	then eval ${*}
+	else eval ${*} >> /dev/null;
+	fi
 }
 
 function checkOk ()
 {
   if [ $? != 0 ]
   then
-		if [ $* ];	then echo FAILED: $*; fi
-    echo "EXITING: Output files not not created.  Check make-release.log for details."
+		if [ "${*}" ];	then errorMsg "FAILED: $*"  ; fi
+    errorMsg "EXITING: Output files not not created." 
     exit 1
 	else 
-		echo SUCCESS: $*
+		msg SUCCESS: ${*}
   fi
 }
 
 function checkOut ()
-{ # $1=module, $2=cvsroot, $3=exportFlag, $4=tag
+{ local	module=$1
+  local cvsroot=$2
+  local tag=$3
 
-	if ! $updateFlag && [ -d $1 ]; then delete $1; fi
+	if ! $updateFlag && [ -d $1 ]; then delete $module; fi
 
-	if [ $3 ]
-	then  if -d $1
-				then	echo "${1} exists, not exporting (because -u flag is set)"
-				else	echo Exporting ${1} \("tag="$tag\) from $2 
-							cvs -q -z3 -d $2 export -r $tag $1 >> ./make-release.log
+	if $exportFlag
+	then  if [ -d $module ]
+				then	msg "${module} exists, not exporting (because -u flag is set)"
+				else	msg "Exporting ${module} \("tag="$tag\) from $cvsroot"
+							run	cvs -z3 -d $cvsroot export -r $tag $module
 				fi
 	else
-				if -d $1
-				then	echo "${1} exists, updating only"
-							cvs update  
-						echo  Checking out ${1} \("tag="$Tag\) from $2 
-				cvs -q -d $2 co -PR -r $Tag $1 >> ./make-release.log
+				if [ -d $module ]
+				then	msg "${module} exists, updating only"
+							run cvs -z3 -d $cvsroot update -PR -r $tag $module
+				else
+							msg  Checking out ${module} \("tag="$tag\) from $cvsroot
+							run cvs -z3 -q -d $cvsroot co -PR -r $tag $module
+				fi
 	fi
 	checkOk `echo "Getting ${1} from repository"`
 }		
@@ -49,92 +79,115 @@ function checkOut ()
 function delete ()
 { # $1=file
 	if [ -d ${1} ]
-	then 	echo Deleting `realpath ${1}`
+	then 	msg Deleting `realpath ${1}`
 				rm -frd ${1}				
 	elif [ -e ${1} ]
-	then 	echo Deleting `realpath ${1}`
-				rm ${1}
+	then 	msg Deleting `realpath ${1}`
+				run rm ${1}
 	fi
 }
 
 #
 # SETUP VARIABLES:
 # 
-while getopts "ht:o:l:m:" optname
+littlebRoot=:pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb
+lisaRoot=:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa
+lisaTag=RELEASE_3_2
+littlebTag=HEAD
+exportFlag=false
+updateFlag=false
+lisp=
+showMessages=true
+showProgramOutput=true
+
+while getopts "euht:o:l:m:" optname
   do
-    case "$optname" in
-	    e)  exportFlag=1;;
-			u)	updateFlag=1;;
-      t)	tag=${OPTARG};;
-      o)	outputName=${OPTARG};;
-			l)	lisp=${OPTARG};;
-			h)	usage
-						exit 0
-						;;	
+    case 	"$optname" in
+	    e)				exportFlag=true;;
+			u)				updateFlag=true;;
+      t|-btag)	littlebTag=${OPTARG}
+                tagName=-$littlebTag
+								;;
+			-lisatag) lisaTag=${OPTARG};;
+      o)				outputName=${OPTARG};;
+			l)				lisp=${OPTARG};;
+			-lisa) 		lisaRoot=${OPTARG};;
+			-littleb) littlebRoot=${OPTARG};;
+			h)				usage
+								exit 0
+								;;	
+			q)				showProgramOutput=false;;
+			Q)  	    showProgramOutput=false
+								showMessages=false;;
       *)
-      # Should not occur
         echo "Unknown error while processing options"
+				exit 1
         ;;
     esac
   done
+
 # finish setting up variables
-if [ ! outputName ]; 
-then outputName=`echo littleb-src-$tag | tr "[:upper:]" "[:lower:]"`
+if [ ! $outputName ]; 
+then 	outputName=littleb-src${tagName}
 fi
 
-echo This script will make $outputName.tar.gz and $outputName.zip
+msg "Options:   exportFlag=${exportFlag}, updateFlag=${updateFlag}"
+msg "           littlebTag=$littlebTag,lisaTag=$lisaTag"
+msg "           littlebRoot=$littlebRoot"
+msg "           lisaRoot=$lisaRoot"
+msg "           lisp=$lisp"
+msg This script will make $outputName.tar.gz and $outputName.zip
 
 # DELETE OUTPUT FILES:
-delete make-release.log
-if [ ! update ]
-then	delete b1
-			delete lisa
-fi
-delete ${outputName}.tar 
-delete ${outputName}.tar.gz 
-delete ${outputName}.zip
+rm -frd output
 
-checkOut b1 :pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb
+# CHECKOUT
 
-# anonymous checkout from cvs
-checkOut lisa :pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa HEAD
+checkOut b1 $littlebRoot $littlebTag
 
-# did this when I was having so many anonymous cvs checkout problems!
-# cp -R lisa b1
+run cd b1
 
-cd b1
+checkOut lisa $lisaRoot $lisaTag
 
-checkOut graph-tools :pserver:anonymous@graph-tools.cvs.sourceforge.net:/cvsroot/graph-tools
+checkOut graph-tools  $littlebRoot $littlebTag
 
-cd libraries
+msg "CHANGING to library directory"
 
-checkOk "changing to library directory"
+run cd libraries
 
-checkOut segment-polarity :ext:am116@orchestra.med.harvard.edu:/cvs/littleb 
+checkOut segment-polarity  $littlebRoot $littlebTag
 
-checkOut scaffold :ext:am116@orchestra.med.harvard.edu:/cvs/littleb 
+checkOut scaffold  $littlebRoot $littlebTag
 
-checkOut multisite :ext:am116@orchestra.med.harvard.edu:/cvs/littleb
+checkOut multisite $littlebRoot $littlebTag
 
-cd ../..
+run cd ../..
 
-# compile using the lisp interpreter
+#
+# LISP COMPILE
+#
 if [ $lisp ]
 then
-	$lisp < compile-all.lisp
+	run 'echo "(load \"compile-all.lisp\")" | $lisp'
 	checkOk "compiling code and libraries"
 fi
 
-tar -cf ${outputName}.tar b1
+#
+# CREATE ARCHIVES
+#
+run mkdir output
 
-checkOk `echo Making ${outputName}.tar`
+run tar -cf ${outputName}.tar output/b1
 
-gzip ${outputName}.tar
+checkOk `echo Making output/${outputName}.tar`
 
-checkOk `echo Making ${outputName}.tar.gz`
+run gzip output/${outputName}.tar
 
-zip -q -r ${outputName}.zip b1
+checkOk `echo Making output/${outputName}.tar.gz`
 
-checkOk `echo Making ${outputName}.zip`
+run zip -q -r ${outputName}.zip output/b1
 
-echo FINISHED$?
+checkOk `echo Making output/${outputName}.zip`
+
+echo FINISHED
+
