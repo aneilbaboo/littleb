@@ -1,0 +1,606 @@
+
+Changes for b1
+ built by cvschangelogbuilder 2.1 (build 1.47) with option listdeltabydate.
+
+2007-11-29
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/pattern-match.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-inference.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example5-complexes.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/kb.lisp 1.3 (changed):
+		* fixed canonicalization bugs
+		* fixed bug in kb-run introduced by ANSI LOOP compliance fixes
+	* b1@/cvsroot/littleb/b1/release/compile-all.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/release/make-release.sh 1.2 (changed):
+		*** empty log message ***
+
+2007-11-28
+	* b1@/cvsroot/littleb/b1/b1.asd 1.9 (changed):
+		V1_5_5
+
+2007-11-27
+	* b1@/cvsroot/littleb/b1/release/compile-all.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/release/make-release.sh 1.1 (added):
+		Added make-release.sh and compile-all
+
+2007-11-26
+	* b1@/cvsroot/littleb/b1/libraries/examples/example5-complexes.lisp 1.3 (changed):
+		Fixed complexes example
+
+2007-11-25
+	* b1@/cvsroot/littleb/b1/libraries/examples/example5-complexes.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/release/make-release.bat 1.2 (changed):
+		Fixed bug: example5 was strangely truncated... more sourceforge cvs
+		weirdness????
+
+2007-11-22
+	* b1@/cvsroot/littleb/b1/changes.txt 1.1 (added):
+		Version 1.5.4
+
+2007-11-21
+	* b1@/cvsroot/littleb/b1/.cvsignore 1.2 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/b1.asd 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.12 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/enzymatic-reaction.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dimension.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dimensional-methods.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/expand.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/gauss.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-printer.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/operators.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/field-pattern.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/lisa-extensions.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/rule-patterns.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/error.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/name.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/object.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/reader-core.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/trace.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include-path.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/clisp.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defcon.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defrule.lisp 1.4 (changed):
+		Added ignore declarations which gets rid of almost all the clisp warnings
+	* b1@/cvsroot/littleb/b1/release/make-release.bat 1.1 (added):
+		Does a fresh anonymous checkout of code to build a working little b source folder
+
+2007-11-20
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.5 (changed):
+		* Added DELETE-BINARIES, which does the expected.
+		* Fixed FILES-IN-SYSTEM so that duplicates are removed using PATHNAME-MATCH-P rather than EQUALP.
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/clisp.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.2 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.6 (changed):
+		Delete-binaries now returns a list of deleted pathnames rather than a count
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.10 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/query.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/utility/utility.lisp 1.5 (changed):
+		Fixes to get compile-library working on clisp
+
+2007-11-19
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.5 (changed):
+		Fixed some clisp printing bugs
+	* b1@/cvsroot/littleb/b1/src/global/name.lisp 1.4 (changed):
+		Got rid of fields-remain argument in print-name-obj
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include-path.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/library.lisp 1.3 (changed):
+		More CLISP warning suppression (during loading)
+		better error reporting in INCLUDE-PATH
+	* b1@/cvsroot/littleb/b1/b1.asd 1.7 (changed):
+		Moved platform specific code to the platform directory, removed editor-lispworks.lisp from utility dir
+	* b1@/cvsroot/littleb/b1/src/platform/clisp.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.1 (added):
+		Moved platform-specific code to the platform folder
+
+2007-11-16
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.3 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.5 (changed):
+		Changed ANSI-non compliant LOOP syntax: FINALLY RETURN ... to FINALLY (RETURN ...)
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.4 (changed):
+		Fix for clisp unix which doesn't support posix:version-* functions
+	* b1@/cvsroot/littleb/b1/src/portable/misc.lisp 1.2 (changed):
+		Put windows-specific code in the correct conditional compilation block
+		to correct clisp on unix bug
+
+2007-11-15
+	* b1@/cvsroot/littleb/b1/b1.asd 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept-class.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/property-class.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/property.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/expose.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/kb.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include-path.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/library.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/utility/utility.lisp 1.4 (changed):
+		* little b version is now 1.5.2
+		* added several ignore declarations
+		* delete-directory fixed for clisp
+		* compilation handling for clisp
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.8 (changed):
+		Removed a debugging output
+
+2007-11-12
+	* b1@/cvsroot/littleb/b1/b1.asd 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.9 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.11 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell/flat-lattice.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-inference.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/timings.txt 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/matlab/ode-translation.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/error.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/fieldinfo.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/clear.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/field-reader.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/token-reader.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/utility/utility.lisp 1.3 (changed):
+		Several changes to bring code into line with ANSI standard & CLisp (still not yet working fully on CLisp, though):
+		  * LOOP compliance:
+		      not using THE HASH-KEYS/-VALUES OF instead THE HASH-KEYS/-VALUES IN
+		      using FINALLY (RETURN ..) instead of FINALLY RETURN
+		  * moved error into global dir, since it is needed for some conditions defined in global
+		  * fixed reader functions
+		  * reintroduced +top-level-pprint-dispatch+ (needed for CLisp)
+
+2007-11-09
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/b1.asd 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/utility/utility.lisp 1.2 (changed):
+		Initial set of bug fixes for clisp
+
+2007-11-07
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.9 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.10 (changed):
+		Fixed bug in define-custom-rate
+
+2007-11-05
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.6 (changed):
+		*** empty log message ***
+
+2007-11-03
+	* b1@/cvsroot/littleb/b1/b1.asd 1.3 (changed):
+		Version 1.5
+
+2007-11-01
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.10 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.8 (changed):
+		Complex reactions in multiple locations are working!
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.9 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example5-complexes.lisp 1.1 (added):
+		Updated spherical cell to use preferred :outer and :inner fields of membrane
+		added compelxes example
+
+2007-10-29
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/membrane-apposition.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.5 (changed):
+		Complex reactions in multiple locations are working!
+
+2007-10-25
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/3d-ode-biochem.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/3d-ode-biochemistry.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/non-dimensional-ode-biochemistry.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/ode-biochem.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/basic-ode-modelling.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/pattern-match.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/2d.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/3d.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/null.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/enzymatic-reaction.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/membrane-apposition.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell/flat-lattice.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/egfr-mapk.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1-alternate.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1-reversible.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example2-reversible.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example3-manual es complex.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example4-enzymatic-reaction.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi-d.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi-er.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi2.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/locations/cell.lisp 1.2 (changed):
+		* complex-reaction tenatively working with both localizations and rate functions
+		* switched from b-user/3d-ode-biochemistry and b-user/non-dimensional-ode-biochemistry
+		                 to     b-user/3d-ode-biochem and       b-user/ode-biochem
+		* added notion of a location class's dimensionality, (normally 3 for compartments, 2 for membranes, 1 for membrane interfaces);
+		   - accessible via generic function location-class-dimensionality
+		   - location-class-dimension is now implemented as a ordinary fn which calls location-class-dimensionality
+	* b1@/cvsroot/littleb/b1/libraries/b/_config.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/test.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dimension.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-concept.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/operators.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/quantity.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/unit.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.4 (changed):
+		* this checkin has a bug which prevents .moles models from being produced
+		* b/biochem/complex/ files are now compiled
+		* moved test code to separate file b/biochem/complex/test
+		* fixed complex-reaction-type.set-rate-function bug
+		* location.size var default values are handled in base class now
+		* fixed field printing when *print-level* is bound (no longer prints #.field); removed b-debugger hook
+		* quote printer now always prints 'A even when *print-pretty* is nil
+		* using simplify-number in b/math to reduce values to floats (rather than rationals)
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/test.lisp 1.2 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.4 (changed):
+		Changed argument order in underlying custom rate-functions - user-supplied constants are now the first arg (better for constructing arglist dynamically)
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.5 (changed):
+		Complex-reaction-exists rule now generates dynamic rule naming it after complex reaction
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.9 (changed):
+		Defmonomer documentation string now comes before site definitions
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.3 (changed):
+		Looks like complex reactions and rate functions are working!!
+		(still need to fix the matlab code generation bug, though)
+	* b1@/cvsroot/littleb/b1/src/core/expose.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/rule-patterns.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.4 (changed):
+		Misc changes - got rid of bug where circular package dependencies causes stack overflow
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell/flat-lattice.lisp 1.3 (changed):
+		Now exporting location-class-dimensionality from b/biochem
+
+2007-10-23
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/aggregate.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/enzymatic-reaction.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/localization.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/membrane-apposition.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-inference.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species-type.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.5 (changed):
+		Major update:
+		* reaction inference now implemented by dynamic rules (via ADD-RULE)
+		* def-custom-rate-function introduced;  mass-action, hill function and custom-rate are now defined with this macro
+		   - required changes to .SET-RATE-FUNCTION field
+		   - necessary first step to accomodate complex-species-type rate calculators
+		* changed LOCATION-REQUIREMENT to LOCALIZATION object, now generated using @ infix operator
+		* tested examples/example4-enzymatic-reaction and segment-polarity/2cell and /dros-stripes-yippie
+		* running a bit slower; may need to tune math system
+
+2007-10-22
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.4 (changed):
+		Changed anonymous-fld-function print-object to pretty printer function
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defrule.lisp 1.3 (changed):
+		Fixed ADD-RULE bug - using INTERN in macro leads; add-rule is now exported from B package
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.3 (changed):
+		Fixed circular include dependency message
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.3 (changed):
+		Fixed printing of anonymous fld functions
+
+2007-10-20
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/portable-pkg.lisp 1.2 (changed):
+		Added anonymous-fld-function funcallable object which has find-or-create semantics and prints as ?.(F ARGS) or ?.F
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.2 (changed):
+		Removed redundant functions class-slots1 class-slot-list
+
+2007-10-18
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/token-reader.lisp 1.3 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/src/core/query.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/object.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.4 (changed):
+		Added lookup (fast-query) capability
+
+2007-10-17
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.4 (changed):
+		Graphs of complex-patterns are now canonicalized properly
+
+2007-10-15
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.2 (changed):
+		Fixed include warn bug - when included file modifies an unrelated package
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/ode.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/pattern-match.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept-class.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/rule-patterns.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/object.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defrule.lisp 1.2 (changed):
+		Separated out reaction inference functionality
+
+2007-10-10
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.1 (added):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.bat 1.2 (changed):
+		Now correctly checksout lisa from sourceforge
+
+2007-10-09
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/membrane-apposition.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species-type.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-printer.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/reader.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/core/query.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/name.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/token-reader.lisp 1.2 (changed):
+		* fixed assert-instances bug inside QUERY
+
+2007-10-07
+	* b1@/cvsroot/littleb/b1/src/global/name.lisp 1.2 (changed):
+		*** empty log message ***
+
+2007-09-28
+	* b1@/cvsroot/littleb/b1/src/core-types/concept-class.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/object.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.2 (changed):
+		Fixed object-expander bug (old object-expanders were not deleted on INIT)
+
+2007-09-25
+	* b1@/cvsroot/littleb/b1/.cvsignore 1.1 (added):
+	* b1@/cvsroot/littleb/b1/asdf/LICENSE 1.1 (added):
+	* b1@/cvsroot/littleb/b1/asdf/README 1.1 (added):
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/asdf/asdf.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/b1.asd 1.1 (added):
+	* b1@/cvsroot/littleb/b1/b1.asd 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/.cvsignore 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/3d-ode-biochemistry.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b-user/non-dimensional-ode-biochemistry.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/.cvsignore 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/_config.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/2-dimensional.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/3-dimensional.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/aggregate.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/basic-ode-modelling.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/2d.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/3d.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/dimensionalization/null.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/enzymatic-reaction.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/membrane-apposition.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell/flat-lattice.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multisided-cell/hex-lattice.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/multistate-reactant.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/non-dimensional.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-inference.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species-type.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/std-rate-functions.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/timings.txt 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/graph.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/gui.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/defer-expression.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dimension.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dimensional-methods.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/dtype.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/expand.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/gauss.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-concept.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-expression.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-printer.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/non-dimensionalize.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/ode-var.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/operators.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/product-expression-printer.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/product-expression.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/quantity.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/range.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression-printer.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/unit.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/var.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/matlab/ode-translation.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/matlab/settings.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/dimensionalization.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/null.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/standard-dimensions.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/standard-units.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/standard.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/units/unit-systems.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/util.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/.cvsignore 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/_init.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/egfr-mapk-mkp.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/egfr-mapk.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1-alternate.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1-reversible.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example2-reversible.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example3-manual es complex.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/example4-enzymatic-reaction.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi-d.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi-er.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/g6pi2.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/locations/cell.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/egf-basal-k1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/egf-basal.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/egf-egfr.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/egfr-egf-k1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/espx-catalysis.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/espx-deactivation.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mapk-cascade-k1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mapk-cascade.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mkp-basal-k1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mkp-basal-k2.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mkp-basal.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mkp-mapk-cascade-k1.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/reactions/mkp-mapk-cascade.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/species/egfr.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/species/mapk-cascade.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/libraries/examples/species/mkp.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/readme.txt 1.1 (added):
+	* b1@/cvsroot/littleb/b1/readme.txt 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/readme.txt 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept-class.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core-types/concept.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core-types/property-class.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core-types/property.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core-types/rule.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/expose.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/field-function.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/field-pattern.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/for-pattern.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/kb.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/lisa-extensions.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/order.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/printer.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/query.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/reify.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/rule-patterns.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/core/type.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/fieldinfo.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/global.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/missing.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/name.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/object.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/reader-core.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/trace-filter.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/global/trace.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/clear.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/edit.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/include-declaration.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/include-documentation.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/include-path.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/include.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/library.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/include/uninclude.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/packages/mallavar-utility-pkg.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgconstants.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/packages/portable-pkg.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/portable/clos.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/portable/dspec.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/portable/misc.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/portable/prompt.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/bq-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/char-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/field-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/list-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/math-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/more-editor-funcs.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/object-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/quote-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/string-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/reader/token-reader.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/assume.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defcon.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/define.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defplaceholder.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defprop.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defrule.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/system.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/b-utils.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/context-info.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/form-inspection.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/mop.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/portable.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/predicate.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/prompt.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/trie.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/src/utility/utility.lisp 1.1 (added):
+	* b1@/cvsroot/littleb/b1/support/init.lisp 1.1 (added):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.bat 1.1 (added):
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.sh 1.1 (added):
+		Initial commit
+
