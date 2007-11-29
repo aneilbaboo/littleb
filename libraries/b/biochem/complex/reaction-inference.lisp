@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.7 2007/11/12 15:06:05 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.8 2007/11/29 17:36:58 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -33,10 +33,8 @@
 (defrule complex-reaction-exists 
   (?cr complex-reaction-type)
   =>
-  (multiple-value-bind (graph-patterns rule-pattern actions)
+  (multiple-value-bind (rule-pattern actions)
       (compute-graph-inference-rule-parts ?cr)
-    (dolist (g graph-patterns)
-      [complex-pattern g])
     (add-rule rule-pattern actions (intern (with-print-context t
                                              (format nil "~A" ?cr))))))
 
@@ -59,7 +57,7 @@
           collect `[complex-pattern-match ,[complex-pattern p] ,cstype ,ivar] into rule-pattern
           collect cstype into lhs-cstypes
           collect ivar into ivars
-          finally (return (values lhs-patterns
+          finally (return (values ; lhs-patterns
                                   `(:and ,@rule-pattern)
                                   `(create-reaction-type-from-complex-reaction-type
                                     ,cr                  ; complex reaction
@@ -93,7 +91,7 @@
                   ((> (length (remove-duplicates sublocations)) 1)
                    (b-error "Cannot create complex-species-type - multiple sublocations specified: ~S"
                             (remove-duplicates sublocations)))
-                  (t {[complex-species-type graph] @ (first sublocations)})))))
+                  (t {[complex-species-type (gtools:canonical-graph graph)] @ (first sublocations)})))))
 
 (defun create-reaction-type-from-complex-reaction-type 
        (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms bonds lost-bonds relabels deletions

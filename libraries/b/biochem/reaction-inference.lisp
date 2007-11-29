@@ -26,7 +26,7 @@
 ;;; Description:  when included, this rule infers which species and reactions
 ;;;               are implied by an initial set of species and reactions.
 
-;;; $Id: reaction-inference.lisp,v 1.3 2007/11/12 15:06:06 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.4 2007/11/29 17:36:56 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -80,28 +80,3 @@
                              `(list ,@substitutions)))))))
             
         
-
-;;;;  
-;;;; (defrule empty-reaction-type-requirement-satisfied
-;;;;   (:and (?rt-req [reaction-type-requirement 
-;;;;                   ?rxn-type :lhs nil nil nil])
-;;;;         (?loc [location])
-;;;;         (:test (subtypep   (class-of ?loc)  ; the reaction can occur in ?rxn-loc
-;;;;                            ?rxn-type.location-class)))
-;;;;   =>
-;;;;   [reaction ?rxn-type ?loc])
-
-;;;; (defrule reaction-type-requirement-satisfied
-;;;;    (:and (?species   [species ?species-type ?species-loc])    ; and the species in question exists in the right location,        
-;;;;     [has-sublocation ?rxn-loc ?localization ?species-loc] ; given relationship between a location and sublocation
-;;;;     (?rt-req    [reaction-type-requirement               
-;;;;                  ?rxn-type :lhs                     
-;;;;                  ?species-type ?localization ?stoich])
-;;;;     (:test (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
-;;;;                        ?rxn-type.location-class)))
-;;;;   =>  ;; one of the reaction-type requirements has been satisfied
-;;;;   
-;;;;   ;; record that ?species satisfies the localization requirement ?loc-req
-;;;;   {?rxn-type.(lhs-species ?rxn-loc ?rt-req) := ?species}
-;;;;   (when ?rxn-type.(satisfied-at ?rxn-loc)
-;;;;     [reaction ?rxn-type ?rxn-loc]))

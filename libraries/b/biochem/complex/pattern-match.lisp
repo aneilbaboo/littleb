@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: pattern-match.lisp,v 1.2 2007/10/25 03:58:00 amallavarapu Exp $
+;;; $Id: pattern-match.lisp,v 1.3 2007/11/29 17:36:57 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: Matches complex patterns in the database
@@ -42,3 +42,8 @@
   (dolist (iso (gtools:find-subgraph-isomorphisms ?subgraph ?graph))
     [complex-pattern-match ?pattern ?species-type iso]))
 
+
+(defield complex-pattern.matches (x)
+  (assert (or (complex-pattern-p x)
+              (complex-species-type-p x)))
+  (gtools:find-subgraph-isomorphisms .id x.id))

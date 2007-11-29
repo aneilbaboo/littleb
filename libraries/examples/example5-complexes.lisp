@@ -26,14 +26,14 @@
                      ->> [[egfr 1][egf 1]]})
 
 ;; SHC binds to EGFR when located in the C2 membrane
-(define shc-egfr-binding {[egfr * _ *] + [shc] @ :outer ;; Note: [shc] is shorthand for [shc _]
-                          ->>
-                          [[egfr * 1 *][shc 1]]})
+;;;; (define shc-egfr-binding {[egfr * _ *] + [shc] @ :outer ;; Note: [shc] is shorthand for [shc _]
+;;;;                           ->>
+;;;;                           [[egfr * 1 *][shc 1]]})
 
 
 ;; set the rate functions:
 egf-binding.(set-rate-function 'mass-action 2)
-shc-egfr-binding.(set-rate-function 'mass-action 2)
+;;shc-egfr-binding.(set-rate-function 'mass-action 2)
 
 
 ;;;
@@ -43,6 +43,7 @@ shc-egfr-binding.(set-rate-function 'mass-action 2)
 (define sc [[spherical-cell] :outer dish])
 
 sc.membrane.(contains [egfr])
+sc.inner.(contains [shc])
 sc.outer.(contains [egf])
 
 ;;;
@@ -51,5 +52,5 @@ sc.outer.(contains [egf])
 {[egfr].(in sc.membrane).conc.t0 := .02}
 {[egf].(in sc.outer).conc.t0 := .1}
 
-(create-ode-model "egfr-complex")
+(create-ode-model "egfr")
 

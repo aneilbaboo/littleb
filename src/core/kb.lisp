@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.2 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.3 2007/11/29 17:36:58 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -76,9 +76,9 @@
                    *kb-command-queue* nil)
           when transaction
           sum (loop for cmd = (pop transaction)
-                    while transaction
                     do (kb-do-command cmd)
-                    sum (lisa:run)))))
+                    sum (lisa:run)
+                    while transaction))))
 
 (defun kb-do-command (cmd)
   (let ((action (car cmd))
