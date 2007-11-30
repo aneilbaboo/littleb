@@ -1,5 +1,7 @@
 #!/bin/bash
-# $Revision: 1.1 $
+# Uploads all files in the relative sub-directory output 
+# to upload.sourceforge.net/incoming
+# $Revision: 1.2 $
 set -e
 trap "kill 0" 2
 
