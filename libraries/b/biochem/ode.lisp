@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.10 2007/11/07 21:24:51 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.11 2007/12/02 07:45:39 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -129,17 +129,26 @@
       (setf .%precomputed-rate
             .type.rate-fn.(map-substitution (reaction-rate-substituter object)))))
 
+(deftype species-type-localization ()
+  `(and localization
+        (satisfies localization-entity-is-species-type-p)))
+
+(defun localization-entity-is-species-type-p (x)
+  (species-type-p x.entity))
+
 (defun reaction-rate-substituter (rxn)
   (let ((substs (|REACTION.SUBSTITUTION-TABLE| rxn))
         (type-substs rxn.type.k._hash-table))
     (labels ((substitute (o)
                (typecase o
                  (function     (funcall o rxn))
-                 (species-type (let ((species (gethash o substs)))
-                                 (unless species (b-error "BUG: Unable to substitute ~S; ~
+                 ((or species-type
+                      species-type-localization)
+                  (let ((species (gethash o substs)))
+                    (unless species (b-error "BUG: Unable to substitute ~S; ~
                                                  no species exists for this species-type."
-                                                          o))
-                                 species.conc))
+                                             o))
+                    species.conc))
                  (t            (let ((subst (or (gethash o type-substs)
                                                 (gethash o substs))))
                                  (if subst (substitute subst)

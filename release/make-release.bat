@@ -8,4 +8,5 @@ cd libraries
 cvs -d :ext:am116@orchestra.med.harvard.edu:/cvs/littleb checkout segment-polarity
 cvs -d :ext:am116@orchestra.med.harvard.edu:/cvs/littleb checkout scaffold
 cvs -d :ext:am116@orchestra.med.harvard.edu:/cvs/littleb checkout multisite
-cd ../
+cd ../..
+pause
