@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.10 2007/11/20 18:23:15 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.11 2007/12/05 20:01:06 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -57,12 +57,21 @@
   (flet ((find-location-class-in-sum-expression (se)
             (mutils:ifit (find-if #'complex-graph-concept-p (if se se.vars))
                          it.location-class)))
-    (let* ((lclass (or defined-lclass 
-                       (find-location-class-in-sum-expression lhs)
-                       (find-location-class-in-sum-expression rhs))))
-      (check-complex-reaction-type-argument lhs lclass)
-      (check-complex-reaction-type-argument rhs lclass)
-      lclass)))
+    (cond
+     ((and (b/math::unit-sum-expression-p lhs)
+           (let ((first lhs.vars.[0]))
+             (and (localization-p first)
+                  (location-class-p first.location))))
+      (let ((first lhs.vars.[0]))
+        (determine-complex-reaction-type-location-class 
+         first.location {first.entity} rhs)))           
+     (t
+      (let* ((lclass (or defined-lclass 
+                         (find-location-class-in-sum-expression lhs)
+                         (find-location-class-in-sum-expression rhs))))
+        (check-complex-reaction-type-argument lhs lclass)
+        (check-complex-reaction-type-argument rhs lclass)
+        lclass)))))
 
 (defun check-complex-reaction-type-argument (rt-arg loc-class)
   (labels ((coef-ok (num)
@@ -124,9 +133,19 @@
          (declare (ignorable ,rhs))
          ,@body))))
      
+(defun location-definition-p (x)
+  (and (localization-p x)
+       (location-class-p x.location)))
+
+(deftype location-definition ()
+  `(satisfies location-definition-p))
+
 (defun graphs-in-expression (x)
   "Returns complex-graph objects plus the corresponding vars in the expression"
   (etypecase x
+    ;; expr @ location-class
+    ((cons location-definition)  (graphs-in-expression (first x).entity))
+    ;; (a b c ...)
     (list           (loop for elt in x
                           collect elt into rxn-vars
                           collect (typecase elt
@@ -135,7 +154,10 @@
                                     (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
                           into graphs
                           finally (return (values graphs rxn-vars))))
+    ;; {a + b + c...}
     (sum-expression (graphs-in-expression x.vars))
+
+    ;; a
     (t              (graphs-in-expression (list x)))))
                            
 
