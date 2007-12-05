@@ -29,12 +29,10 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.3 2007/11/21 07:10:58 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.4 2007/12/05 18:53:26 amallavarapu Exp $
 
-#+:lispworks
 (in-package editor)
 
-#+:lispworks
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
 ;(setf (editor:variable-value "CURRENT-PACKAGE" :global) nil) ;"B-USER")
@@ -516,12 +514,12 @@
                              (symbolp (second x))
                              x)))))))))
 
-
+#+:lw-editor
 (ignore-errors
-  (mutils:whenit (capi:find-interface 'lw-tools:listener)
-    (setf (slot-value (slot-value (slot-value mutils:it 'lw-tools::editor-pane) 'capi::buffer)
-                      'editor::syntax-table)
-          *b-syntax-table*)))
+   (mutils:whenit (capi:find-interface 'lw-tools:listener)
+     (setf (slot-value (slot-value (slot-value mutils:it 'lw-tools::editor-pane) 'capi::buffer)
+                       'editor::syntax-table)
+           *b-syntax-table*)))
   
 
 (setf dbg:*debug-print-level* 8)

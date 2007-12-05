@@ -26,7 +26,7 @@
 ;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.9 2007/11/28 23:51:36 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.10 2007/12/05 18:53:26 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -64,11 +64,6 @@
   :depends-on           (:lisa :graph-tools)
   :pathname             *b-source-path*      
   :serial t
-;;;;   :perform (asdf:load-op :before (op c)
-;;;;              (setf *readtable* 
-;;;;                    (with-standard-io-syntax *readtable*)
-;;;;                    *print-pprint-dispatch* 
-;;;;                    (with-standard-io-syntax *print-pprint-dispatch*)))
   :components
   ((:module #:packages
     :components ((:file "mallavar-utility-pkg")
