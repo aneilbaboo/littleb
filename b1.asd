@@ -26,7 +26,7 @@
 ;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.10 2007/12/05 18:53:26 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.11 2007/12/06 20:07:12 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -77,7 +77,8 @@
                  (:file "clos"))
     :serial t)
    (:module #:utility
-    :components ((:file "utility")                               
+    :components ((:file "utility")  
+                 (:file "datatable")
                  (:file "form-inspection")
                  (:file "context-info")
                  (:file "predicate")
