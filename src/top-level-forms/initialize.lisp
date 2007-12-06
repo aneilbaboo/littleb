@@ -25,7 +25,7 @@
 ;;; File: initialize
 ;;; Description: 
 
-;;; $Id: initialize.lisp,v 1.6 2007/12/06 22:00:39 amallavarapu Exp $
+;;; $Id: initialize.lisp,v 1.7 2007/12/06 22:25:20 amallavarapu Exp $
 
 (in-package b)
 
@@ -57,6 +57,10 @@
   (setf *object-expanders* nil)
   (add-object-expander 'cclass-expander most-negative-fixnum))
 
+(defun initialize-debugger ()
+  (setf *debugger-enabled* nil
+        *debugger-hook* 'littleb-debugger-hook))
+
 (defun init (&optional (load-init-file-p t))
   "Sets the little b environment to the initial state, clears definitions in temporary packages,
    and loads the initialization file."
@@ -68,6 +72,8 @@
   (initialize-syntax)
 
   (system-database-initialization)
+
+  (initialize-debugger)
   
   ;; load init file
   (when load-init-file-p (load-init-file))

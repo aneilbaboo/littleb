@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.10 2007/12/05 20:01:06 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.11 2007/12/06 22:25:16 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -183,7 +183,7 @@
 ;;; LOCATION DIMENSIONALITY:  compartment size dimensionality 
 ;;;
 (define-generic location-class-dimensionality (lclass)
-  (:method (lc) 0)
+  (:method (lc) 1)
   (:method ((lc (eql compartment))) *compartment-dimensionality*)
   (:method ((lc (eql membrane))) (1- *compartment-dimensionality*)))
 

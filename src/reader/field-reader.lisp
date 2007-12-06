@@ -28,7 +28,7 @@
 ;;;                     [x ...].y
 ;;;                     {...}.y, etc.
 
-;;; $Id: field-reader.lisp,v 1.2 2007/11/12 15:06:09 amallavarapu Exp $
+;;; $Id: field-reader.lisp,v 1.3 2007/12/06 22:25:20 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -62,9 +62,9 @@ it will be converted to a field expression.  form.X => (FLD form :X)"
                           (tok      (handler-case (read-from-string tokstr nil nil :preserve-whitespace t)
                                       (error (e) (b-reader-error stream (format nil "~A" e))))))
                      (cond ; normalize the token
-                      ((find #\: tokstr)          `(quote ,tok)) ; symbol with explicit package
-                      ((and tok (symbolp tok))    (key tok))     ; symbol => keyword
-                      (t                          tok))))))      ; otherwise, the TOK as read 
+                      ((find #\: (subseq tokstr 1)) `(quote ,tok)) ; symbol with explicit package
+                      ((and tok (symbolp tok))       (key tok))     ; symbol => keyword
+                      (t                             tok))))))      ; otherwise, the TOK as read 
              (make-fld-form (obj ftok &optional args)
                (list* 'fld (if escape-object (cons '*comma* obj) obj)
                       ftok args)))
