@@ -36,15 +36,15 @@
   ((type           species-type :documentation "The species-type that this species is an instance of")
    (location       :documentation "A location object"))
   (when (not (typep .location .type.location-class))
-    (b-error "Cannot create species of type ~S in ~S.  Location-class mismatch: expecting ~S, but received (class ~S)."
-           .type .location .type.location-class (class-of .location)))
+    (b-error "Invalid location: ~S is invalid for ~S (expecting a location of type ~S)."
+           .location  .type .type.location-class))
   =>
   {.type.(in .location) :# object}) ; name this object according to the type & where it is located.
 
 (defield species-type.in (loc)
   "Returns the species of this type which exists in location LOC, or NIL"
   (or (lookup [species object loc])
-      (b-error "Unable to find ~S.(in ~S)" object loc)))
+      (b-error "Species doesn't exist: attempt to access ~S.(in ~S)." object loc)))
 
 (defield location.all-species ()
   (remove object (query species) :key ?.location :test-not #'eq))

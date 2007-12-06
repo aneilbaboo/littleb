@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.9 2007/11/29 22:41:18 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.10 2007/12/06 14:32:45 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects

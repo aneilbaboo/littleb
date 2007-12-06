@@ -6,6 +6,7 @@ lib
 *.fas
 *.ufasl
 *.ofasl
+*.sig
 *.~*
 *.~si
 b-prefs.lisp
