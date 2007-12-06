@@ -43,7 +43,8 @@
 
 (defield species-type.in (loc)
   "Returns the species of this type which exists in location LOC, or NIL"
-  (lookup [species object loc]))
+  (or (lookup [species object loc])
+      (b-error "Unable to find ~S.(in ~S)" object loc)))
 
 (defield location.all-species ()
   (remove object (query species) :key ?.location :test-not #'eq))
