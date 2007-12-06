@@ -25,7 +25,7 @@
 ;;; File: initialize
 ;;; Description: 
 
-;;; $Id: initialize.lisp,v 1.3 2007/11/12 15:06:09 amallavarapu Exp $
+;;; $Id: initialize.lisp,v 1.4 2007/12/06 14:30:34 amallavarapu Exp $
 
 (in-package b)
 
@@ -45,7 +45,8 @@
         ))
 
 (defun initialize-print-dispatch ()
-  (setf *print-pprint-dispatch* +top-level-pprint-dispatch-table+))
+  (setf *print-pretty* t ;; necessary for lispworks personal
+        *print-pprint-dispatch* +top-level-pprint-dispatch-table+))
 
 (defun initialize-syntax ()
   (initialize-readtable)

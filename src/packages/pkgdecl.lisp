@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.6 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.7 2007/12/06 14:30:34 amallavarapu Exp $
 ;;;
 
 
@@ -104,7 +104,7 @@
    #:show-new-objects #:trace-objects
    #:hide-classes #:unhide-classes
    ;; b error functions and macros
-   #:b-error #:b-assert #:b-warn 
+   #:b-error #:b-assert #:b-warn #:*debugger-enabled*
    #:b-error-cause #:b-error-arguments #:b-error-format-string
    ;; system functions
    #:objects #:classes #:unique-object

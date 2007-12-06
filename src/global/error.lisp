@@ -25,10 +25,21 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.3 2007/12/06 14:30:33 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)
+
+(defvar *debugger-enabled* nil)
+
+(defun littleb-debugger-hook (condition encapsulation)
+  (cond
+   (*debugger-enabled*
+    (let ((*debugger-hook* encapsulation))
+      (invoke-debugger condition)))
+   (t 
+    (format t "ERROR: ~A~%" condition *standard-output*)
+    (invoke-restart 'abort))))
 
 (defun b-format (stream string &rest args)
   (let ((*math-print-function* 'default-math-printer))

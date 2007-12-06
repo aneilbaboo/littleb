@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.6 2007/11/12 15:06:07 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.7 2007/12/06 14:30:34 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -70,6 +70,10 @@
   (declare (ignorable value o f args)) 
   (call-next-method))
 
+(defmethod fld ((o null) f &rest args)
+  (declare (ignorable o args))
+  (b-error "Object missing - attempted to access ~S"
+           `,.nil.(,f ,@args)))
 (port:define-dspec-class defield () "")
 (port:define-dspec-form-parser defield (fe)
   (defield-dspec fe))
