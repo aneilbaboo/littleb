@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.12 2007/11/21 07:10:56 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.13 2007/12/06 01:29:20 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -636,6 +636,7 @@
                      with either other site offsets or values
          PATTERNP is always NIL."
   (let ((pattern-detected-p nil)
+        (default-signal     '%%default)
         (sites              (map 'list #'identity (monomer-sites monomer-object))))
     (labels
         ((site-error (binding si msg &rest args)
@@ -676,6 +677,9 @@
          (record-binding2 (si binding i)
            (when (eq binding '%%default)
              (setf binding (default-site-binding monomer (site-info-index si))))
+           (when (eq binding '**)
+             (setf default-signal '(**)
+                   binding '*))
            (when (wildcard-binding-p binding) (setf pattern-detected-p t))
            (etypecase si
              (bond-site-info
@@ -690,8 +694,8 @@
       (record-monomer offset (length sites) binding-table)
       (loop ;; connect the monomer node to the site nodes:
             for i from (1+ offset) to (+ offset (length sites))
-            for rest-bindings = (or bindings '(%%default)) 
-                           then (or (rest rest-bindings) '(%%default))
+            for rest-bindings = (or bindings default-signal) 
+                           then (or (rest rest-bindings) default-signal)
             for binding = (first rest-bindings)   
             for site-label = (record-binding  binding i)
             when site-label 
