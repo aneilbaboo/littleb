@@ -25,7 +25,7 @@
 ;;; File: mallavar-utility-pkg.lisp
 ;;; Description: 
 
-;;; $Id: mallavar-utility-pkg.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: mallavar-utility-pkg.lisp,v 1.2 2007/12/06 19:57:12 amallavarapu Exp $
 
 ;;;
 
@@ -53,6 +53,8 @@
    #:timed-dolist #:decode-absolute-time #:macroexpand-n
    #:match #:test
    #:with-compile-path #:with-load-path
+   ;; datatable macros:
+   #:with-data-table #:with-substitution-table #:with-substituted-combinations #:macro-multilet
    ;; context info:
    *context-info* #:with-context-info #:error-with-context #:format-context-info
    ;; form inspection:

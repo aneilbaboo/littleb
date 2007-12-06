@@ -25,12 +25,13 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.7 2007/12/06 14:30:34 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.8 2007/12/06 19:57:12 amallavarapu Exp $
 ;;;
 
 
 (defpackage b
   (:documentation "Contains code for the B language")
+  (:use lisa-user cl mallavar-utility portable)
   (:import-from  #:b-system #:*b-root-directory* #:*b-core-signature* #:*b-compile-name*)
   (:export ;; top level forms
    #:define #:defcon #:defprop #:defrule #:predefine #:define-syntax-reader
@@ -59,6 +60,8 @@
    #:include-path-descendents #:include-path-ancestors #:include-path-components
    #:include-path-package #:include-path-spec 
    #:prompt-for-new-include-file #:prompt-for-library
+   ;; data table macros:
+   #:with-data-table #:with-substitution-table #:with-subtitution-combinations #:macro-multilet 
    ;; expose api
    #:expose-name
    #:expose-symbol #:unexpose-symbol #:symbol-exposed-p #:symbol-exposing-packages
@@ -113,8 +116,7 @@
    ;; required for math-reader
    #:numeric 
    #:+ #:- #:^ #:* #:/ #:= #:< #:> #:<= #:>=                  ; some are redundant, but here for completeness
-   #:operator-precedence)
-  (:use lisa-user cl mallavar-utility portable))
+   #:operator-precedence))
 
 (defpackage "B.GLOBAL")
 
