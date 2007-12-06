@@ -25,18 +25,21 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.3 2007/12/06 14:30:33 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.4 2007/12/06 15:30:59 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)
 
 (defvar *debugger-enabled* nil)
-
+(defvar *last-error* nil)
+(defvar *last-error-info* nil)
 (defun littleb-debugger-hook (condition encapsulation)
+  (declare (ignore encapsulation))
+  (setf *last-error* condition)      
+  #+:lispworks (setf *last-error-info* (dbg:bug-backtrace nil))
   (cond
    (*debugger-enabled*
-    (let ((*debugger-hook* encapsulation))
-      (invoke-debugger condition)))
+    (invoke-debugger condition))
    (t 
     (format t "ERROR: ~A~%" condition *standard-output*)
     (invoke-restart 'abort))))

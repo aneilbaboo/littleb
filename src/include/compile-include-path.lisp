@@ -77,17 +77,18 @@
                              (load-force    *include-force*)
                              (compile-verbose *compile-verbose*)
                              (load-verbose    *include-verbose*))
-   (with-include-compilation-unit
-   (let ((*compile-verbose* compile-verbose)
-         (*include-verbose* load-verbose)
-         (ipath (include-path ipath))
-         (*package* (include-path-package ipath t)))
-     (cond
-      ((needs-compile-p ipath compile-force recursive)
-       (dolist (op (nreverse (compute-ipath-operations ipath)))
-         (process-include-path-compile-operation op compile-force load-force))
-       (setf (currently-compiled-p ipath) t))
-      (t (setf (currently-compiled-p ipath) t))))))
+  (let ((*debugger-enabled* t))
+    (with-include-compilation-unit
+     (let ((*compile-verbose* compile-verbose)
+           (*include-verbose* load-verbose)
+           (ipath (include-path ipath))
+           (*package* (include-path-package ipath t)))
+       (cond
+        ((needs-compile-p ipath compile-force recursive)
+         (dolist (op (nreverse (compute-ipath-operations ipath)))
+           (process-include-path-compile-operation op compile-force load-force))
+         (setf (currently-compiled-p ipath) t))
+        (t (setf (currently-compiled-p ipath) t)))))))
 
 
       
