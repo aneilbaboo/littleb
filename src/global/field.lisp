@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.7 2007/12/06 14:30:34 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.8 2007/12/06 15:37:52 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -73,7 +73,7 @@
 (defmethod fld ((o null) f &rest args)
   (declare (ignorable o args))
   (b-error "Object missing - attempted to access ~S"
-           `,.nil.(,f ,@args)))
+           (list* 'fld nil f args)))
 (port:define-dspec-class defield () "")
 (port:define-dspec-form-parser defield (fe)
   (defield-dspec fe))
