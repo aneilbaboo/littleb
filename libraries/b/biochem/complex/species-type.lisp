@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.14 2007/12/06 14:32:45 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.15 2007/12/10 14:33:46 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -311,9 +311,8 @@
                                     :suffix (if complex "]" ""))
         (loop for mdescr = (pprint-pop)
               do (prin1 `[,@mdescr] stream)
-               
-              (pprint-newline-selectively :linear stream)
-              (pprint-exit-if-list-exhausted))))))
+              (pprint-exit-if-list-exhausted)
+              (pprint-newline-selectively :linear stream))))))
 
 
 ;;;
@@ -330,8 +329,20 @@
                               (etypecase id
                                 (complex-graph  id)
                                 (cons           (make-complex-graph id nil)))))))
+  (check-complex-species-type-graph-is-valid .id)
   =>
   (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
+
+(defun check-complex-species-type-graph-is-valid (g)
+  (loop for i from 0 below (gtools:graph-vertex-count g)
+        for lab = (gtools:graph-vertex-label g i)
+        if (site-label-p lab)
+        do (cond 
+            ((site-label-has-value-p lab)
+             (b-assert (= 1 (length (gtools:graph-vertex-outputs g i))) ()
+                       "Invalid state site: ~S ~S" g i))
+            (t (b-assert (= 2 (length (gtools:graph-vertex-outputs g i))) ()
+                         "Invalid bond site: ~S ~S" g i)))))
 
 (defield complex-species-type.monomers ()
   (remove-if-not #'symbolp (gtools:graph-labels .id)))
