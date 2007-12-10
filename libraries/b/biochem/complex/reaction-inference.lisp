@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.10 2007/12/06 14:32:45 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.11 2007/12/10 14:29:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -102,16 +102,17 @@
     (let* ((lhs-graphs (mapcar ?.id lhs-species-types))
            (localized-lhs-csts (mapcar #'copy-localization-to-complex-species-type
                                        crt-lhs-entities lhs-species-types))
+           (localized-rhs-csts  (mapcar #'make-localized-complex-species-type
+                                        (compute-rhs-graphs (apply #'vector
+                                                                   rhs-new-graph
+                                                                   lhs-graphs)
+                                                            isomorphisms
+                                                            bonds
+                                                            lost-bonds
+                                                            relabels
+                                                            deletions
+                                                            rhs-monomer-localizations)))
            (rtype      [reaction-type 
                         localized-lhs-csts
-                        (mapcar #'make-localized-complex-species-type
-                         (compute-rhs-graphs (apply #'vector
-                                                    rhs-new-graph
-                                                    lhs-graphs)
-                                             isomorphisms
-                                             bonds
-                                             lost-bonds
-                                             relabels
-                                             deletions
-                                             rhs-monomer-localizations))]))
+                        localized-rhs-csts]))
       [complex-reaction-inference cr rtype (mapcar #'cons crt-lhs-entities localized-lhs-csts)])))
