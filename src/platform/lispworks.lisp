@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.5 2007/12/06 00:47:11 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.6 2007/12/10 14:42:20 amallavarapu Exp $
 
 (in-package editor)
 
@@ -119,7 +119,8 @@
 
 (defun operate-on-buffer (fn)
   (let* ((b        (current-buffer))
-         (b-path   (buffer-pathname b)))
+         (b-path   (buffer-pathname b))
+         (b:*debugger-enabled* t))
     (mutils:with-load-path b-path
       (let* ((ipath    (if b-path (b:include-path-from-pathname b-path :errorp nil)))
              (src      (if ipath (probe-file (b:include-path-source-file ipath)))))
@@ -156,7 +157,8 @@
 (defun operate-on-region (p point-fn region-fn)
   (let* ((b        (current-buffer))
          (b-path   (buffer-pathname b))
-         (pane     (buffer-editor-pane b)))
+         (pane     (buffer-editor-pane b))
+         (b:*debugger-enabled* t))
     (mutils:with-load-path b-path
       (let* ((pkg-name (find-package-name-for-point b :point p))
              (ipath    (b:include-path pkg-name))
