@@ -26,7 +26,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.5 2007/11/21 07:10:57 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.6 2007/12/12 15:06:07 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -109,29 +109,6 @@ on (RESET) or (INIT).  Useful for storing an object which must be used as an ide
 (defvar *trace-stack-location* (list ()))
 (defconstant *hidden-classes* (make-hash-table)) ;; traceability & visibility in (objects)
 
-
-;;;; (defvar *inside-kb-transaction-form* nil)
-
-;;;; (defmacro kb-transaction (&body body)
-;;;;   "ensures that any changes to the kb made in body are completed before 
-;;;; any rules are triggered."
-;;;;   (declare (special *inside-kb-transaction-form*))
-;;;;   (let ((kb-halted (gensym "KB-HALTED"))
-;;;;         (val       (gensym "VAL")))
-;;;;     (cond 
-;;;;      (*inside-kb-transaction-form*
-;;;;       `(progn ,@body))
-;;;;      (t
-;;;;       (let ((*inside-kb-transaction-form* t))
-;;;;         (declare (special *inside-kb-transaction-form*))
-;;;;         `(let* ((,kb-halted *kb-halt*)
-;;;;                 (*kb-halt*  t)
-;;;;                 (,val      (progn ,@body)))
-;;;;            (declare (optimize (speed 3)))
-;;;;            (unless ,kb-halted 
-;;;;              (kb-run)
-;;;;              (flush-trace))
-;;;;            ,val))))))
 
 (defmacro kb-transaction (&body body)
   "ensures that any changes to the kb made in body are completed before 

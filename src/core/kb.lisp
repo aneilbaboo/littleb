@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.3 2007/11/29 17:36:58 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.4 2007/12/12 15:06:07 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -149,35 +149,3 @@
 
 
 
-
-;;;;  consider removing kb-compose/accumulate since they're not utilized
-;;;; (defun kb-compose ()
-;;;;   (let ((new-inst (kb-run)))
-;;;;     (loop while (> (hash-table-count +accumulator-objects+) 0)
-;;;;           do (kb-transaction
-;;;;                (maphash (lambda (k v)          
-;;;;                           (declare (ignorable k))
-;;;;                           (kb-finalize-property v))
-;;;;                         +accumulator-objects+))
-;;;;           (clrhash +accumulator-objects+)
-;;;;           (incf new-inst (kb-run)))
-;;;;     new-inst))
-
-;;;; (defmacro accumulate (fe &optional (value nil value-p) (uniquep t))
-;;;;   (if (not (fld-form-p fe))
-;;;;       (error "Bad arguments to accumulate: invalid field-expression ~A.  ~
-;;;;               FIELD-ACCESSOR be of the form obj.field1.field2...fieldn" fe)
-
-;;;;     (let ((val (gensym "VAL")))
-;;;;       `(lisa:with-inference-engine (*accumulator-rete*)
-;;;;          (let* ((+OBJECTS+ +accumulator-objects+)
-;;;;                 (,val         ,value))
-
-;;;;            ,(if value-p ; a value was provided, 
-;;;;                 `(if ,uniquep
-;;;;                      (pushnew ,val ,fe)
-;;;;                    (push ,val ,fe))
-;;;;               ; value was not provided: only initialize property, if necessary
-;;;;               `(if (missingp ,fe)
-;;;;                    (setf ,fe nil))))))))
-                   

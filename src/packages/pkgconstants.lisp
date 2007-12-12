@@ -25,8 +25,17 @@
 ;;; File: pkgconstants
 ;;; Description: Constants which name packages
 
-;;; $Id: pkgconstants.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: pkgconstants.lisp,v 1.2 2007/12/12 15:06:08 amallavarapu Exp $
 ;;; $Log: pkgconstants.lisp,v $
+;;; Revision 1.2  2007/12/12 15:06:08  amallavarapu
+;;; * got rid of commented out code (kb.lisp, constants.lisp)
+;;; * added initialize-global-valuel (deletes all symbols from global-value pkg)
+;;; * global-value package now uses now other packages
+;;; * added defstruct-with-fields, defclass-with-fields
+;;; * portable:destroy now ensures symbol is uninterned from home package
+;;; * removed field-reader dispatcher for #|
+;;; * *print-pretty* set to nil when dynamic rules are added
+;;;
 ;;; Revision 1.1  2007/09/25 17:54:13  amallavarapu
 ;;; *** empty log message ***
 ;;;
@@ -75,7 +84,7 @@
                                        (defpackage "SLOT-SYMBOL")))
 
 (defconstant +global-package+ (or (find-package "GLOBAL-VALUE")
-                                  (defpackage "GLOBAL-VALUE")))
+                                  (defpackage "GLOBAL-VALUE" (:use))))
 
 (defconstant +keyword-package+ (find-package "KEYWORD"))
 

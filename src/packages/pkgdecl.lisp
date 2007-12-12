@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.8 2007/12/06 19:57:12 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.9 2007/12/12 15:06:08 amallavarapu Exp $
 ;;;
 
 
@@ -39,6 +39,8 @@
    #:kb-transaction #:kb-find-or-create #:add-rule
    #:define-constant #:define-var #:define-parameter
    #:init #:query #:lookup
+
+   #:defstruct-with-fields #:defclass-with-fields
    ;; assumption api
    #:define-assumption-name #:assume #:check-assumption-exists
    ;; include api

@@ -25,7 +25,7 @@
 ;;; File: initialize
 ;;; Description: 
 
-;;; $Id: initialize.lisp,v 1.7 2007/12/06 22:25:20 amallavarapu Exp $
+;;; $Id: initialize.lisp,v 1.8 2007/12/12 15:06:08 amallavarapu Exp $
 
 (in-package b)
 
@@ -72,6 +72,8 @@
   (initialize-syntax)
 
   (system-database-initialization)
+
+  (initialize-global-value)
 
   (initialize-debugger)
   

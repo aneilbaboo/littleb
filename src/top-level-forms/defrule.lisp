@@ -26,7 +26,7 @@
 ;;; Description: defrule, defines b rules
 ;;;
 
-;;; $Id: defrule.lisp,v 1.4 2007/11/21 07:12:53 amallavarapu Exp $
+;;; $Id: defrule.lisp,v 1.5 2007/12/12 15:06:08 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -47,7 +47,8 @@
         (rule-name       '#:rule-name)
         (user-name       '#:user-name))
     `(flet ((ADD-RULE (,pattern ,form &optional ,user-name)
-              (let ((,rule-name (or ,user-name (gentempn (format nil "~A-DYNRULE" ',name) 0 ,*package*))))
+              (let ((*print-pretty* nil)
+                    (,rule-name (or ,user-name (gentempn (format nil "~A-DYNRULE" ',name) 0 ,*package*))))
                 (eval `(defrule ,,rule-name ,,pattern => ,,form)))))
        ,@body)))
             
@@ -59,7 +60,7 @@
                                (values (first args) (second args) (third args) (cdddr args))
                              (values nil (first args) (second args) (cddr args))))
          (rule-parse      (make-rule-parse patterns))
-         (rhs-fn-symbol   (sym name "-RHS-FN"))
+         (rhs-fn-symbol   (let ((*print-pretty* nil)) (sym name "-RHS-FN")))
          (lambda-list     (rule-parse-rhs-lambda-list rule-parse))
          (rhs-code        `(funcall ',rhs-fn-symbol ,@(rule-parse-rhs-apply-args rule-parse)))
          (lisa-defs       (rule-parse-lisa-rule-definitions rule-parse name rhs-code))

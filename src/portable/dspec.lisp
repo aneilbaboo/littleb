@@ -68,8 +68,9 @@
 (defun destroy-symbol (symbol &rest args &key undefinep forget-dspec-p uninternp)
   (declare (ignorable symbol args undefinep forget-dspec-p uninternp))
   ()
-  #+lispworks (apply #'dspec:destroy-symbol symbol args)
-  #+clisp (remprop symbol 'system::doc))
+  #+:lispworks (apply #'dspec:destroy-symbol symbol args)
+  #+:clisp (remprop symbol 'system::doc)
+  (unintern symbol (symbol-package symbol)))
                        
 (defun find-dspec-locations (dspec)
   (declare (ignorable dspec))
