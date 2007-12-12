@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.11 2007/12/05 20:01:06 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.12 2007/12/12 15:33:39 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -222,7 +222,7 @@
        (null (symbol-package x))))
 
 (defun fix-automatic-bond-labels (binding-table)
-  "If we have generated auto-generated bonds vars which have only one bond side,
+  "If we have made auto-generated bonds vars which have only one bond side,
    convert these to self-bond (_) bonds."
   (loop for v being the hash-keys of binding-table
         for cnxns being the hash-values of binding-table
@@ -243,13 +243,15 @@
   (loop for lvert across lhs
         for rvert = (if (site-label-p lvert)
                         (find lvert rhs :test #'named-vertex=))
-        when (and rvert
-                  (not (equal (site-label-value rvert)
-                              (site-label-value lvert))))
+        for lstate = (site-label-state lvert)
+        for rstate = (site-label-state rvert)
+        unless (or (null rvert)
+                   (equal lstate rstate)
+                   (eq rstate '*))
         collect (list (make-site-label (site-label-monomer lvert)
                                        (site-label-sindex lvert))
-                      (site-label-value lvert)
-                      (site-label-value rvert))))
+                      (site-label-state lvert)
+                      (site-label-state rvert))))
 
         
   
@@ -258,43 +260,53 @@
 
 (defconstant +empty-graph+ (make-complex-graph ()))
 (defun lhs-default-site-binding-function (lhs-graphs)
-  (let* ((rev-table (make-hash-table :test #'equal)) ; a table from site-labels to 
+  (let* ((bond-table (make-hash-table :test #'equal)) ; a table from site-labels to bond-labels
          (lhs-graph (case (length lhs-graphs)
                       (0 +empty-graph+)
                       (1 (first lhs-graphs))
                       (t (gtools:merge-graphs
                           (list* +empty-graph+ lhs-graphs)))))
-         (labels    (graph-list-labels lhs-graphs)))
+         (lhs-labels  (graph-list-labels lhs-graphs)))
     (lambda (monomer site-num binding)
       (cond
        ((and binding (not (eq binding '*))) binding)
-       (t
-        (let* ((site-label (make-site-label monomer site-num))
-               (vindex     (position site-label labels :test #'named-vertex=))
-               (existing-label      (if vindex (svref labels vindex)))
-               (dindex     (position monomer labels :test #'equal)))
-          (if vindex
+       (t ;; binding is nil or *
+        (let* (;; the site we're trying to get info about:
+               (site-label (make-site-label monomer site-num)) 
+               ;; its vertex index (calculated from lhs)
+               (lhs-vindex (position site-label lhs-labels :test #'named-vertex=))
+               ;; 
+               (existing-label  (if lhs-vindex (svref lhs-labels lhs-vindex)))
+               (dindex          (position monomer lhs-labels :test #'equal)))
+          (if lhs-vindex ;; if this site existed on lhs,
               (cond
-               ((site-label-has-value-p existing-label)
-                (site-label-value existing-label))
+               ;; a state site
+               ((site-label-has-state-p existing-label) 
+                (site-label-state existing-label))
                (t ; must be a connector-site
                 (let* ((cnxns      (mapcar (lambda (i)
-                                             (svref labels i))
+                                             (svref lhs-labels i))
                                            (remove 
                                             dindex 
-                                            (gtools:graph-vertex-outputs lhs-graph vindex))))
+                                            (gtools:graph-vertex-outputs lhs-graph lhs-vindex))))
                        (lhs-csites (list* site-label ;; all sites connected to this site on lhs
-                                          cnxns))
-                       (existing   (firsthash lhs-csites rev-table)))
+                                          cnxns))    ;; including the site itself
+                                                        ;; find the bond var for any of the lhs-connected sites
+                       (existing-bond-label   (firsthash lhs-csites bond-table)))
+
                   (cond
                    ((null cnxns)     '*)
-                   ((equalp existing `(,monomer ,site-num)) '_) ; connected to self
+
+                   (existing-bond-label existing-bond-label)
+
+                   ((equalp (first lhs-csites) (second lhs-csites)) '_) ; "unconnected"
+
                    (t
-                    (let ((cnxn-var (make-bond-label)))
+                    (let ((bond-label (make-bond-label)))
                       (loop for sl in lhs-csites
-                            do (setf (gethash sl rev-table) cnxn-var))
-                      cnxn-var))))))
-            (funcall 'non-pattern-default-site-binding monomer site-num binding))))))))
+                            do (setf (gethash sl bond-table) bond-label))
+                      bond-label))))))
+            (funcall 'non-pattern-default-site-binding monomer site-num nil))))))))
                 
 (defun compute-rhs-new-graph (rhs-graphs lhs-verticies)
   "The RHS-NEW-GRAPH is a graph of all monomers which are created by a reaction"
@@ -311,11 +323,15 @@
 
 (defun compute-complex-graph-bonds (g)
   "Returns a list of bonds between named vertex sites"
-  (remove-if (lambda (x) (eq (length x) 1))
+  (remove-if (lambda (x) (eq (length x) 1)) ;; should length 1 ever occur?
+             ;; remove any edges to domain verticies
              (mapcar (lambda (bondlist) (remove-if #'fld-form-p bondlist))
-                     (mutils:mapatoms (lambda (i)
-                                        (gtools:graph-vertex-label g i))
-                                      (gtools:graph-edges g)))))
+                     ;; remove edges from domain verticies
+                     (remove-if #'fld-form-p
+                                (mutils:mapatoms (lambda (i)
+                                                   (gtools:graph-vertex-label g i))
+                                                 (gtools:graph-edges g))
+                                :key #'first))))
           
 (defun graph-remove-reference-labels (g)
   "Returns a copy of the complex graph by stripping any reference labels"
@@ -356,10 +372,10 @@
        ((rhs-patterns deref-rhs-patterns rhs-rxn-vars)
                          (extract-canonical-graphs-from-expression cr.rhs))
        (rhs-monomer-locs (mapcan #'monomer-localizations rhs-rxn-vars)) ; an assoc list of rhs monomers to sublocations
-       (lhs-cnxns        (mapcan #'compute-complex-graph-bonds lhs-patterns))
-       (rhs-cnxns        (mapcan #'compute-complex-graph-bonds rhs-patterns))
-       (created-cnxns    (compute-bond-set-difference rhs-cnxns lhs-cnxns))
-       (lost-cnxns       (compute-bond-set-difference lhs-cnxns rhs-cnxns))
+       (lhs-bonds        (mapcan #'compute-complex-graph-bonds lhs-patterns))
+       (rhs-bonds        (mapcan #'compute-complex-graph-bonds rhs-patterns))
+       (new-bonds        (compute-bond-set-difference rhs-bonds lhs-bonds))
+       (lost-bonds       (compute-bond-set-difference lhs-bonds rhs-bonds))
        (lhs-verticies    (graph-list-labels lhs-patterns))
        (rhs-verticies    (graph-list-labels rhs-patterns))
        (rhs-new-graph    (compute-rhs-new-graph rhs-patterns lhs-verticies))
@@ -386,8 +402,8 @@
                      (cdr nl))))
 
       (values 
-       (mapcar #'map-named-vertex->graph-index created-cnxns) ;; new bonds
-       (mapcar #'map-named-vertex->graph-index lost-cnxns) ;; lost bonds
+       (mapcar #'map-named-vertex->graph-index new-bonds)  ;; new bonds
+       (mapcar #'map-named-vertex->graph-index lost-bonds) ;; lost bonds
        (mapcar (lambda (lchange)                           ;; label changes
                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
                label-changes)
@@ -398,7 +414,7 @@
        lhs-rxn-vars
        (mapcar #'named-localization->graph-index-localization rhs-monomer-locs)))))
 
-(defun compute-rhs-graphs (input-graphs isomorphisms bonds disbonds relabels remove 
+(defun compute-rhs-graphs (input-graphs isomorphisms new-bonds lost-bonds relabels remove 
                                         sublocations)
   "Returns: RHS-GRAPHS, RHS-LOCALIZATIONS
    Where RHS-GRAPHS is a list of complex-graph objects
@@ -410,8 +426,8 @@
          Graph indicies used below are cons pairs (G . I), 
            where G is the 0-based index into INPUT-GRAPHS,
              and I is the 0-based vertex in that graph
-         BONDS - bonds to be created (a list of graph index pairs)
-         DISBONDS - bonds to be destroyed (a list of graph index pairs)
+         NEW-BONDS - bonds to be created (a list of graph index pairs)
+         LOST-BONDS - bonds to be destroyed (a list of graph index pairs)
          RELABELS - relabellings (representing state site value changes
                     (a list of the form (GI OLD-LABEL NEW-LABEL))
          REMOVE   - verticies to be deleted from the output
@@ -434,7 +450,7 @@
              (bond (b) (mapcar #'gvertex b))) ; converts a bond using isomorphisms
 
       ;; label monomer sublocations
-      (loop for ((gnum . v) subloc) in sublocations
+      (loop for ((gnum . v) . subloc) in sublocations
             for graph = (graph gnum)
             for vertex = (vertex gnum v)
             do (setf (gtools:graph-vertex-label graph vertex)
@@ -442,7 +458,7 @@
                                     subloc]))
 
       ;; disconnect edges
-      (loop for ((gnum . v1) (nil . v2)) in disbonds
+      (loop for ((gnum . v1) (nil . v2)) in lost-bonds
             do (setf (gtools:graph-vertex-edge-p (graph gnum) 
                                                  (vertex gnum v1)
                                                  (vertex gnum v2))
@@ -450,14 +466,14 @@
 
       ;; relabel verticies
       (loop for ((g . v) nil to) in relabels
-            do (setf (site-label-value (gtools:graph-vertex-label 
+            do (setf (site-label-state (gtools:graph-vertex-label 
                                         (graph g) 
                                         (vertex g v)))
                      to))
 
       ;; merge the graphs, connect edges between them
       (let* ((rhs-super-graph (gtools:merge-graphs (coerce input-graphs 'list) 
-                                                  :edges (mapcar #'bond bonds)
+                                                  :edges (mapcar #'bond new-bonds)
                                                   :remap `((nil ,@(mapcar #'gvertex remove))))))
 
         ;; and return the distinct complexes resulting from this operation:

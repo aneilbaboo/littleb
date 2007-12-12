@@ -26,7 +26,7 @@
 ;;; Description:  when included, this rule infers which species and reactions
 ;;;               are implied by an initial set of species and reactions.
 
-;;; $Id: reaction-inference.lisp,v 1.4 2007/11/29 17:36:56 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.5 2007/12/12 15:33:39 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -43,7 +43,7 @@
       (generate-reaction-inference-rule ?rtype '?loc)
     (add-rule patterns
               `(infer-reaction ,?rtype ?loc ,substitution-list)
-              (intern (format nil "|~A|" ?rtype)))))
+              (intern (format nil "~A" ?rtype)))))
 
 (defun infer-reaction (rtype loc substs)
   "creates a reaction and adds substitions to the substition table"

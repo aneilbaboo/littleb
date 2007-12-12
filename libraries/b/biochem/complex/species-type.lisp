@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.15 2007/12/10 14:33:46 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.16 2007/12/12 15:33:39 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -134,11 +134,11 @@
 (defun site-info-name (s) (first (site-info-tags s)))
 
 ;; bond sites can connect to other bond sites
-(defstruct (bond-site-info (:include site-info))
+(defstruct-with-fields (bond-site-info (:include site-info))
   type sublocation)
 
 ;; state sites have values
-(defstruct (state-site-info (:include site-info))
+(defstruct-with-fields (state-site-info (:include site-info))
   type default)
 
 (defun member-type-p (x) (and (consp x) (eq (first x) 'member)))
@@ -257,7 +257,7 @@
                    (value-test (wildcard-label-state test)))
                (and (site-test site-test 
                                (complex-graph-label-to-site-labels glabel))
-                    (value-test value-test (site-label-value glabel)))))
+                    (value-test value-test (site-label-state glabel)))))
 
            (complex-graph-label-test-predicate (test glabel)
              (cond
@@ -272,7 +272,7 @@
                 (and (site-label-p glabel)
                      (equal (site-label-sindex test) (site-label-sindex glabel))
                      (equal (site-label-monomer test) (site-label-monomer glabel))
-                     (value-test (site-label-value test) (site-label-value glabel))))
+                     (value-test (site-label-state test) (site-label-state glabel))))
 
                (t (error "Unexpected test graph label:~S" test)))))
     #'complex-graph-label-test-predicate))
@@ -336,13 +336,15 @@
 (defun check-complex-species-type-graph-is-valid (g)
   (loop for i from 0 below (gtools:graph-vertex-count g)
         for lab = (gtools:graph-vertex-label g i)
+        for outputs = (gtools:graph-vertex-outputs g i)
         if (site-label-p lab)
         do (cond 
-            ((site-label-has-value-p lab)
-             (b-assert (= 1 (length (gtools:graph-vertex-outputs g i))) ()
-                       "Invalid state site: ~S ~S" g i))
+            ((site-label-has-state-p lab)
+             (b-assert (= 1 (length outputs)) ()
+                       "Invalid state site: ~S. Vertex ~S has ~S outputs." g i outputs))
             (t (b-assert (= 2 (length (gtools:graph-vertex-outputs g i))) ()
-                         "Invalid bond site: ~S ~S" g i)))))
+                         "Invalid bond site in ~S.  Vertex ~S has ~S outputs." 
+                         g i outputs)))))
 
 (defield complex-species-type.monomers ()
   (remove-if-not #'symbolp (gtools:graph-labels .id)))
@@ -355,7 +357,11 @@
 (defcon reference-pattern (complex-graph-concept :notrace)
   "Reference patterns are created when reactions are defined; each monomer has a reference number indicating its identity in the context of a complex-reaction-type"
   (id)
-  (setf .id (ensure-canonical-complex-graph id t))
+  (let ((reorder (second (multiple-value-list
+                          (gtools:canonical-graph
+                           (graph-remove-reference-labels
+                            (gtools:copy-graph id)))))))
+    (setf .id (gtools:reorder-graph id reorder)))
   =>
   (setf .location-class (complex-graph-location-class .id #'monomer-symbol-ref-p)))
 
@@ -382,7 +388,7 @@
 
 ;;;
 ;;; SITE-LABEL
-(declaim (inline site-label-p site-label-sindex site-label-monomer site-label-value))
+(declaim (inline site-label-p site-label-sindex site-label-monomer site-label-state))
 (defun make-site-label (monomer sindex &optional (value nil value-p))
   (if value-p (list sindex monomer value)
     (list sindex monomer)))
@@ -391,9 +397,9 @@
   (and (consp x) (integerp (first x))))
 (defun site-label-sindex (x) (first x))
 (defun site-label-monomer (x) (second x))
-(defun site-label-value (x) (third x))
-(defun (setf site-label-value) (value x) (setf (third x) value))
-(defun site-label-has-value-p (x) (> (length x) 2))
+(defun site-label-state (x) (third x))
+(defun (setf site-label-state) (value x) (setf (third x) value))
+(defun site-label-has-state-p (x) (> (length x) 2))
 
 (defun complex-graph-label-to-site-labels (glabel)
   "Given a GLABEL, e.g., (0 KSR), returns the labels of that site."
@@ -456,19 +462,19 @@
   (containing-location-class 
    (mapcar (lambda (d) (eval d).location-class) monomers)))
 
-(defun unreference-graph-vertex-label (x)
-  "Removes the field label from a graph label - 
-   e.g., KSR.A -> KSR and (0 KSR.A) -> (0 KSR)"
-  (cond
-   ((fld-form-p x) (fld-form-object x))
-   ((consp x)      (list* (first x) (fld-form-object (second x))
-                          (cddr x)))
-   (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
+;;;; (defun unreference-graph-vertex-label (x)
+;;;;   "Removes the field label from a graph label - 
+;;;;    e.g., KSR.A -> KSR and (0 KSR.A) -> (0 KSR)"
+;;;;   (cond
+;;;;    ((fld-form-p x) (fld-form-object x))
+;;;;    ((consp x)      (list* (first x) (fld-form-object (second x))
+;;;;                           (cddr x)))
+;;;;    (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
 
-(defun unreference-graph-labels (g)
-  (map-into (gtools:graph-labels g)
-            #'unreference-graph-vertex-label)
-  g)
+;;;; (defun unreference-graph-labels (g)
+;;;;   (map-into (gtools:graph-labels g)
+;;;;             #'unreference-graph-vertex-label)
+;;;;   g)
 ;;;
 ;;; BUILD-COMPLEX-GRAPH: internal work-horse which builds the actual GRAPH structure, 
 ;;;                      from data produced by the parser
@@ -658,7 +664,7 @@
          (site-value-from-binding (binding si)
            (cond 
             ((eq '%%default binding)   (state-site-info-default si))
-            ((wildcard-binding-p binding)  '*)
+            ((wildcard-binding-p binding)  (default-site-binding monomer (site-info-index si) '*))
             ((typep binding (state-site-info-type si))  binding)
             ((and (consp binding) 
                   (every (lambda (x) (typep x (state-site-info-type si)))
@@ -691,7 +697,9 @@
            (when (eq binding '**)
              (setf default-rest-args '(**)
                    binding '*))
-           (when (wildcard-binding-p binding) (setf pattern-detected-p t))
+           (when (wildcard-binding-p binding) 
+             (setf pattern-detected-p t
+                   binding (default-site-binding monomer (site-info-index si) '*)))
            (etypecase si
              (bond-site-info
               (unless (record-bond-binding i binding binding-table)
@@ -863,21 +871,21 @@
         when (monomer-symbol-p k)
         do (remhash k *reference-labels*)))
 
-(defun complex-pattern-from-reference-pattern (rp)
-  [complex-pattern (complex-graph-from-reference-graph rp)])
+;;;; (defun complex-pattern-from-reference-pattern (rp)
+;;;;   [complex-pattern (complex-graph-from-reference-graph rp)])
 
-(defun complex-graph-from-reference-graph (rg)
-  (let ((copy (gtools:copy-graph rg)))
-    (unreference-graph-labels copy)
-    (gtools:graph-delete-verticies-if
-     copy
-     (lambda (i)
-       (selector-graph-ignorable-vertex-p rg i)))))
+;;;; (defun complex-graph-from-reference-graph (rg)
+;;;;   (let ((copy (gtools:copy-graph rg)))
+;;;;     (unreference-graph-labels copy)
+;;;;     (gtools:graph-delete-verticies-if
+;;;;      copy
+;;;;      (lambda (i)
+;;;;        (selector-graph-ignorable-vertex-p rg i)))))
                                    
 (defun selector-graph-ignorable-vertex-p (rg i)
   (let ((label (gtools:graph-vertex-label rg i)))
   (cond
-   ((site-label-has-value-p label) 
+   ((site-label-has-state-p label) 
     (eq label '*))
    (t (= (length (gtools:graph-vertex-outputs rg i)) 1)))))
 
@@ -919,7 +927,7 @@
              (some (lambda (x) (eq x '*)) x)))))
 
 (defun firsthash (keys hash-table &optional default)
-  "Returns the hash-values of a key in keys, otherwise default"
+  "Returns the first hash-value available for a list of keys, otherwise default"
   (or (loop for k in keys
             for v = (gethash k hash-table #1='#:nohash)
             unless (eq v #1#)
@@ -987,7 +995,7 @@
                     collect (cond
                              ;; state sites
                              ((state-site-info-p sinfo)
-                              (site-label-value
+                              (site-label-state
                                (gtools:graph-vertex-label
                                 graph 
                                 (complex-graph-mindex-sindex-to-vertex graph mindex sindex))))
@@ -1088,8 +1096,8 @@ Returns the vertexes representing sites in the correct order."
         (let ((cst-graph (gentemp "?"))
               (testgraph (make-complex-graph cdescr)))
           (values `((,objvar [complex-species-type ,cst-graph])
-                    (:test (gtools:find-subgraph-isomorphisms
+                    (:test (gtools:find-subgraph-isomorphisms 
                             ,testgraph
-                            ,cst-graph nil))))))))))
+                            ,cst-graph :continue-if nil))))))))))
 
 (add-pattern-expander 'complex-pattern-expander)

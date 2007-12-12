@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.11 2007/12/10 14:29:50 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.12 2007/12/12 15:33:39 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -114,5 +114,6 @@
                                                             rhs-monomer-localizations)))
            (rtype      [reaction-type 
                         localized-lhs-csts
-                        localized-rhs-csts]))
+                        localized-rhs-csts
+                        cr.location-class]))
       [complex-reaction-inference cr rtype (mapcar #'cons crt-lhs-entities localized-lhs-csts)])))
