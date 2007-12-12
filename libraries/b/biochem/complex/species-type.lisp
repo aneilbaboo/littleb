@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.16 2007/12/12 15:33:39 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.17 2007/12/12 22:43:20 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -224,9 +224,14 @@
                   (symbol nil)
                   (number nil)
                   (fld-form nil)
-                  (cons   (or (and (eq (first x) (first y))
-                                   (complex-graph-label< (second x) (second y)))
-                              (complex-graph-label< (first x) (first y)))))))))
+                  (cons   (or (complex-graph-label< (first x) (first y))
+                              (and (equal (first x) (first y))
+                                   (complex-graph-label< (rest x) (rest y))))))))))
+                          ;(or (and (eq (first x) (first y))
+                          ;         (or (and (eq (second x) (second y))
+                          ;                  (complex-graph-l
+                          ;             (complex-graph-label< (second x) (second y)))
+                          ;    (complex-graph-label< (first x) (first y)))))))))
     #'complex-graph-label<))
 
 (defmethod gtools:graph-type-label-test-predicate ((type (eql 'complex-graph)))
