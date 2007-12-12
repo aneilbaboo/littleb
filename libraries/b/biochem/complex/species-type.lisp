@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.17 2007/12/12 22:43:20 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.18 2007/12/12 23:45:40 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -63,6 +63,10 @@
 (defcon monomer ()
   (&optional (name := *name*)
    &property (location-class := compartment)))
+
+     
+(defield monomer.[] (x)
+  object.(site x))
 
 (defprop monomer.sites ()
  (let* ((sindex -1)
@@ -129,7 +133,8 @@
 ;;;
 ;;; SITE-INFO structure
 ;;;
-(defstruct (site-info (:constructor nil)) tags index)
+
+(defstruct-with-fields (site-info (:constructor nil)) tags index documentation)
 
 (defun site-info-name (s) (first (site-info-tags s)))
 
@@ -147,7 +152,7 @@
     (symbol (intern (symbol-name x) :keyword))
     (t      x)))
 
-(defun make-site-info (tags &rest args &key states default connector sublocation index)
+(defun make-site-info (tags &rest args &key states default connector documentation sublocation index)
   (declare (ignorable args))
   (let* ((tags      (mapcar #'keywordify
                             (if (listp tags) tags (list tags))))
@@ -170,13 +175,14 @@
              default states name))
 
     
-     (states (make-state-site-info :tags tags :type states :default default :index index))
+     (states (make-state-site-info :tags tags :type states :default default :index index
+                                   :documentation documentation))
 
      (t      (make-bond-site-info :tags tags
                                   :index index
                                   :type connector
+                                  :documentation documentation
                                   :sublocation sublocation)))))
-
 
 (defun ensure-canonical-complex-graph (x &optional force-pattern)
   (gtools:canonical-graph
