@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.12 2007/12/12 15:33:39 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.13 2007/12/12 19:00:04 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -439,8 +439,8 @@
                     these monomers do not share the same sublocation, we have a problem.
                     This is resolved in favor of the NIL sublocation if that is present; 
                     otherwise, an error occurs (currently - fail to generate rxn in future?)."
-  (let* ((input-graphs (map 'simple-vector #'gtools:copy-graph input-graphs)))
-    (labels ((graph (n) (svref input-graphs n))
+  (let* ((graph-copies (map 'simple-vector #'gtools:copy-graph input-graphs)))
+    (labels ((graph (n) (svref graph-copies n))
              (vertex (g i) ;; using the isomorphisms, gets the true vertex i of graph g
                (case g
                  (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
@@ -467,12 +467,12 @@
       ;; relabel verticies
       (loop for ((g . v) nil to) in relabels
             do (setf (site-label-state (gtools:graph-vertex-label 
-                                        (graph g) 
+                                        (graph g)
                                         (vertex g v)))
                      to))
 
       ;; merge the graphs, connect edges between them
-      (let* ((rhs-super-graph (gtools:merge-graphs (coerce input-graphs 'list) 
+      (let* ((rhs-super-graph (gtools:merge-graphs (coerce graph-copies 'list) 
                                                   :edges (mapcar #'bond new-bonds)
                                                   :remap `((nil ,@(mapcar #'gvertex remove))))))
 
