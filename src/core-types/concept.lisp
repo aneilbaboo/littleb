@@ -25,7 +25,7 @@
 ;;; File: concept
 ;;; Description: defines the base class, CONCEPT
 
-;;; $Id: concept.lisp,v 1.3 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: concept.lisp,v 1.4 2007/12/12 15:03:39 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -130,7 +130,7 @@
 ;;;
 
 (defmethod describe-object ((o concept) stream)
-  (ifit (fld o :_doc) (format stream "~A~%" it))
+  (ignore-errors (ifit (fld o :documentation) (format stream "~A~%" it)))
   (prin1 o stream)
   (format stream "~%~%ID-FIELDS:~%")
   (loop for fi in (fieldinfos o)
