@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.8 2007/12/06 15:37:52 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.9 2007/12/12 23:56:50 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -630,4 +630,9 @@
   "Accesses an element of an array"
   (setf (apply #'aref o indexes) value))
 
- 
+;;;
+;;; .LENGTH
+;;;
+(defmethod fld ((o sequence) (field (eql :length)) &rest args)
+  (declare (ignore field args))
+  (length o))
