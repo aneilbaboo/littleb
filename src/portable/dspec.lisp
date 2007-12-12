@@ -70,7 +70,8 @@
   ()
   #+:lispworks (apply #'dspec:destroy-symbol symbol args)
   #+:clisp (remprop symbol 'system::doc)
-  (unintern symbol (symbol-package symbol)))
+  (when (symbol-package symbol)
+    (unintern symbol (symbol-package symbol))))
                        
 (defun find-dspec-locations (dspec)
   (declare (ignorable dspec))
