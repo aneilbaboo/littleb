@@ -88,6 +88,19 @@
 (defield sum-expression.vars ()
   (get-math-expression-vars object))
 
+(defield sum-expression.as-list ()
+  "Converts a sum-expression (with positive integer coefficients only) into a list containing the elements:
+   {:a + 2 :b}.as-list => (:A :B :B)
+   {:a + 2.5 :b}.as-list => error"
+  (loop for se in .variable
+        for c = (sum-element-coef se)
+        for v = (sum-element-var se)
+        unless (and (integerp c)
+                    (plusp c))
+        do (b-error "Cannot convert ~S to a list - ~S is not a positive integer coefficient"
+                    object c)
+        append (make-list c :initial-element v)))
+
 ;;;
 ;;; MULTIPLICITY-SUM-EXPRESSION: a sum expression of one variable and coefficient
 ;;;
@@ -141,21 +154,6 @@
 (defun sum-element-var (o) (car o))
 (defun sum-element-coef (o) (cdr o))
 
-(defield sum-expression.as-list ()
-  "Converts a sum-expression (with positive integer coefficients only) into a list containing the elements:
-   {:a + 2 :b}.as-list => (:A :B :B)
-   {:a + 2.5 :b}.as-list => error"
-  (loop for se in .variable
-        for c = (sum-element-coef se)
-        for v = (sum-element-var se)
-        unless (and (integerp c)
-                    (plusp c))
-        do (b-error "Cannot convert ~S to a list - ~S is not a positive integer multiple."
-                    object c)
-        if (> c 1)
-        append (make-list c :initial-element v)
-        else
-        collect v))
 
 ;;;
 ;;; MAP methods
