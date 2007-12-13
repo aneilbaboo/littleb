@@ -291,7 +291,7 @@ symbols in the correct package."
      (remove-if-not (lambda (o) (B::Needs-Compile-P o nil nil))
                     (remove-duplicates
                      (mapcar #'first
-                             (mapcan #'include-path-compiled-signature
+                             (mapcan #'include-path-source-signature
                                      (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib))))
                      :test #'string=)))))
 

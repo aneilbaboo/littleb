@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.18 2007/12/12 23:45:40 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.19 2007/12/13 01:33:52 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -151,7 +151,7 @@
   (typecase x
     (symbol (intern (symbol-name x) :keyword))
     (t      x)))
-
+                                                                    
 (defun make-site-info (tags &rest args &key states default connector documentation sublocation index)
   (declare (ignorable args))
   (let* ((tags      (mapcar #'keywordify
