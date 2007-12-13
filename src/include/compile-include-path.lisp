@@ -289,11 +289,13 @@ symbols in the correct package."
   (with-include-compilation-unit
    (let ((*load-truename* (ensure-library lib t)))
      (remove-if-not (lambda (o) (B::Needs-Compile-P o nil nil))
-                    (remove-duplicates
-                     (mapcar #'first
-                             (mapcan #'include-path-source-signature
-                                     (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib))))
-                     :test #'string=)))))
+                    (library-compilable-ipaths lib)))))
+(defun library-compilable-ipaths (lib)
+  (remove-duplicates
+   (mapcar #'first
+           (mapcan #'include-path-source-signature
+                   (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib))))
+   :test #'string=))
 
 (defun library-needs-compile-p (lib)
   (when (library-ipaths-needing-compile lib) t))

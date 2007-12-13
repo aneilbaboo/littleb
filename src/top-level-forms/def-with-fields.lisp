@@ -27,7 +27,7 @@
 ;;;              macros
 ;;;
 
-;;; $Id: def-with-fields.lisp,v 1.1 2007/12/12 23:01:34 amallavarapu Exp $
+;;; $Id: def-with-fields.lisp,v 1.2 2007/12/13 04:43:31 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -49,8 +49,9 @@
                                        (declare (ignore f args))
                                        (setf (slot-value object ',fname) value)))))
                                slot-descriptions)))
-  `(prog1 (defstruct ,name-and-options ,@slot-descriptions)
-     ,@deffld-forms)))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (prog1 (defstruct ,name-and-options ,@slot-descriptions)
+       ,@deffld-forms))))
                        
 
 (defmacro defclass-with-fields (name superclasses slots &rest class-options)
@@ -67,6 +68,7 @@
                                       (declare (ignore f args))
                                       (setf (slot-value object ',fname) value)))))
                               slots)))
-    `(prog1 (defclass ,name ,superclasses ,slots ,@class-options)
-       ,@deffld-forms)))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (prog1 (defclass ,name ,superclasses ,slots ,@class-options)
+         ,@deffld-forms))))
                        
