@@ -142,7 +142,9 @@
 (defun sum-element-coef (o) (cdr o))
 
 (defield sum-expression.as-list ()
-  "Converts a sum-expression (with positive integer coefficients only) into a list containing the elements"
+  "Converts a sum-expression (with positive integer coefficients only) into a list containing the elements:
+   {:a + 2 :b}.as-list => (:A :B :B)
+   {:a + 2.5 :b}.as-list => error"
   (loop for se in .variable
         for c = (sum-element-coef se)
         for v = (sum-element-var se)
