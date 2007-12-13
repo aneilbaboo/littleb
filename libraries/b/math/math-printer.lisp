@@ -184,7 +184,8 @@ outer operator, and the second argument is considered the inner operator"
                {A + B + C - D E}"          
   (let* ((o       (first oform))
          (args    (rest oform))
-         (bracesp (braces-required-p outer-op o)))
+         (bracesp (braces-required-p outer-op o))
+         (*print-context* t)) 
     (if bracesp (print-math #\( stream))        
     (pprint-logical-block (stream args)
       (ecase (operator-type o)
