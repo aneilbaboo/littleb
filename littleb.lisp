@@ -25,7 +25,7 @@
 ;;; File: littleb.lisp
 ;;; Description: Loads the little b language.
 
-;;; $Id: littleb.lisp,v 1.4 2007/11/19 22:03:57 amallavarapu Exp $
+;;; $Id: littleb.lisp,v 1.5 2007/12/13 01:20:26 amallavarapu Exp $
 ;;; $Name:  $
 
 #-:asdf+ (load (merge-pathnames "asdf/asdf+.lisp" *load-truename*))
@@ -43,11 +43,16 @@
 #+:clisp (ext:without-package-lock () (asdf:load-system :b1))
 #-:clisp (asdf:load-system :b1)
 
+
 (let ((init-file (b:get-b-path :root "init.lisp")))
   (unless (probe-file init-file)
     (mutils:copy-file (b:get-b-path :root "support/init.lisp") init-file)))
 
 (b:init)
+
+(when (b:library-needs-compile-p 'b)
+  (b:compile-library 'b)
+  (b:init))
 
 #+:lw-editor
 (mutils:whenit (ignore-errors (capi:find-interface 'lispworks-tools:listener))

@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.9 2007/12/12 15:06:08 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.10 2007/12/13 01:20:26 amallavarapu Exp $
 ;;;
 
 
@@ -49,7 +49,7 @@
    #:compile-include-path #:reset #:reload-on-reset #:edit #:*reset-target* #:*reset-defaults*
    #:library-create-include-path #:include-file-package-name #:*library-search-paths*
    #:compile-library #:add-library #:libraries #:remove-library #:library-compiled-dir
-   #:delete-library-binaries
+   #:delete-library-binaries #:library-needs-compile-p
    #:ensure-library #:compile-library  #:library-name #:ignore-paths #:ignore-path-p #:library-compile-directives
    #:find-library #:find-all-libraries #:library-documentation
 

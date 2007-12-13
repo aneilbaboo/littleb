@@ -91,8 +91,7 @@
         (t (setf (currently-compiled-p ipath) t)))))))
 
 
-      
-                 
+                    
 
 (defun compile-and-load-ipath (ipath compile-force load-force)
   "Returns T if file was actually compiled."
@@ -285,6 +284,19 @@ symbols in the correct package."
 ;;;
 ;;; LIBRARY COMPILATION
 ;;;
+
+(defun library-ipaths-needing-compile (lib)
+  (with-include-compilation-unit
+   (let ((*load-truename* (ensure-library lib t)))
+     (remove-if-not (lambda (o) (B::Needs-Compile-P o nil nil))
+                    (remove-duplicates
+                     (mapcar #'first
+                             (mapcan #'include-path-compiled-signature
+                                     (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib))))
+                     :test #'string=)))))
+
+(defun library-needs-compile-p (lib)
+  (when (library-ipaths-needing-compile lib) t))
 
 (defun compile-library (lib  &key
                              (compile-force *include-force*)
