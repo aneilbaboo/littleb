@@ -51,7 +51,7 @@
           ,@body)))))
 
 
-(defun needs-compile-p (ipath force recursive)
+(defun needs-compile-p (ipath &optional force recursive)
   (let ((ipath (include-path ipath)))
     (and (not (currently-compiled-p ipath))
          (ecase force
@@ -287,18 +287,21 @@ symbols in the correct package."
 
 (defun library-ipaths-needing-compile (lib)
   (with-include-compilation-unit
-   (let ((*load-truename* (ensure-library lib t)))
-     (remove-if-not (lambda (o) (B::Needs-Compile-P o nil nil))
-                    (library-compilable-ipaths lib)))))
+   (remove-if-not #'needs-compile-p
+                  (library-compilable-ipaths lib))))
+
 (defun library-compilable-ipaths (lib)
-  (remove-duplicates
-   (mapcar #'first
-           (mapcan #'include-path-source-signature
-                   (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib))))
-   :test #'string=))
+  (let ((*load-truename* (ensure-library lib t)))
+    (remove-duplicates
+     (mapcar #'first
+             (apply #'append
+                    (mapcar #'include-path-source-signature
+                            (remove-if (lambda (x) (or (keywordp x) (consp x)))                                                                (library-compile-directives lib)))))
+     :test #'string=)))
 
 (defun library-needs-compile-p (lib)
-  (when (library-ipaths-needing-compile lib) t))
+  (some (lambda (o) (needs-compile-p o nil t))
+        (library-compilable-ipaths lib)))
 
 (defun compile-library (lib  &key
                              (compile-force *include-force*)
