@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.19 2007/12/13 01:33:52 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.20 2007/12/13 04:41:42 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -38,8 +38,6 @@
 ;;; COMPLEX - a species-type which 
 ;;;
 (in-package #I@library/biochem)
-
-(include b/biochem/species)
 
 ;;;
 ;;;
