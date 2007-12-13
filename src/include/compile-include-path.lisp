@@ -59,14 +59,20 @@
                                    (src-sig  (include-path-source-signature ipath))
                                    (cpl      (probe-file (include-path-compiled-file ipath)))
                                    (src-time (file-write-date src)))
-                              (or (not (and cpl
-                                            (equalp src-time (signature-write-time src-sig))
-                                            (equalp src-sig (include-path-compiled-signature ipath))))
-                                  (and recursive 
-                                       (some (lambda (dep-sig) (not (equalp (cdr dep-sig) 
-                                                                            (signature-write-time
-                                                                             (include-path-source-signature (car dep-sig))))))
-                                             (rest src-sig))))))
+                              (or 
+                               (not (and cpl
+                                         (<= *b-core-signature* (file-write-date cpl))
+                                         (equalp src-time (signature-write-time src-sig))
+                                         (equalp src-sig (include-path-compiled-signature ipath))))
+                               (and recursive 
+                                    (some 
+                                     (lambda (dep-sig) 
+                                       (not (equalp 
+                                             (cdr dep-sig) 
+                                             (signature-write-time
+                                              (include-path-source-signature 
+                                               (car dep-sig))))))
+                                     (rest src-sig))))))
            ((t)             (not (currently-compiled-p ipath)))))))
 
 
@@ -300,8 +306,9 @@ symbols in the correct package."
      :test #'string=)))
 
 (defun library-needs-compile-p (lib)
-  (some (lambda (o) (needs-compile-p o nil t))
-        (library-compilable-ipaths lib)))
+  (with-include-compilation-unit
+   (some (lambda (o) (needs-compile-p o))
+         (library-compilable-ipaths lib))))
 
 (defun compile-library (lib  &key
                              (compile-force *include-force*)
