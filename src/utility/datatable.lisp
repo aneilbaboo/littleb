@@ -61,6 +61,22 @@
 ;;;;  [{[ERB _] + [NRG _] ->> [[ERB 1] [NRG 1]]}
 ;;;;   (|.SET-RATE-FUNCTION| 'MASS-ACTION 0.001)])
 
+;;;; WITH-SUBSTITUTION-TABLE:
+;;;; User supplies a table of variables and substitutions for those
+;;;; variables.  The block of code following the table is 
+;;;; EXAMPLE:
+;;;; (with-substitution-table 
+;;;;                  ((a b c)
+;;;;                   (1 2 3)
+;;;;                   (4 5 6))
+;;;;                (format t "~A ~A ~A, " a b c))
+;;;; =M>
+;;;; (PROGN
+;;;;  (FORMAT T "~A ~A ~A, " 1 2 3)
+;;;;  (FORMAT T "~A ~A ~A, " 4 5 6))
+;;;; =>
+;;;; 1 2 3, 4 5 6
+
 (defmacro with-substitution-table ((header &rest data) &body body)
   "The table consists of a header (symbols/column names) and data, a 
    set of lists containing the values corresponding to each column.
@@ -74,24 +90,43 @@
     `(with-substitutions ,binding-sets
        ,@body)))
 
-;;;; EXAMPLE:
-;;;; (with-substitution-table 
-;;;;                  ((a b c)
-;;;;                   (1 2 3)
-;;;;                   (4 5 6))
-;;;;                (format t "~A ~A ~A~%" a b c))
-;;;; (PROGN
-;;;;  (FORMAT T "~A ~A ~A~%" 1 2 3)
-;;;;  (FORMAT T "~A ~A ~A~%" 4 5 6))
-
-(defmacro with-data-table ((&key row col data) (colnames &rest rows) &body body)
-  "Treats nil and _ as empty. "
-  (let ((sub-table  (mapcan
+;;;; WITH-DATA-TABLE:  
+;;;; User specifies:
+;;;;    * substitution variables
+;;;;    * 2D-table of columns and rows
+;;;;    * body of code
+;;;; For each cell in the table, the macro results
+;;;; in a substituted version of the code where the
+;;;; column headers and row headers as well as data
+;;;; are substituted everywhere the variables appear.
+;;;; 
+;;;; The user can specify a value which signals a cell 
+;;;; should be ignored.  By default this is NIL.
+;;;;
+;;;; 
+               
+;;;; EXAMPLE
+;;;; (with-data-table (:row V1! :col V2! :data D!)
+;;;;     ((   'a 'b 'c)
+;;;;      ('a  1  2  3)
+;;;;      ('b  4  5  6)
+;;;;      ('c  7  8  9))
+;;;;   (format t "~S ~S ~S, " v1! v2! D!))
+;;;; =>
+;;;  A A 1, A B 1, A C 3, B A 4, B B 5 ...
+       
+(defmacro with-data-table ((&key row col data ignore) (colnames &rest rows) &body body)
+  "ROW COL and DATA are substituted in the code (BODY).  If a cell contains the ignore symbol,
+   no substitutions will be performed.  By default, IGNORE is NIL."
+  (let* ((row        (or row (gensym "row")))
+         (col        (or col (gensym "col")))
+         (data       (or data (gensym "data")))
+         (sub-table  (mapcan
                      (lambda (rowlist)
                        (loop with rowname = (first rowlist)
                              for colname in colnames
                              for d in (rest rowlist)
-                             when (and d (not (eq d '_)))
+                             unless (eq d empty)
                              collect (if (listp data) (list* colname rowname d)
                                        (list colname rowname d))))
                      rows)))
@@ -105,15 +140,8 @@
             ,@sub-table)
          ,@body))))
 
-;;;; EXAMPLE
-;;;; (with-data-table (:row V1! :col V2! :data D!)
-;;;;     ((   'a 'b 'c)
-;;;;      ('a  1  2  3)
-;;;;      ('b  4  5  6)
-;;;;      ('c  7  8  9))
-;;;;   (format t "~S ~S ~S~%" v1! v2! D!))
-       
-          
+
+;; WITH-SUBSTITUTED-COMBINATIONS:          
 (defmacro with-substituted-combinations (substitution-sets &body body)
   "Where Bindings = ((v1 m1 m2 m3 ..)
                      (v2 m4 m5 m6 ...)
