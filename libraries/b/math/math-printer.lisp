@@ -196,13 +196,17 @@ outer operator, and the second argument is considered the inner operator"
                   (princ #\space stream)))
         ((:xfy :fxy :yfx)
          (print-math (first args) stream o)
+         (pprint-newline-selectively :linear stream)
          (print-math o stream)
+         (pprint-newline-selectively :linear stream)
          (print-math (second args) stream o))
         ((:xf :yf)
          (print-math (first args) stream o)
+         (pprint-newline-selectively :linear stream)
          (print-math o stream))
         (:frest 
          (print-math o stream)
+         (pprint-newline-selectively :linear stream)
          (print-math args stream))))
     (if bracesp (print-math #\) stream))))
 

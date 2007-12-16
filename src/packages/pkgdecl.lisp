@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.10 2007/12/13 01:20:26 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.11 2007/12/16 02:17:33 amallavarapu Exp $
 ;;;
 
 
@@ -94,7 +94,7 @@
    ;; #:concept lambda list keywords
    #:&property #:&optional #:&key #:&rest #:&method
    ;; b object system:          
-   #:fieldinfo #:id-fieldinfo #:cclass-fieldinfo
+   #:fieldinfo #:id-fieldinfo #:cclass-fieldinfo #:fieldinfo-symbol #:fieldinfo-lambda-switch
    #:fieldinfo-kind #:fieldinfo-args #:fieldinfo-default #:fieldinfo-documentation
    #:fieldinfo-p #:id-fieldinfo-p #:cclass-fieldinfo-p
    #:local-field-symbol-p #:local-field-symbol

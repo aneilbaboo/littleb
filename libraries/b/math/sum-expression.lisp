@@ -227,3 +227,11 @@ is the numeric component."
   (declare (ignore field args))
   o)
   
+(defmethod fld ((o list) (field (eql :vars)) &rest args)
+  (declare (ignore field args))
+  o)
+
+(defmethod fld (o (field (eql :vars)) &rest args)
+  (declare (ignore field args))
+  (list o))
+
