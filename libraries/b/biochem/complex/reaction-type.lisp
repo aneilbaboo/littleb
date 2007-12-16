@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.13 2007/12/12 19:00:04 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.14 2007/12/16 02:18:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -46,32 +46,38 @@
    rhs
    &optional
    (location-class := nil))
-  (let* ((lhs (canonicalize-complex-reaction-type-argument lhs))
-         (rhs (canonicalize-complex-reaction-type-argument rhs))
-         (location-class (determine-complex-reaction-type-location-class location-class lhs rhs)))
-    (setf .lhs lhs
-          .rhs rhs
-          .location-class location-class)))
+  (multiple-value-bind (lhs rhs lclass)
+      (parse-reaction-type-arguments lhs rhs location-class '->> #'canonicalize-complex-pattern)
+    (setf .lhs (apply #'s+ lhs)
+          .rhs (apply #'s+ rhs)
+          .location-class lclass)))
 
+;;;;
+;;;; PRINTING:
+
+(defmethod print-concept ((o complex-reaction-type) &optional stream)
+  (if *debug-printing* (call-next-method)
+    (print-math-expression o stream t)))
+
+(defmethod print-math-expression 
+           ((o complex-reaction-type)
+            &optional (stream *standard-output*) (outer-op t))
+  (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
+
+;;;;
+;;;; REACTION-TYPE ARGUMENT PARSING, VALIDATION:
+;;;;
+#| commented out for now -- trying new approach
 (defun determine-complex-reaction-type-location-class (defined-lclass lhs rhs)
   (flet ((find-location-class-in-sum-expression (se)
             (mutils:ifit (find-if #'complex-graph-concept-p (if se se.vars))
                          it.location-class)))
-    (cond
-     ((and (b/math::unit-sum-expression-p lhs)
-           (let ((first lhs.vars.[0]))
-             (and (localization-p first)
-                  (location-class-p first.location))))
-      (let ((first lhs.vars.[0]))
-        (determine-complex-reaction-type-location-class 
-         first.location {first.entity} rhs)))           
-     (t
-      (let* ((lclass (or defined-lclass 
-                         (find-location-class-in-sum-expression lhs)
-                         (find-location-class-in-sum-expression rhs))))
-        (check-complex-reaction-type-argument lhs lclass)
-        (check-complex-reaction-type-argument rhs lclass)
-        lclass)))))
+    (let* ((lclass (or defined-lclass 
+                       (find-location-class-in-sum-expression lhs)
+                       (find-location-class-in-sum-expression rhs))))
+      (check-complex-reaction-type-argument lhs lclass)
+      (check-complex-reaction-type-argument rhs lclass)
+      lclass)))
 
 (defun check-complex-reaction-type-argument (rt-arg loc-class)
   (labels ((coef-ok (num)
@@ -83,7 +89,7 @@
                   (b-error "~S.location-class does not match ~S." var loc-class)))
                (localization
                 (unless var.(is-valid-for loc-class)
-                  (b-error "Invalid reaction-type argument: ~S.  ~
+                  (b-error "Invalid complex-reaction-type argument: ~S.  ~
                             No ~S sublocation in location class ~S." 
                            var  var.location loc-class)))
                (t            
@@ -95,32 +101,50 @@
         (b-error "Invalid argument to complex-reaction-type: ~S." rt-arg))
       rt-arg.(map-terms #'check-term))))
 
-(defmethod print-concept ((o complex-reaction-type) &optional stream)
-  (if *debug-printing* (call-next-method)
-    (print-math-expression o stream t)))
+(defun parse-complex-reaction-arguments (lhs rhs location-class)
+  (mutils:let+ (((clhs lclass) (canonicalize-reaction-type-argument lhs))
+                (crhs          (canonicalize-complex-reaction-type-argument rhs))
+                (lclass        (determine-complex-reaction-type-location-class lclass clhs crhs)))
+    (values clhs crhs lclass)))
 
-(defmethod print-math-expression 
-           ((o complex-reaction-type)
-            &optional (stream *standard-output*) (outer-op t))
-  (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
 
 (defun canonicalize-complex-reaction-type-argument (side)
-  (labels ((canonicalize-object (x) 
-             (etypecase x 
-               (sum-expression (apply #'s+
-                                      x.(map-terms 
-                                         (lambda (o c) 
-                                           (unless (= 1 c) 
-                                             (b-error "Coefficient invalid in ~A ~S as complex reaction argument"
-                                                      c o))
-                                           (canonicalize-object o)))))
-               (list           (apply #'s+ (mapcar #'canonicalize-object x)))
-               (localization   [localization (canonicalize-object x.entity) x.location])
-               (monomer         (eval `[,x.name]))
-               (complex-species-type [reference-pattern x.id])
-               (reference-pattern x))))
-    (canonicalize-object side)))
+  (let (lclass)
+    (labels ((canonicalize-object (x) 
+               (etypecase x
+                 (sum-expression (apply #'s+
+                                        x.(map-terms 
+                                           (lambda (o c) 
+                                             (unless (= 1 c) 
+                                               (b-error "Coefficient invalid in ~A ~S as complex reaction argument"
+                                                        c o))
+                                             (canonicalize-object o)))))
+                 (list           (apply #'s+ (mapcar #'canonicalize-object x)))
+                 (localization   (cond
+                                  ((location-class-p x.location)
+                                   (setf lclass x.location)
+                                   (canonicalize-object x.entity))
+                                  (t [localization (canonicalize-object x.entity) x.location])))
+                 (monomer         (eval `[,x.name]))
+                 (complex-species-type [reference-pattern x.id])
+                 (reference-pattern x))))
+      (values (canonicalize-object side) lclass))))
+|#
+  
+;;;;
+;;;; NEW APPROACH BEGIN
+;;;; 
+(defun canonicalize-complex-pattern (x)
+  (etypecase x
+    (monomer               (canonicalize-complex-pattern (eval `[,x.name])))
+    (complex-species-type  [reference-pattern x.id])
+    (reference-pattern     x)))
 
+    
+;;;;
+;;;; NEW APPROACH END
+;;;;
+  
 (defmacro with-complex-reaction-type-parts (((lhs lhs-form)
                                         (rhs rhs-form))
                                        &body body)
