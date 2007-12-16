@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.5 2007/12/16 02:18:50 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.6 2007/12/16 02:37:20 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -98,7 +98,7 @@
        nil)))
 
 ;;;;
-;;;; NEW APPROACH
+;;;; PARSING OF REACTION-TYPE ARGUMENTS:
 ;;;;
 (defun canonicalize-reaction-type-argument (x type-fn)
   "Returns:
@@ -156,43 +156,15 @@
       (b-error "Invalid sublocation for ~S: ~{~S~^, ~}."
                loc-class (set-difference sublocs (location-class-sublocations loc-class)))))
     (values clhs crhs loc-class)))
-;;;;
-;;;; END NEW APPROACH
-;;;;
 
 (defun canonicalize-species-type (x)
   (unless (species-type-p x)
     (b-error "Expecting a species-type, but received ~S." x))
   x)
 
-
-;;;; (defun determine-reaction-type-location-class (defined-lclass lhs rhs)
-;;;;   (flet ((find-location-class-in-sum-expression (se)
-;;;;             (mutils:ifit (find-if #'species-type-p (if se se.vars))
-;;;;                          it.location-class)))
-;;;;     (let* ((lclass (or defined-lclass 
-;;;;                        (find-location-class-in-sum-expression lhs)
-;;;;                        (find-location-class-in-sum-expression rhs))))
-;;;;       (check-reaction-type-argument lhs lclass)
-;;;;       (check-reaction-type-argument rhs lclass)
-;;;;       lclass)))
-
-;;;; (defun check-reaction-type-argument (rt-arg loc-class)
-;;;;   (labels ((coef-ok (num)
-;;;;              (and (integerp num) (> num 0)))
-;;;;            (check-term (var num)
-;;;;              (typecase var
-;;;;                (species-type         (if (null (subtypep var.location-class loc-class))
-;;;;                                       (b-error "~S.location-class does not match ~S." var loc-class)))
-;;;;                (localization         (if (null var.(is-valid-for loc-class))
-;;;;                                          (b-error "Invalid reaction-type argument: ~S.  No ~S sublocation in location class ~S." var  var.location loc-class)))
-;;;;                (t            (b-error "Expecting a species-type or location-requirement, but received ~S." var)))
-;;;;              (unless (coef-ok num)
-;;;;                (b-error "Invalid stoichiometry (~S) in reaction-type sum-expression ~S" num rt-arg))))
-;;;;     (when rt-arg 
-;;;;       (unless (sum-expression-p rt-arg)
-;;;;         (b-error "Invalid argument to reaction-type: ~S.  Expecting a {na A + nb B + nb C....}" rt-arg))
-;;;;       rt-arg.(map-terms #'check-term))))
+;;;
+;;; END ARGUMENT PARSING
+;;;
 
 (hide-classes reaction-type-requirement |REACTION-TYPE.LHS-REQUIREMENTS| |REACTION-TYPE.RHS-REQUIREMENTS|)
 
@@ -219,9 +191,11 @@
    (rhs reaction-type) &optional (location-class := nil)
    &property (fwd reaction-type :#= [reaction-type .lhs .rhs .location-class])
              (rev reaction-type :#= [reaction-type .rhs .lhs .location-class]))
-  (unless (math-expression-p lhs) {.lhs := {lhs}})
-  (unless (math-expression-p rhs) {.rhs := {rhs}})
-  {.location-class := (determine-reaction-type-location-class .location-class .lhs .rhs)})
+  (multiple-value-bind (clhs crhs loc-class)
+      (parse-reaction-type-arguments lhs rhs location-class '<-> #'canonicalize-species-type)
+   (setf .lhs (apply #'s+ clhs)
+         .rhs (apply #'s+ crhs)
+         .location-class loc-class)))
 
 
 (defield reversible-reaction.kf ()
@@ -284,3 +258,32 @@
 ;;;;   (eq (length (gethash loc .reactants)) 
 ;;;;       (length .lhs-requirements)))
 
+
+
+;;;; (defun determine-reaction-type-location-class (defined-lclass lhs rhs)
+;;;;   (flet ((find-location-class-in-sum-expression (se)
+;;;;             (mutils:ifit (find-if #'species-type-p (if se se.vars))
+;;;;                          it.location-class)))
+;;;;     (let* ((lclass (or defined-lclass 
+;;;;                        (find-location-class-in-sum-expression lhs)
+;;;;                        (find-location-class-in-sum-expression rhs))))
+;;;;       (check-reaction-type-argument lhs lclass)
+;;;;       (check-reaction-type-argument rhs lclass)
+;;;;       lclass)))
+
+;;;; (defun check-reaction-type-argument (rt-arg loc-class)
+;;;;   (labels ((coef-ok (num)
+;;;;              (and (integerp num) (> num 0)))
+;;;;            (check-term (var num)
+;;;;              (typecase var
+;;;;                (species-type         (if (null (subtypep var.location-class loc-class))
+;;;;                                       (b-error "~S.location-class does not match ~S." var loc-class)))
+;;;;                (localization         (if (null var.(is-valid-for loc-class))
+;;;;                                          (b-error "Invalid reaction-type argument: ~S.  No ~S sublocation in location class ~S." var  var.location loc-class)))
+;;;;                (t            (b-error "Expecting a species-type or location-requirement, but received ~S." var)))
+;;;;              (unless (coef-ok num)
+;;;;                (b-error "Invalid stoichiometry (~S) in reaction-type sum-expression ~S" num rt-arg))))
+;;;;     (when rt-arg 
+;;;;       (unless (sum-expression-p rt-arg)
+;;;;         (b-error "Invalid argument to reaction-type: ~S.  Expecting a {na A + nb B + nb C....}" rt-arg))
+;;;;       rt-arg.(map-terms #'check-term))))
