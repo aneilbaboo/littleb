@@ -26,14 +26,10 @@
 ;;; Description: [] := The object expression operator macro 
 ;;;
 
-;;; $Id: object-reader.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $
+;;; $Id: object-reader.lisp,v 1.2 2007/12/17 00:59:02 amallavarapu Exp $
 (in-package b)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-
-
-(defgeneric objectify (obj initializer &rest args)
-  (:documentation "Provides the implementation for [OBJ ...ARGS]."))
 
 (set-syntax-from-char #\[ #\( +b-readtable+)
 (set-syntax-from-char #\] #\) +b-readtable+)
