@@ -25,7 +25,7 @@
 ;;; File: reader-core
 ;;; Description: 
 
-;;; $Id: reader-core.lisp,v 1.2 2007/11/21 07:10:57 amallavarapu Exp $
+;;; $Id: reader-core.lisp,v 1.3 2007/12/17 01:11:18 amallavarapu Exp $
 
 (in-package b)
 
@@ -33,7 +33,24 @@
 
 (defconstant +standard-readtable+ (with-standard-io-syntax *readtable*))
 (defconstant +b-readtable+ (copy-readtable *readtable*))
-(defconstant +b-standard-tokens-readtable+ (copy-readtable *readtable*))
+
+;;;
+;;; STANDARD-TOKENS-READTABLE 
+;;; Provides a version of the readtable in which the token chars are unmodified
+;;; (ie, field syntax is not installed).  This was found to be necessary to support
+;;; CLISP compiler, which is sensitive to the state of *readtable*.
+;;; 
+(defconstant +b-standard-tokens-readtable+ (copy-readtable *readtable*)
+  "A readtable in which the token chars are unmodified (as in the +b-readtable+), but
+   other macro-characters are installed.")
+
+;;;
+;;; The working readtable is used in conjunction with the standard-tokens-readtable.
+;;; It is used by library files which need to modify the current readtable.  Since
+;;; some Lisps (eg CLISP) will set *readtable* to +b-standard-tokens-readtable+ during
+;;; compilation, such code needs to know the correct readtable to modify.  
+;;; Horrible and kludgy; I'm not sure how to get around it.
+;;;
 (defvar *working-readtable* nil
   "The working readtable is the 'true' little b readtable.")
 
