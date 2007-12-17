@@ -27,7 +27,7 @@
 ;;;              this is a meta-reaction which implicates 
 ;;;              reaction-types and enzyme substrate complexes
 
-;;; $Id: enzymatic-reaction.lisp,v 1.4 2007/11/21 07:10:56 amallavarapu Exp $
+;;; $Id: enzymatic-reaction.lisp,v 1.5 2007/12/17 16:21:12 amallavarapu Exp $
 ;;;
 ;;;
 (in-package #I@folder)
@@ -51,11 +51,11 @@
               :documentation "A dictionary of REACTION-TYPEs representing forward steps.")
    (rev       dictionary :#= [dictionary] :relevance t
               :documentation "A dictionary of REACTION-TYPEs representing reverse steps."))
-  
-  (setf .location-class (determine-reaction-type-location-class location-class {e + p} {e + s})
-        .e (if (math-expression-p e) e {e})
-        .s (if (math-expression-p s) s {s})
-        .p (if (math-expression-p p) p {p})))
+  (multiple-value-bind (clhs crhs loc-class)
+      (parse-reaction-type-arguments {e + p} {e + s} location-class '-E> #'canonicalize-species-type)
+    (setf .location-class loc-class
+          .lhs clhs
+          .rhs crhs)))
 
 (defprop enzymatic-reaction.steps (list :documentation "A list of the form ([:REVERSIBLE | :IRREVERSIBLE]*)" :relevance t)  
   (when (and (zerop .fwd._length) (zerop .rev._length))
