@@ -34,7 +34,7 @@
 ;;;              arithmetic-value and any combinations.
 ;;;              
 
-;;; $Id: math-concept.lisp,v 1.3 2007/12/19 21:13:45 amallavarapu Exp $
+;;; $Id: math-concept.lisp,v 1.4 2007/12/19 22:02:44 amallavarapu Exp $
 ;;; $Log $
 
 (in-package b/math)
@@ -57,12 +57,9 @@
 (defield math-concept.let (&rest bindings)
    (map-vars object (math-let-substituter bindings) nil))
 
-#+:clisp
-(ext:without-package-lock ("COMMON-LISP") 
-  (defield null.vars () nil))
-
-#-:clisp 
-(defield null.vars () nil)
+(defmethod fld ((o null) (field (eql :vars)) &rest args)
+  (declare (ignore o field args)) 
+  nil)
 
 (defield math-concept.vars () nil)
 
