@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.20 2007/12/13 04:41:42 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.21 2007/12/19 21:09:22 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -338,7 +338,7 @@
                               (etypecase id
                                 (complex-graph  id)
                                 (cons           (make-complex-graph id nil)))))))
-  (check-complex-species-type-graph-is-valid .id)
+  ;(check-complex-species-type-graph-is-valid .id)
   =>
   (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
@@ -933,7 +933,7 @@
   (and (consp x)
        (let ((head (first x)))
          (or (fld-form-p head)
-             (some (lambda (x) (eq x '*)) x)))))
+             (some (lambda (x) (member x '(* **))) x)))))
 
 (defun firsthash (keys hash-table &optional default)
   "Returns the first hash-value available for a list of keys, otherwise default"
