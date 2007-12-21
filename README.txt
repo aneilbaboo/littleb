@@ -23,9 +23,9 @@ I Installing the Source Tree:
            The cvs program will need to be in the Shell's path.
 
            Or, do it manually:
-		cvs -z3 -d:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
+		cvs -z3 -d :pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
         	 => creates the folder lisa/ inside b1/
-		cvs -z3 -d:pserver:anonymous@graph-tools.cvs.sourceforge.net:/cvsroot/graph-tools co -P graph-tools
+		cvs -z3 -d :pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb co -P graph-tools
         	 => creates the folder graph-tools/ inside b1/
 
 	When you're done, the b1 folder should look like this:
