@@ -1,8 +1,10 @@
-;;; This is asdf+ some useful extensions to ASDF (Another System Definition Facility).  
-;;; $Revision: 1.8 $
+;;; This is asdf+ some useful extensions to ASDF (Another System
+;;; Definition Facility).
+;;; $Revision: 1.9 $
 
-;;; You may load this file instead of ASDF.lisp, provided that either ASDF.lisp has
-;;; already been loaded or is present in the same folder as this file.
+;;; You may load this file instead of ASDF.lisp, provided that either
+;;; ASDF.lisp has already been loaded or is present in the same folder
+;;; as this file.
 
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome: please mail to
@@ -53,10 +55,6 @@
 ;;
 (in-package asdf)
 
-(export 'files-in-system)
-(defun files-in-system (system)
-  (mapcar #'component-pathname (components-in-system system)))
-
 (defun components-in-system (system)
  (remove-duplicates 
    (loop for (nil . component) in (traverse (make-instance 'operation)
@@ -67,32 +65,44 @@
    :key #'component-pathname
    :test #'pathname-match-p))
 
+
+(export 'files-in-system)
+(defun files-in-system (system)
+  (mapcar #'component-pathname (components-in-system system)))
+
 (defun sysdef-central-registry-subsearch (name)
   "Looks in each *central-registry* folder for NAME.asd or system.asd in 
    the subdirectory named NAME."
   (block nil
       (dolist (form *central-registry*)
-        (let* ((dir (merge-pathnames (make-pathname :directory `(:relative ,name))
-                                     (eval form)))
+        (let* ((dir (merge-pathnames 
+                     (make-pathname :directory `(:relative ,name))
+                     (eval form)))
                (path (when dir
-                       (or (probe-file (make-pathname :defaults dir :version :newest
-                                                      :name name :type "asd" :case :local))
-                           (probe-file (make-pathname :defaults dir :version :newest
-                                                      :name "system" :type "asd" :case :local))))))
+                       (or (probe-file
+                            (make-pathname :defaults dir :version :newest
+                                           :name name :type "asd" :case :local))
+                           (probe-file
+                            (make-pathname :defaults dir :version :newest
+                                           :name "system" :type "asd"
+                                           :case :local))))))
           (if path (return path))))))
 
-(setf *system-definition-search-functions* (nconc *system-definition-search-functions*
-                                                  (list 'sysdef-central-registry-subsearch)))
+(setf *system-definition-search-functions* 
+      (nconc *system-definition-search-functions*
+             (list 'sysdef-central-registry-subsearch)))
 
 (export 'platform-name)
 (defun platform-name ()
-  "Provides a short string which names the current Lisp implementation.  This may
-be used to generate directory names for example to store different platform FASL files."
+  "Provides a short string which names the current Lisp
+implementation.  This may be used to generate directory names for
+example to store different platform FASL files."
   (flet ((feature-select (elts &optional (default "Unknown"))
            (let ((name (or (first (intersection elts *features*)) default)))
              (if (symbolp name) (string-capitalize (symbol-name name)) name)))
          (make-safe-dir-name (&rest strs)
-           (substitute-if-not #\- #'alphanumericp (format nil "~{~A~^-~}" strs))))
+           (substitute-if-not #\- #'alphanumericp
+                              (format nil "~{~A~^-~}" strs))))
     (make-safe-dir-name
      (feature-select '(:allegro :clisp :lispworks :sbcl :cmucl)
                      (lisp-implementation-type))
@@ -108,13 +118,15 @@ be used to generate directory names for example to store different platform FASL
 (export 'component-system)
 
 ;;;
-;;; SYSTEM-BIN-DIRECTORY - function for re-directing compiler output to specific directories 
+;;; SYSTEM-BIN-DIRECTORY - function for re-directing compiler output
+;;; to specific directories
 ;;;
 ;;; USAGE:
 ;;;         (setf (system-bin-directory :my-system) #P"~/lisp/bin/my-system/")
 
 (defvar *system-bin-directories* ()
-  "An assoc list mapping system names to bin directories (which may be relative pathnames)")
+  "An assoc list mapping system names to bin directories (which may be
+  relative pathnames)")
 
 (export 'system-bin-directory)
 (defun system-bin-directory (system)
@@ -128,7 +140,8 @@ be used to generate directory names for example to store different platform FASL
   (let* ((system (find-system system))
         (path   (pathname value))
         (sysname (component-name system))
-        (existing (find sysname *system-bin-directories* :key #'car :test #'equalp)))
+        (existing (find sysname *system-bin-directories*
+                        :key #'car :test #'equalp)))
     (cond
      (existing (setf (cdr existing) path))
      (t (push (cons sysname path) *system-bin-directories*)))))
@@ -144,7 +157,8 @@ be used to generate directory names for example to store different platform FASL
      (sys-bin-dir (mapcar (lambda (path)
                             (merge-pathnames
                              (make-pathname :type (pathname-type path))
-                             (merge-pathnames (enough-namestring src-path sys-path)
+                             (merge-pathnames (enough-namestring src-path
+                                                                 sys-path)
                                               sys-bin-dir)))
                           paths))
      (t           paths))))
