@@ -27,7 +27,7 @@
 ;;;              Provides an object that has fields which are flexibly added.
 ;;;
 
-;;; $Id: dictionary.lisp,v 1.5 2007/11/21 07:10:56 amallavarapu Exp $
+;;; $Id: dictionary.lisp,v 1.6 2007/12/22 18:45:54 amallavarapu Exp $
 (in-package b/util)
 
 (include-declaration :expose-packages (mallavar-utility)
@@ -124,4 +124,4 @@ KEY is contained in the dictionary."
     (loop with ht = ( |DICTIONARY._HASH-TABLE| d)
           for k being the hash-keys of ht
           for v being the hash-values of ht
-          do (format stream  "~%~50S~S" k v stream))))
+          do (format stream  "~%~50S~S" k v))))
