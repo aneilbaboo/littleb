@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Revision: 1.5 $
+# $Revision: 1.6 $
 set -e
 trap "kill 0" 2
 
@@ -21,7 +21,7 @@ function usage()
 	echo " -l lisp       Lisp interpreter which will run compile-all.lisp "    
 	echo " -q            quiet (hides program output)"
 	echo " -Q            really quiet (hides even messages from this script)"
-	echo " -h help       this output"
+	echo " -h, --help    this output"
 }
 
 function msg () 
@@ -103,25 +103,26 @@ showProgramOutput=true
 while getopts "euht:o:l:m:" optname
   do
     case 	"$optname" in
-	    e)				exportFlag=true;;
-			u)				updateFlag=true;;
+      e)				exportFlag=true;;
+      u)				updateFlag=true;;
       t|-btag)	littlebTag=${OPTARG}
                 tagName=-$littlebTag
-								;;
-			-lisatag) lisaTag=${OPTARG};;
+                ;;
+      -lisatag) lisaTag=${OPTARG};;
       o)				outputName=${OPTARG};;
-			l)				lisp=${OPTARG};;
-			-lisa) 		lisaRoot=${OPTARG};;
-			-littleb) littlebRoot=${OPTARG};;
-			h)				usage
-								exit 0
-								;;	
-			q)				showProgramOutput=false;;
-			Q)  	    showProgramOutput=false
-								showMessages=false;;
+      l)				lisp=${OPTARG};;
+      -lisa) 		lisaRoot=${OPTARG};;
+      -littleb) littlebRoot=${OPTARG};;
+      q)				showProgramOutput=false;;
+      Q)  	    showProgramOutput=false
+                showMessages=false;;
+      h|-help)	usage
+                exit 0
+                ;;	
+
       *)
-        echo "Unknown error while processing options"
-				exit 1
+				usage
+      	exit 1
         ;;
     esac
   done
