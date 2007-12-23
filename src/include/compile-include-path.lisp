@@ -44,12 +44,13 @@
 
 (defmacro with-include-compilation-unit (&rest body)
   `(with-binding-environment (*current-compiled-ipaths* *current-loaded-ipaths* *signature-cache* *dependency-cache*)
-     (#+clisp ext:without-package-lock #+clisp ("COMMON-LISP")
-      #-clisp progn
-      (with-include-load-unit 
-        (with-compilation-unit ()
-          ,@body)))))
-
+     (with-include-load-unit 
+       (with-compilation-unit ()
+	 #+:clisp (ext:without-package-lock ("COMMON-LISP")
+		    (let ((clos::*gf-warn-on-replacing-method* nil))
+		     ,@body))
+         #+:sbcl  (sb-ext:without-package-locks ,@body)
+         #-(or :clisp :sbcl) ,@body))))
 
 (defun needs-compile-p (ipath &optional force recursive)
   (let ((ipath (include-path ipath)))
@@ -361,7 +362,8 @@ symbols in the correct package."
 (defun platform-compile-file (src dest)
   #-:clisp (compile-file src :output-file dest)
   ;; special handling for clisp, since the clisp binaries require standard-io-syntax:
-  #+:clisp (compile-file-with-standard-io-syntax src :output-file dest))
+  #+:clisp (port:allowing-redefinitions
+             (compile-file-with-standard-io-syntax src :output-file dest)))
 
 #+:clisp
 (progn
