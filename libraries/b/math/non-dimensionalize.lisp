@@ -167,6 +167,7 @@ value to be used to non-dimensionalize an object o"
   (dimension-of (dimension-combination-error-argument2 dce)))
 
 (defmethod print-object ((e dimension-combination-error) stream)
+  (declare (ignore stream))
   (with-slots (argument1 argument2 operator format-arguments) e
     (setf format-arguments
           (list argument1 operator argument2
