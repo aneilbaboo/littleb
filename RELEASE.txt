@@ -1,6 +1,6 @@
-This file contains notes for the little b source code.  If you are
-interested in getting started right away with using little b to build
-models, it may be easier to download the GUI application from the 
+This file contains notes for the little b source code, version 1-5-6.  If 
+you are interested in getting started right away with using little b to 
+build models, it may be easier to download the GUI application from the 
 little b website: http://littleb.org/download.html.
 
 Little b is a Lisp-based language designed to allow the user to 
@@ -37,6 +37,77 @@ highlighting.
 More information at: http://littleb.org
 
 --------------------------------------------------------------------------------
+Changes:
+1.5.6 (2007-12-23)
+==================
+Thanks to Albert Krewinkel (AK) who has started working on SBCL compliance.  
+Some of his changes and fixes for several bugs he found appear in this release.  
+
+<< Known Issues >>
+* Will not load on SBCL
+* CLISP printing is a mess.   Object forms (lists beginning with OBJECT) should 
+  print as [], but print as (OBJECT ..) when inside a pprint-logical-block.
+  Same for FLD forms and MATH forms.
+
+  This due to a bug which is fixed in CLISP CVS source tree (but not yet
+  released):
+  https://sourceforge.net/tracker/?func=detail&atid=101355&aid=1835520&group_id=1355
+  We may post a prerelease build on the little b SourceForge site.  However, even this
+  version has pretty-print formatting issues (too many line feeds).
+  !! Need to figure develop a simple test case and submit CLISP bug report !!
+
+<< User-visible changes >>
+Bug Fixes
+* Bugs causing complexes to be computed incorrectly during rxn inference now fixed.
+* explicitly provided locations in reaction-types and complex-reaction-types are now
+  handled correctly.  E.g., {x @ :outer @ membrane ->> x @ :inner}
+* Changed get-cvs-... scripts and README.txt to reflect correct CVS repository for graph-tools
+* CLISP package lock problem fixed
+* CLISP bug prevents load (workaround provided in this release):
+  https://sourceforge.net/tracker/index.php?func=detail&aid=1854698&group_id=1355&atid=101355
+* reversible-reaction now constructs properly
+* littleb.lisp now automatically compiles b library when /src files have changed
+
+
+Features
+* Added datatable macros (with-substitution-table with-data-table, etc), exported from b package
+  - allow the user to specify a body of code which will be duplicated 
+    for each set of substitutions provided
+* Errors now do not dump user into the debugger.  To enable the debugger,
+  (setf *debugger-enabled* t) at the command prompt or your init.lisp file.
+* sites definitions now accept an optional :documentation keyword argument
+  e.g.,	(defmonomer egf (L :documentation "ligand binding site"))
+* SLIME environments now open in B-USER
+* Double asterisks, **, can now be used to indicate that the rest of the sites 
+  accept any state/binding: eg, [[receptor 1 **][ligand 1]]
+* Field access on NIL produces a more user-friendly message now 
+  (cryptic "Attempt to access NULL.X, :X is not a field of NULL" errors are replaced)
+* printing a bit fixed
+* (DESCRIBE concept) now works
+
+<< Internal Changes >>
+Modifications
+* Started move toward SBCL Compliance (AK)
+* Removed useless :source-extension line which only seems to cause problems with and clisp, sbcl
+* Got rid of check-complex-species-type-graph check inside complex-species-type-ctor
+* Added comments explaining +b-standard-tokens-readtable+ and *working-readtable*
+* Removed useless objectify fn
+* added .vars, .length fields to lists and all other objects
+* exporting some additional fieldinfo accessors to b package
+* print-math-form now breaks lines before & after operators
+* Removed mop.lisp (AK) - all functionality in clos.lisp
+* Added .as-list field to sum-expression objects
+* fixes to global-value - symbols now deleted correctly
+* #| reader no longer returns a value (NIL).
+* site-label-value changed to site-label-state
+
+Bug fixes
+* Got rid of circular include dependency in complex/species-type
+* library-needs-compile-p fixed
+* compilation bug fixed in def-with-fields
+* added defstruct-with-fields, defclass-with-fields
+* *print-pretty* set to nil when dynamic rules are added
+
 Changes:
 1.5.5 (2007-11-29)
 ==================

@@ -604,3 +604,244 @@ Changes for b1
 	* b1@/cvsroot/littleb/b1/get-cvs-modules.sh 1.1 (added):
 		Initial commit
 
+
+Changes for b1 since V1-5-5 (excluded)
+ built by cvschangelogbuilder 2.1 (build 1.47) with option listdeltabydate.
+
+2007-12-23
+	* b1@/cvsroot/littleb/b1/release/make-release.sh 1.6 (changed):
+		Changed added --help option
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.12 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/clisp.lisp 1.4 (changed):
+		Suppresses CLOS method redefinition warnings on CLISP 2.43 and later
+
+2007-12-22
+	* b1@/cvsroot/littleb/b1/release/.cvsignore 1.3 (changed):
+		Change ignore of b1 to b1/
+	* b1@/cvsroot/littleb/b1/asdf/asdf+.lisp 1.9 (changed):
+		Cosmetic changes from Albert Krewinel
+	* b1@/cvsroot/littleb/b1/libraries/b/util/dictionary.lisp 1.6 (changed):
+		Krewinkel bug fix
+
+2007-12-21
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.bat 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.sh 1.2 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/README.txt 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.bat 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/get-cvs-modules.sh 1.3 (changed):
+		Changed scripts and readme to reflect correct CVS repository for graph-tools
+
+2007-12-20
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.6 (changed):
+		Now, littleb.lisp switches to B-USER if SWANK is present.
+	* b1@/cvsroot/littleb/b1/b1.asd 1.14 (changed):
+		Removed useless :source-extension line which only seems to cause problems with and clisp, sbcl
+
+2007-12-19
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.21 (changed):
+		* got rid of check-complex-species-type-graph check inside complex-species-type-ctor
+		* now, ** is recognized as a complex-pattern
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-concept.lisp 1.3 (changed):
+		Defining null.vars raises an error on CLISP because of change to COMMON-LISP package - now fixed.
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-concept.lisp 1.4 (changed):
+		Fixed CLISP package lock problem
+
+2007-12-17
+	* b1@/cvsroot/littleb/b1/src/global/reader-core.lisp 1.3 (changed):
+		Added comments explaining +b-standard-tokens-readtable+ and *working-readtable*
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/enzymatic-reaction.lisp 1.5 (changed):
+		Enzymatic-reaction now uses parse-reaction-type-arguments
+	* b1@/cvsroot/littleb/b1/src/reader/object-reader.lisp 1.2 (changed):
+		Removed useless objectify fn
+
+2007-12-16
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-printer.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.11 (changed):
+		* added .vars field to lists and all other objects
+		* exporting some additional fieldinfo accessors to b package
+		* print-math-form now breaks lines before & after operators
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.14 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/localization.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.5 (changed):
+		Fixed bug where explicitly provided locations in reaction-types and complex-reaction-types were not handled correctly
+		  (e.g., {x @ :outer @ membrane -> y @ :inner})
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-type.lisp 1.6 (changed):
+		Fixed reversible-reaction ctor
+	* b1@/cvsroot/littleb/b1/src/utility/mop.lisp 1.2 (removed):
+		Removed mop.lisp
+
+2007-12-15
+	* b1@/cvsroot/littleb/b1/src/utility/datatable.lisp 1.2 (changed):
+		Fixed up comments
+
+2007-12-13
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.9 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/def-with-fields.lisp 1.2 (changed):
+		* compilation bug fixed in def-with-fields
+		* library-needs-compile-p fixed
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.19 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.8 (changed):
+		* fixed bug in library-needs-compile-p
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.5 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/libraries/b/math/math-printer.lisp 1.4 (changed):
+		*print-context* now set inside pprint-as-infix
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.3 (changed):
+		Added .as-list field
+	* b1@/cvsroot/littleb/b1/libraries/b/math/sum-expression.lisp 1.4 (changed):
+		Added documentation to .as-list
+	* b1@/cvsroot/littleb/b1/littleb.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.10 (changed):
+		Added library-needs-compile-p
+		littleb.lisp now automatically compiles b library if necessary
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.10 (changed):
+		Fixed bugs in library-needs-compile-p
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.20 (changed):
+		Got rid of circular include dependency in complex/species-type
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.11 (changed):
+		Needs-compile-p now checks whether the core signature is more recent than the compiled file write-date
+
+2007-12-12
+	* b1@/cvsroot/littleb/b1/src/core/kb.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/constants.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/global.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgconstants.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.9 (changed):
+	* b1@/cvsroot/littleb/b1/src/portable/dspec.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/field-reader.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/defrule.lisp 1.5 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.8 (changed):
+		* got rid of commented out code (kb.lisp, constants.lisp)
+		* added initialize-global-valuel (deletes all symbols from global-value pkg)
+		* global-value package now uses now other packages
+		* added defstruct-with-fields, defclass-with-fields
+		* portable:destroy now ensures symbol is uninterned from home package
+		* removed field-reader dispatcher for #|
+		* *print-pretty* set to nil when dynamic rules are added
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.12 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.12 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.16 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/reaction-inference.lisp 1.5 (changed):
+		* several bugs in complex reaction inference fixed
+		   - domain parser now treats * on rhs correctly
+		* site-infos now support fields
+		* reference pattern graphs are now correctly canonicalized (by canonicalizing
+		    an unreferenced version of the graph, and reordering the referenced version)
+		* site-label-value changed to site-label-state
+		**** STILL GETTING WARNING ABOUT REDEFINING REACTION-TYPE-RHS-FNs ! *****
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.9 (changed):
+		Added .length field to sequence
+	* b1@/cvsroot/littleb/b1/b1.asd 1.12 (changed):
+		Added def-with-fields.lisp to sysdef
+	* b1@/cvsroot/littleb/b1/src/core-types/concept.lisp 1.4 (changed):
+		Concept DESCRIBE method now works
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.13 (changed):
+		Cosmetic changes only to reaction-type
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.17 (changed):
+		Fixed bug -- states were being ignored in canonicalization (graph-type-label-less-predicate for complex-graphs)
+	* b1@/cvsroot/littleb/b1/src/portable/dspec.lisp 1.3 (changed):
+		Fixed portable:destroy-symbol bug
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/def-with-fields.lisp 1.1 (added):
+		Initial commit
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.18 (changed):
+		Sites can now contain documentation.
+		e.g.,
+		(defmonomer egf (L :documentation "ligand binding site"))
+	* b1@/cvsroot/littleb/b1/b1.asd 1.13 (changed):
+		V1.5.6 now
+
+2007-12-10
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.6 (changed):
+		Enabled debugger in operate-on-region/buffer so interface displays an error box.
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.11 (changed):
+		Minor code prettification
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.15 (changed):
+		Minor pretty-printing fix (final square brace now prints on same line as last monomer)
+
+2007-12-06
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.11 (changed):
+	* b1@/cvsroot/littleb/b1/src/reader/field-reader.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.7 (changed):
+		* fixed {null-dimension ^ 0} => 1 incorrectness
+		* now, O.:F => (FLD O :F), not (FLD O ':F) (needed for flexible complex-constructor syntax)
+	* b1@/cvsroot/littleb/b1/.cvsignore 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.10 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.14 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species.lisp 1.4 (changed):
+		* prettified error messages for species-type.in
+		* fixed bug in the rest-wildcard handler (**)
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/species-type.lisp 1.13 (changed):
+		Added [monomer **] syntax
+	* b1@/cvsroot/littleb/b1/src/packages/mallavar-utility-pkg.lisp 1.2 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.8 (changed):
+	* b1@/cvsroot/littleb/b1/src/utility/datatable.lisp 1.1 (added):
+		Added datatable macros to mutils (with-substitution-table with-data-table, etc) and exported from b package
+	* b1@/cvsroot/littleb/b1/src/global/error.lisp 1.3 (changed):
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/src/packages/pkgdecl.lisp 1.7 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.4 (changed):
+		Cleaned up error handling - added *debugger-enabled* to public interface.
+		a debugger-hook is installed which now aborts all errors if this var is T.
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/species.lisp 1.3 (changed):
+		Failure of species-type.in now throws an error
+	* b1@/cvsroot/littleb/b1/src/global/field.lisp 1.8 (changed):
+		Fix bug for NIL.field error - used `,. syntax, not available until *after* little b  is loaded
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.5 (changed):
+		Fixed the invalid key binding (F7=>Compile Buffer)
+	* b1@/cvsroot/littleb/b1/b1.asd 1.11 (changed):
+		Oops - forgot datatable.lisp in system definition --- here it is.
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.6 (changed):
+		Silly unbound symbol fixed
+	* b1@/cvsroot/littleb/b1/src/global/error.lisp 1.4 (changed):
+	* b1@/cvsroot/littleb/b1/src/include/compile-include-path.lisp 1.6 (changed):
+	* b1@/cvsroot/littleb/b1/src/top-level-forms/initialize.lisp 1.5 (changed):
+		Small bug fixes: merge-graphs directedp was ignored
+
+2007-12-05
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-type.lisp 1.11 (changed):
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/location.lisp 1.10 (changed):
+		Fixed location-class-p
+		fixed @ location-class syntax for complex-reaction-types
+	* b1@/cvsroot/littleb/b1/b1.asd 1.10 (changed):
+	* b1@/cvsroot/littleb/b1/src/platform/lispworks.lisp 1.4 (changed):
+		Got rid of (perform (asdf:load-op :before ..) in sysdef
+
+2007-12-02
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.12 (changed):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/ode.lisp 1.11 (changed):
+	* b1@/cvsroot/littleb/b1/release/make-release.bat 1.3 (changed):
+		Finally fixed bug where localized species-types weren't being substituted correctly
+	* b1@/cvsroot/littleb/b1/release/.cvsignore 1.2 (changed):
+		Now also ignoring output dir
+
+2007-11-30
+	* b1@/cvsroot/littleb/b1/RELEASE 1.2 (removed):
+	* b1@/cvsroot/littleb/b1/release/uploadfiles.sh 1.1 (added):
+		*** empty log message ***
+	* b1@/cvsroot/littleb/b1/CHANGELOG 1.2 (removed):
+	* b1@/cvsroot/littleb/b1/LICENSE 1.2 (removed):
+	* b1@/cvsroot/littleb/b1/README 1.2 (removed):
+	* b1@/cvsroot/littleb/b1/CHANGELOG.txt 1.1 (added):
+	* b1@/cvsroot/littleb/b1/LICENSE.txt 1.1 (added):
+	* b1@/cvsroot/littleb/b1/README.txt 1.1 (added):
+	* b1@/cvsroot/littleb/b1/RELEASE.txt 1.1 (added):
+		Changed the informational text files to have .txt endings
+		Renamed ANNOUNCE to RELEASE.txt
+	* b1@/cvsroot/littleb/b1/release/uploadfiles.sh 1.2 (changed):
+		Initial commit of uploadfiles.sh: simple script which automates
+		uploading of all files from relative subdir output to
+		upload.sourceforge.net/incoming
+
+2007-11-29
+	* b1@/cvsroot/littleb/b1/changes.txt 1.2 (removed):
+	* b1@/cvsroot/littleb/b1/readme.txt 1.4 (removed):
+		Modified specification: SHC now binds from :inner compartment
+	* b1@/cvsroot/littleb/b1/libraries/b/biochem/complex/reaction-inference.lisp 1.9 (changed):
+		One case in which complex-species-type graph was not canonicalized --
+		now fixed
+		Small bug fix
+
