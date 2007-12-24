@@ -40,8 +40,10 @@ More information at: http://littleb.org
 Changes:
 1.5.6 (2007-12-23)
 ==================
-Thanks to Albert Krewinkel (AK) who has started working on SBCL compliance.  
-Some of his changes and fixes for several bugs he found appear in this release.  
+Bugs discovered by German Enciso and Carlos Lopez in the graph-based reaction
+inference code have been fixed in this release.  Thanks also to Albert Krewinkel 
+who has started working on SBCL compliance.  Some of his changes and fixes for 
+several bugs he found appear in this release.  
 
 << Known Issues >>
 * Will not load on SBCL
