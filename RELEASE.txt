@@ -100,6 +100,8 @@ Modifications
 * fixes to global-value - symbols now deleted correctly
 * #| reader no longer returns a value (NIL).
 * site-label-value changed to site-label-state
+* get-cvs-modules scripts now cvs export lisa rather than checkout 
+   (before this, cvs tag failed because no lisa write access)
 
 Bug fixes
 * Got rid of circular include dependency in complex/species-type
