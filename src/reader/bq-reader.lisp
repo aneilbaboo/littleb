@@ -143,7 +143,8 @@
         (list* operator (bq-expand-rest x)))))))
 
 (defun bq-comma-at-error (stream)
-  (b-reader-error stream ",@ not allowed after . or `"))
+  (unless *read-suppress*
+    (b-reader-error stream ",@ not allowed after . or `")))
 
 (defun bq-expand-splice (first rest)
   "Returns the appropriate form to splice first onto any elements in REST"
