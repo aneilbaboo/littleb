@@ -25,7 +25,7 @@ development.  Little b runs on these ANSI Common Lisp implementations:
                     because of memory restrictions
   * Allegro 8.x, another high quality, fast CL implementation
   * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
-          (I recommend using it with Emacs and SLIME)
+          (Works with Emacs and SLIME)
 	
 Others may work too.  We'd be happy to hear about it.
 
@@ -46,6 +46,7 @@ who has started working on SBCL compliance.  Some of his changes and fixes for
 several bugs he found appear in this release.  
 
 << Known Issues >>
+
 * Will not load on SBCL
 * CLISP printing is a mess.   Object forms (lists beginning with OBJECT) should 
   print as [], but print as (OBJECT ..) when inside a pprint-logical-block.
@@ -59,6 +60,7 @@ several bugs he found appear in this release.
   !! Need to figure develop a simple test case and submit CLISP bug report !!
 
 << User-visible changes >>
+
 Bug Fixes
 * Bugs causing complexes to be computed incorrectly during rxn inference now fixed.
 * explicitly provided locations in reaction-types and complex-reaction-types are now
@@ -88,6 +90,7 @@ Features
 * (DESCRIBE concept) now works
 
 << Internal Changes >>
+
 Modifications
 * Started move toward SBCL Compliance (AK)
 * Removed useless :source-extension line which only seems to cause problems with and clisp, sbcl
