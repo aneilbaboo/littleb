@@ -25,7 +25,7 @@
 ;;; File: dimensional-methods
 ;;; Description: 
 
-;;; $Id: dimensional-methods.lisp,v 1.2 2007/11/21 07:10:56 amallavarapu Exp $
+;;; $Id: dimensional-methods.lisp,v 1.3 2007/12/24 19:37:35 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -61,7 +61,7 @@
 ;;;;
 
 (def-multitype-method get-math-expression-vars ((o number numeric-concept dimension unit))
-  (declare (ignore o)) nil)
+   (declare (ignorable o)) nil)
 
 (defmethod get-math-expression-vars (o) (list o))
 
