@@ -25,7 +25,7 @@
 ;;; File: littleb.lisp
 ;;; Description: Loads the little b language.
 
-;;; $Id: littleb.lisp,v 1.6 2007/12/20 20:08:03 amallavarapu Exp $
+;;; $Id: littleb.lisp,v 1.7 2007/12/27 21:18:52 amallavarapu Exp $
 ;;; $Name:  $
 
 #-:asdf+ (load (merge-pathnames "asdf/asdf+.lisp" *load-truename*))
@@ -56,7 +56,7 @@
 
 #+:lw-editor
 (mutils:whenit (ignore-errors (capi:find-interface 'lispworks-tools:listener))
-  (lispworks-tools::listener-execute-command mutils:it "(IN-PACKAGE \"B-USER\")"))
+  (lispworks-tools::listener-execute-command mutils:it "(in-package :b-user)"))
 
 #+:allegro (top-level:do-command :package "B-USER")
 
