@@ -26,7 +26,7 @@
 ;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.14 2007/12/20 17:54:00 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.15 2007/12/29 20:17:39 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -148,17 +148,13 @@
                  (:file "system")
                  (:file "initialize"))
     :serial t))
- ;; can't for the life of me get these PERFORM blocks to run
+
   :perform (asdf:load-op :after (op c)
              (setf *b-core-signature* 
-                   (first (sort (mapcar #'file-write-date (asdf:files-in-system :b1)) #'>)))
+		   (first (sort (mapcar #'file-write-date (asdf:files-in-system :b1)) #'>)))
 
-;;;;              (flet ((evstr (x) (eval (read-from-string x))))
-;;;;                (evstr "(B:INIT)")
-;;;;                (evstr "(B:COMPILE-LIBRARY 'B)")
-;;;;                (evstr "(B:INIT)"))
-                  (pushnew :little-b *features*)
-                  (pushnew :b1 *features*)
+	     (pushnew :little-b *features*)
+	     (pushnew :b1 *features*)
              (format t "~&; little b loaded successfully~&")))
 
 (setf (system-bin-directory :b1) (format nil "../bin/~A/" (platform-name)))
