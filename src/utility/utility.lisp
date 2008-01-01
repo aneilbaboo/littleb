@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.5 2007/11/20 18:23:21 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.6 2008/01/01 23:27:38 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -78,12 +78,11 @@
   (list (car assoc) (cdr assoc)))
 
 
-(defun assoc-val (item assoc &key (default nil defaultp) (test #'eq) test-not)
-  (if defaultp
-      (let ((pos (position item assoc :key #'car :test test :test-not test-not)))
-        (if pos (cdr (nth pos assoc))
-          default))
-    (cdr (assoc item assoc :test test :test-not test-not))))
+(defun assoc-val (item assoc &key default (test #'eql) test-not (key #'identity))
+  (let ((cons (cond
+               (test-not (assoc item assoc :key key :test-not test-not))
+               (t        (assoc item assoc :key key :test test) ))))
+    (if cons (cdr cons) default)))
 
 (defun show-hash (h)
   (maphash (lambda (s v) (format t "~S ~S~%" s v)) h))
