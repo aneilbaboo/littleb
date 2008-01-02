@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.6 2008/01/01 23:27:38 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.7 2008/01/02 01:57:55 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -327,7 +327,8 @@ immediately following the replacement, or NIL if no substitution was made."
                        do (delete-file path))))
         #+:lispworks (lw:delete-directory pathname)
         #+:clisp     (ext:delete-dir pathname)
-        #-(:or :clisp :lispworks)  (delete-file pathname); hope for the best
+        #+:sbcl      (sb-posix:rmdir pathname)
+        #-(:or :sbcl :clisp :lispworks)  (delete-file pathname); hope for the best
         t)
     (error (e) (if error (error e)))))
 
