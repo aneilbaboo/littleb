@@ -10,6 +10,3 @@
 (port:allowing-redefinitions ()
   (setf *warn-if-gf-already-called* nil ; pre-2.43 versions
         *enable-clos-warnings* nil))    ; 2.43 and beyond
-
-(import 'cl-user::quit 'b)
-(export 'cl-user::quit 'b)

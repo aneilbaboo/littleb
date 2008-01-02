@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.11 2007/12/16 02:17:33 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.12 2008/01/02 04:13:03 amallavarapu Exp $
 ;;;
 
 
@@ -118,7 +118,9 @@
    ;; required for math-reader
    #:numeric 
    #:+ #:- #:^ #:* #:/ #:= #:< #:> #:<= #:>=                  ; some are redundant, but here for completeness
-   #:operator-precedence))
+   #:operator-precedence
+
+   #:quit))
 
 (defpackage "B.GLOBAL")
 

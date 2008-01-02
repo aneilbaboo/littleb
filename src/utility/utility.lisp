@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.7 2008/01/02 01:57:55 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.8 2008/01/02 04:13:03 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -1191,3 +1191,31 @@ to the function returned by testform if INVERT is nil.  Otherwise, KEYFORM is th
 ;;;; (defun ninsert-after (predecessor item list &key (test 'eql) (key 'identity) from-end)
 ;;;;   (ninsert-after-if (lambda (x) (funcall test x predecessor))  item list :key key :from-end from-end))
 
+
+;;;
+;;; portable code from David Young's LISA:
+;;;
+(defun gc ()
+  "Invoke the garbage collector."
+  #+allegro (excl:gc)
+  #+clisp (#+lisp=cl ext:gc #-lisp=cl lisp:gc)
+  #+cmu (ext:gc)
+  #+cormanlisp (cl::gc)
+  #+gcl (si::gbc)
+  #+lispworks (hcl:normal-gc)
+  #+lucid (lcl:gc)
+  #+sbcl (sb-ext:gc)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
+  (error 'not-implemented :proc (list 'gc)))
+
+(defun quit (&optional code)
+  #+allegro (excl:exit code)
+  #+clisp (#+lisp=cl ext:quit #-lisp=cl lisp:quit code)
+  #+cmu (ext:quit code)
+  #+cormanlisp (win32:exitprocess code)
+  #+gcl (lisp:bye code)
+  #+lispworks (lw:quit :status code)
+  #+lucid (lcl:quit code)
+  #+sbcl (sb-ext:quit :unix-code (typecase code (number code) (null 0) (t 1)))
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
+  (error 'not-implemented :proc (list 'quit code)))
