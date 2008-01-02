@@ -126,7 +126,7 @@
                        (loop with rowname = (first rowlist)
                              for colname in colnames
                              for d in (rest rowlist)
-                             unless (eq d empty)
+                             unless (eq d ignore)
                              collect (if (listp data) (list* colname rowname d)
                                        (list colname rowname d))))
                      rows)))
