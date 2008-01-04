@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.21 2007/12/19 21:09:22 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.22 2008/01/04 23:38:16 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -40,7 +40,9 @@
 (in-package #I@library/biochem)
 
 ;;;
+;;; MONOMER concept - main role is to hold sites
 ;;;
+
 (define-macro defmonomer (name-lclass &body def)
   (mutils:let+ (((symbol lclass) (etypecase name-lclass
                                    (symbol (values name-lclass 'compartment))
@@ -55,12 +57,10 @@
                        ,@(if doc `(:documentation ,doc))])
        ',symbol)))
 
-;;;
-;;; MONOMER concept - main role is to hold sites
-;;;
 (defcon monomer ()
   (&optional (name := *name*)
-   &property (location-class := compartment)))
+   &property (location-class := compartment)
+             (patterns := ())))
 
      
 (defield monomer.[] (x)
@@ -187,6 +187,7 @@
    (etypecase x
      (list (make-complex-graph x force-pattern))
      (complex-graph x))))
+
 
 ;;;
 ;;; COMPLEX GRAPH - graph structure
@@ -379,6 +380,9 @@
 ;;;
 ;;; COMPLEX-PATTERN
 ;;;
+;;;
+;;; pattern
+;;;
 (defcon complex-pattern (reference-pattern :notrace)
   "Selector patterns are asserted into the database and detected by the detect-complex-pattern-isomorphism rule"
   (id)
@@ -471,19 +475,6 @@
   (containing-location-class 
    (mapcar (lambda (d) (eval d).location-class) monomers)))
 
-;;;; (defun unreference-graph-vertex-label (x)
-;;;;   "Removes the field label from a graph label - 
-;;;;    e.g., KSR.A -> KSR and (0 KSR.A) -> (0 KSR)"
-;;;;   (cond
-;;;;    ((fld-form-p x) (fld-form-object x))
-;;;;    ((consp x)      (list* (first x) (fld-form-object (second x))
-;;;;                           (cddr x)))
-;;;;    (t              (error "Unexpected label ~S - expecting a FLD-FORM" x))))
-
-;;;; (defun unreference-graph-labels (g)
-;;;;   (map-into (gtools:graph-labels g)
-;;;;             #'unreference-graph-vertex-label)
-;;;;   g)
 ;;;
 ;;; BUILD-COMPLEX-GRAPH: internal work-horse which builds the actual GRAPH structure, 
 ;;;                      from data produced by the parser
@@ -639,6 +630,11 @@
         (etypecase site
           (bond-site-info '_)
           (state-site-info (state-site-info-default site))))))
+
+;;; not yet used:
+(defun pattern-default-site-binding (monomer site-num binding)
+  (declare (ignore monomer site-num))
+  (or binding '*))
  
 (defun default-site-binding (monomer site-num &optional binding) 
   (funcall *default-site-binding* monomer site-num binding))
@@ -646,6 +642,7 @@
 (defun square-bracket-fld-form-p (x)
   (and (fld-form-p x)
        (eq (fld-form-field x) '#.(fld-form-field '().[]))))
+
 ;;;
 ;;; PARSE-NAMED-MONOMER-DESCRIPTION
 ;;;
@@ -662,7 +659,7 @@
                      with either other site offsets or values
          PATTERNP is always NIL."
   (let ((pattern-detected-p nil)
-        (default-rest-args     '(%%default))
+        (default-rest-args     '(%%default)) ;; %%default indicates use default site binding fn
         (sites              (map 'list #'identity (monomer-sites monomer-object))))
     (labels
         ((site-error (binding si msg &rest args)
@@ -1012,7 +1009,12 @@
                              ;; connector sites
                              ((bond-site-info-p sinfo)
                               (calculate-bond-label mindex sindex)))))))))
-
+ 
+        
+;;;;
+;;;; CONSTRUCTOR FORMAT
+;;;;
+;;;;
 (defun complex-graph-constructor-form (graph)
   (let ((descr (complex-graph-description graph)))
     (case (length descr)
@@ -1021,6 +1023,91 @@
                       `[,@mdescr])
                     descr)]))))
 
+
+;;;;
+;;;; DOT SCRIPT CONVERTER:
+;;;; 
+(defield complex-graph-concept.show ()
+  (complex-graph-show-dotty .id))
+
+(defield complex-graph-concept.compute-dot-script ()
+  (complex-graph-dot-script .id))
+
+(defun complex-graph-show-dotty (cg &rest args
+                                    &key
+                                    (site-style :filled)
+                                    (site-color :white)
+                                    (monomer-style :filled)
+                                    (monomer-color :lightgrey))
+  (declare (ignorable site-style site-color monomer-style monomer-color))
+  (with-open-file (stream "~/.lbgraph.dot"
+                          :if-exists :supersede
+                          :if-does-not-exist :create
+                          :direction :io)
+    (pprint-logical-block (stream () :prefix "graph complex {" :suffix "}")
+      (pprint-newline :mandatory stream)
+      (apply #'print-complex-graph-dot-script cg stream args))
+    (fresh-line stream))
+  (asdf:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
+
+(defun print-complex-graph-dot-script (cg stream 
+                                          &key
+                                          (offset 0)
+                                          (site-style :filled)
+                                          (site-color :white)
+                                          (monomer-style :filled)
+                                          (monomer-color :lightgrey))
+  (flet ((format-site-label (sv)
+           (let ((slabel (gtools:graph-vertex-label cg sv)))
+             (format nil "~A~@[ = ~S~]"
+                     (site-name-from-site-label slabel) 
+                     (site-label-state slabel)))))
+    (pprint-logical-block (stream ())
+      (dolist (mv (complex-graph-monomer-vertexes cg))
+        (format stream "subgraph cluster~A {~:@_~
+                          node[style=~(~A~),color=~(~A~)];~:@_~
+                          style=~(~A~);~:@_~
+                          color=~(~A~);~:@_~
+                          label=\"~A\";~:@_~
+                          ~{~{siteVertex~A[label=~S]~};~:@_~}~:@_}~:@_"
+                (+ mv offset)
+                site-style site-color 
+                monomer-style 
+                monomer-color
+                (gtools:graph-vertex-label cg mv)
+                (mapcar (lambda (sv)
+                          (list (+ offset sv)
+                                (format-site-label sv)))
+                        (complex-graph-monomer-site-vertexes cg mv))))
+
+      (dolist (espec (complex-graph-bond-edge-specs cg))
+        (unless (equal espec (list (first espec) (first espec)))
+          (dolist (tosite (rest espec))
+            (format stream "siteVertex~A -- siteVertex~A[arrowhead=none];~:@_"
+                    (first espec) tosite)))))))
+                       
+;;;
+;;; GRAPH INFORMATION FUNCTIONS:
+;;;
+(defun site-name-from-site-label (slabel)
+  (let* ((sindex (site-label-sindex slabel))
+         (sinfo  (svref (monomer-sites (site-label-monomer slabel)) sindex)))
+    (site-info-name sinfo)))
+
+(defun complex-graph-bond-edge-specs (cg)
+  "Returns a list of edge-specs representing bonds in the complex-graph CG"
+  (remove-duplicates 
+   (loop with mverts = (complex-graph-monomer-vertexes cg)
+         for i from 0 below (gtools:graph-vertex-count cg)
+         for glabel = (gtools:graph-vertex-label cg i)
+         when (site-label-p glabel)
+         collect (list* i (set-difference (gtools:graph-vertex-outputs cg i)
+                                          mverts)))
+   :test (lambda (x y)
+           (or (equalp x y)
+               (and (= 2 (length x))
+                    (equalp x (reverse y)))))))
+    
 (defun complex-graph-site-bonds (g mindex sindex)
   "For 0-based monomer MINDEX and 0-based site SINDEX, returns a list of 
    monomer-site index cons pairs"
