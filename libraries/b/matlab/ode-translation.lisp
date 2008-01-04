@@ -245,29 +245,45 @@
                (let* ((base-units (matlab-model-base-units mm))
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math base-units
-                   (format file "~%    ~A,... %" (print-math v.t0 nil)))
+                   (m-format file "~%    ~A,... %" (print-math v.t0 nil)))
                  (b-format file " [~A] ~A in ~A" i v the-unit))))
 
     (format file "~%];~%~%")))
 
+(defun escape-matlab-formatting-chars (str)
+  (find-and-replace-all
+   "\\" "\\\\"
+   (find-and-replace-all
+    "^" "\\^"
+    (find-and-replace-all "_" "\\_" str))))
+  
 (defun write-descriptions (file mm)
   (flet ((write-var (v stream)
            (with-print-context t
-             (format stream "\'~A (~S)'" 
-                     v v.dimension.(calculate-unit (matlab-model-base-units mm))))))
+             (let ((d v.dimension))
+               (m-format stream
+                         "\'~A~@[ (~S)~]'" 
+                         v (unless (eq d null-dimension)
+                             d.(calculate-unit (matlab-model-base-units mm))))))))
     (let ((vars (matlab-model-ode-vars mm)))
       (format file "~A=char( ...~%" (matlab-model-descriptions-var-name mm))
       (when vars
         (write-var (first vars) file)
         (loop for v in (rest vars)
               for i = 1 then (1+ i)
-              do (format file ",... % [i]~% " file i)
+              do (format file ",... % [~S]~% " i)
               (write-var v file))
         (format file ");~%~%")))))
 
+
+(defun m-format (stream str &rest args)
+  "Ensures any matlab formatting chars are escaped"
+  (princ (escape-matlab-formatting-chars (format nil "~?" str args)) stream))
+
 (defun b-format (stream string &rest args)
+  "Prints using b print style, creating strings suitable for matlab"
   (let ((*math-print-function* 'default-math-printer))
-    (apply #'format stream string args)))
+    (apply #'m-format stream string args)))
 
 (defun write-kvars (file mm)
   (let* ((name (matlab-model-kvars-name mm))
@@ -424,36 +440,11 @@ preferred-var, then the preferred-var is returned, otherwise the ode-var is used
       (mapcar #'ode-var-from-var vars)
       vars)))
 
-;;;; (defun compute-kvars (rate-fns)
-;;;;   (declare (ignorable rate-fns))
-;;;; ;  (remove-if-not #'kvar-p (query var)))
-;;;;   (let ((params ()))
-;;;;     (labels ((add-kvars-from-math-expr (expr)           
-;;;;                (dolist (v (if expr expr.vars))
-;;;;                  (when (kvar-p v)
-;;;;                    (pushnew v params)
-;;;;                    (when (math-expression-p v.value)
-;;;;                      (add-kvars-from-math-expr v.value))))))
-;;;;       (dolist (expr rate-fns)
-;;;;         (add-kvars-from-math-expr expr))
-;;;;       params)))
-;;;;
 (defun kvar-p (v)
   (or (reference-var-p v)
       (and (derived-var-p v)
            (reference-var-p v.normal-base))))
 
-;;;; (defmacro compute-var-index (var model cache-accessor counter-accessor)
-;;;;   (let ((cache '#:CACHE)
-;;;;         (v     '#:var)
-;;;;         (m     '#:model))
-;;;;     `(let* ((,v ,var)
-;;;;             (,m ,model)
-;;;;             (,cache (,cache-accessor ,m)))
-;;;;        (or (gethash ,v ,cache)
-;;;;            (setf (gethash ,v ,cache)
-;;;;                  (incf (counter-accessor ,cache)))))))
-;;;;   
 (defun ode-var-index (v mm)
   (compute-var-index v (matlab-model-ode-vars mm)))
 
