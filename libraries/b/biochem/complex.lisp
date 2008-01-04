@@ -21,22 +21,7 @@
 ;;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
-;;;
-;;; examples:
-;;;    a species: [[ksr !1 _ _] [mapk !1]]
-;;;    a reaction: {[ksr _] + [mapk _] -> [[ksr !1][mapk !1]]}
-;;;            ==  {[ksr _1 * *] + [mapk _1 * *] -> [[ksr !1 * *][mapk !1 * *]]
-
-;;;
-;;;    [[d1-s-!1 *][d2-s-!1 *]] [d3...] -> [[d1 _]] + [d2-s!1-s!1-d3] 
-;;;
-;;;                                 -> might actually be [[d1 _ !2] 
-;;;
-
-;;;
-;;; SITE - describes a site - 
-;;; DOMAIN - a description of a fragment of a graph
-;;; COMPLEX - a species-type which 
+;;; 
 ;;;
 (in-package #I@folder)
 

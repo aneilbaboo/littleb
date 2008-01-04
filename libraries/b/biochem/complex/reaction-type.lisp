@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.14 2007/12/16 02:18:50 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.15 2008/01/04 23:35:47 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -66,73 +66,6 @@
 
 ;;;;
 ;;;; REACTION-TYPE ARGUMENT PARSING, VALIDATION:
-;;;;
-#| commented out for now -- trying new approach
-(defun determine-complex-reaction-type-location-class (defined-lclass lhs rhs)
-  (flet ((find-location-class-in-sum-expression (se)
-            (mutils:ifit (find-if #'complex-graph-concept-p (if se se.vars))
-                         it.location-class)))
-    (let* ((lclass (or defined-lclass 
-                       (find-location-class-in-sum-expression lhs)
-                       (find-location-class-in-sum-expression rhs))))
-      (check-complex-reaction-type-argument lhs lclass)
-      (check-complex-reaction-type-argument rhs lclass)
-      lclass)))
-
-(defun check-complex-reaction-type-argument (rt-arg loc-class)
-  (labels ((coef-ok (num)
-             (eq num 1))
-           (check-term (var num)
-             (typecase var
-               (complex-graph-concept   
-                (unless (subtypep var.location-class loc-class)
-                  (b-error "~S.location-class does not match ~S." var loc-class)))
-               (localization
-                (unless var.(is-valid-for loc-class)
-                  (b-error "Invalid complex-reaction-type argument: ~S.  ~
-                            No ~S sublocation in location class ~S." 
-                           var  var.location loc-class)))
-               (t            
-                (b-error "Expecting a complex-pattern or location-requirement, but received ~S." var)))
-             (unless (coef-ok num)
-               (b-error "Invalid stoichiometry (~S) in reaction-type sum-expression ~S" num rt-arg))))
-    (when rt-arg 
-      (unless (sum-expression-p rt-arg)
-        (b-error "Invalid argument to complex-reaction-type: ~S." rt-arg))
-      rt-arg.(map-terms #'check-term))))
-
-(defun parse-complex-reaction-arguments (lhs rhs location-class)
-  (mutils:let+ (((clhs lclass) (canonicalize-reaction-type-argument lhs))
-                (crhs          (canonicalize-complex-reaction-type-argument rhs))
-                (lclass        (determine-complex-reaction-type-location-class lclass clhs crhs)))
-    (values clhs crhs lclass)))
-
-
-(defun canonicalize-complex-reaction-type-argument (side)
-  (let (lclass)
-    (labels ((canonicalize-object (x) 
-               (etypecase x
-                 (sum-expression (apply #'s+
-                                        x.(map-terms 
-                                           (lambda (o c) 
-                                             (unless (= 1 c) 
-                                               (b-error "Coefficient invalid in ~A ~S as complex reaction argument"
-                                                        c o))
-                                             (canonicalize-object o)))))
-                 (list           (apply #'s+ (mapcar #'canonicalize-object x)))
-                 (localization   (cond
-                                  ((location-class-p x.location)
-                                   (setf lclass x.location)
-                                   (canonicalize-object x.entity))
-                                  (t [localization (canonicalize-object x.entity) x.location])))
-                 (monomer         (eval `[,x.name]))
-                 (complex-species-type [reference-pattern x.id])
-                 (reference-pattern x))))
-      (values (canonicalize-object side) lclass))))
-|#
-  
-;;;;
-;;;; NEW APPROACH BEGIN
 ;;;; 
 (defun canonicalize-complex-pattern (x)
   (etypecase x
@@ -141,10 +74,6 @@
     (reference-pattern     x)))
 
     
-;;;;
-;;;; NEW APPROACH END
-;;;;
-  
 (defmacro with-complex-reaction-type-parts (((lhs lhs-form)
                                         (rhs rhs-form))
                                        &body body)
