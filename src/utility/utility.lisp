@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.8 2008/01/02 04:13:03 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.9 2008/01/07 23:14:21 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -204,11 +204,13 @@ mechanism."
 (defun find-and-replace (old new seq &key (start 0) end from-end (test 'eql))
   "Returns 2 values - the string with replacements, and the position in the new string
 immediately following the replacement, or NIL if no substitution was made."
-  (let ((pos (search old seq :start2 start :end2 end :from-end from-end :test test))
-        (lenold (length old)))
+  (let* ((pos (search old seq :start2 start :end2 end :from-end from-end :test test))
+         (lenold (length old))
+         (raw-type (type-of seq))
+         (type     (if (consp raw-type) (first raw-type) raw-type)))
     (cond 
      (pos  (multiple-value-bind (left right) (mutils:split seq pos lenold)
-             (values (concatenate (type-of seq) left new right) 
+             (values (concatenate type left new right) 
                      (- (+ pos (length new)) lenold))))
      (t    (values seq nil)))))
 
