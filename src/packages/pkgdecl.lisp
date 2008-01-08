@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.12 2008/01/02 04:13:03 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.13 2008/01/08 22:32:07 amallavarapu Exp $
 ;;;
 
 
@@ -63,7 +63,7 @@
    #:include-path-package #:include-path-spec 
    #:prompt-for-new-include-file #:prompt-for-library
    ;; data table macros:
-   #:with-data-table #:with-substitution-table #:with-subtitution-combinations #:macro-multilet 
+   #:with-data-table #:with-substitution-table #:with-combinations #:macro-multilet 
    ;; expose api
    #:expose-name
    #:expose-symbol #:unexpose-symbol #:symbol-exposed-p #:symbol-exposing-packages

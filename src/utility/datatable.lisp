@@ -139,8 +139,8 @@
            ,@body)))
 
 
-;; WITH-SUBSTITUTED-COMBINATIONS:          
-(defmacro with-substituted-combinations (substitution-sets &body body)
+;; WITH-COMBINATIONS:          
+(defmacro with-combinations (substitution-sets &body body)
   "Where Bindings = ((v1 m1 m2 m3 ..)
                      (v2 m4 m5 m6 ...)
                      ...)"
