@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.9 2008/01/07 23:14:21 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.10 2008/01/08 04:27:05 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -211,7 +211,7 @@ immediately following the replacement, or NIL if no substitution was made."
     (cond 
      (pos  (multiple-value-bind (left right) (mutils:split seq pos lenold)
              (values (concatenate type left new right) 
-                     (- (+ pos (length new)) lenold))))
+                     (- (+ 1 pos (length new)) lenold))))
      (t    (values seq nil)))))
 
 
