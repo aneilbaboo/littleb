@@ -117,28 +117,26 @@
        
 (defmacro with-data-table ((&key row col data ignore) (colnames &rest rows) &body body)
   "ROW COL and DATA are substituted in the code (BODY).  If a cell contains the ignore symbol,
-   no substitutions will be performed.  By default, IGNORE is NIL."
+   no substitutions will be performed.  By default, IGNORE is NIL.
+   ROW, COL and DATA may be either a symbol or a list of symbols.  
+   In the later case, the corresponding element in the table must be a list of the same length."
   (let* ((row        (or row (gensym "row")))
          (col        (or col (gensym "col")))
          (data       (or data (gensym "data")))
          (sub-table  (mapcan
-                     (lambda (rowlist)
-                       (loop with rowname = (first rowlist)
-                             for colname in colnames
-                             for d in (rest rowlist)
-                             unless (eq d ignore)
-                             collect (if (listp data) (list* colname rowname d)
-                                       (list colname rowname d))))
+                      (lambda (rowlist)
+                        (loop with rowname = (first rowlist)
+                              for colname in colnames
+                              for d in (rest rowlist)
+                              unless (eq d ignore)
+                              collect `(,@(if (listp col) colname (list colname))
+                                        ,@(if (listp row) rowname (list rowname))
+                                        ,@(if (listp data) d (list d)))))
                      rows)))
-    (if (listp data)
-        `(with-substitution-table 
-             ((,col ,row ,@data)
-              ,@sub-table)
-           ,@body)
-      `(with-substitution-table 
-           ((,col ,row ,data)
-            ,@sub-table)
-         ,@body))))
+    `(with-substitution-table 
+         ((,@(ensure-list col) ,@(ensure-list row) ,@(ensure-list data))
+          ,@sub-table)
+           ,@body)))
 
 
 ;; WITH-SUBSTITUTED-COMBINATIONS:          
