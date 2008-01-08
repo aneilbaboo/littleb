@@ -77,6 +77,15 @@
                    #-win32 #P"" 
                    (user-homedir-pathname)))
 
+(defun make-temp-file ()
+  #+:lispworks (hcl:make-temp-file)
+  #+:clisp (linux:|tempnam| "tmp" "littleb")
+
+  #+(and :win32 (not (or :lispworks :clisp)))
+  (format nil "C:\\Windows\\Temp\\~A.tmp" (gensym "littleb"))
+  
+  #+(and :unix (not (or :lispworks :clisp)))
+  (format nil "~/tmp/~A.tmp" (gensym "littleb")))
 
 (defun prompt-for-yes-or-no (&optional (format "") &rest args)
   #+capi
