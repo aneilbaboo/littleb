@@ -139,40 +139,50 @@
            ,@body)))
 
 
-;; WITH-COMBINATIONS:          
-(defmacro with-combinations (substitution-sets &body body)
+(defun compute-permuted-substitutions (substitution-sets)
+  (let ((cpaths (mapcar (lambda (b) ;; (((v1 m1) (v1 m2) (v1 m3))
+                          ;;  ((v2 m4) (v2 m5) (v2 m6))...)
+                          (let ((v (first b)))
+                             (mapcar (lambda (m)
+                                       (list v m))
+                                     (rest b))))
+                        substitution-sets)))
+    (mutils:compute-choice-paths cpaths)))
+
+;; WITH-PERMUTATIONS:          
+(defmacro with-permutations (substitution-sets &body body)
   "Where Bindings = ((v1 m1 m2 m3 ..)
                      (v2 m4 m5 m6 ...)
                      ...)"
-  (let* ((cpaths (mapcar (lambda (b) ;; (((v1 m1) (v1 m2) (v1 m3))
-                                     ;;  ((v2 m4) (v2 m5) (v2 m6))...)
-                           (let ((v (first b)))
-                             (mapcar (lambda (m)
-                                       (list v m))
-                                    (rest b))))
-                         substitution-sets))
-         (subst-bindings  (mutils:compute-choice-paths cpaths)))
-    `(with-substitutions ,subst-bindings ,@body)))
+  `(with-substitutions ,(compute-permuted-substitutions substitution-sets) ,@body))
 
+(defmacro with-combinations (substitution-sets &body body)
+  "Calculates all 
+  (let* ((psets (compute-permuted-substitutions substitution-sets))
+         (csets (remove-duplicates 
+                 psets 
+                 :test (lambda (x y)
+                         (null (set-exclusive-or (mapcar #'cdr x) (mapcar #'cdr y) :test #'equal))))))
+    `(with-substitutions ,csets ,@body)))
+    
 ;;;; FOR EXAMPLE:
 ;;;;
-;;;; (with-monomer-combinations ((r erb1 erb2)
-;;;;                             (l egf nrg))
-;;;;   {[r] + [l] ->> [[r 1][l 1]]}
-;;;;   {[[r 1][l 1]] ->> [r] + [l]})
-;;;;
-;;;; =M>
-;;;;
-;;;; (PROGN
-;;;;  {[ERB1] + [EGF] ->> [[ERB1 1] [EGF 1]]}
-;;;;  {[[ERB1 1] [EGF 1]] ->> [ERB1] + [EGF]}
-;;;;  {[ERB1] + [NRG] ->> [[ERB1 1] [NRG 1]]}
-;;;;  {[[ERB1 1] [NRG 1]] ->> [ERB1] + [NRG]}
-;;;;  {[ERB2] + [EGF] ->> [[ERB2 1] [EGF 1]]}
-;;;;  {[[ERB2 1] [EGF 1]] ->> [ERB2] + [EGF]}
-;;;;  {[ERB2] + [NRG] ->> [[ERB2 1] [NRG 1]]}
-;;;;  {[[ERB2 1] [NRG 1]] ->> [ERB2] + [NRG]})
+;;;; (with-permutations ((a 1 2)
+;;;;                     (b 1 2))
+;;;;   (format t "~A ~A~%" a b))
+;;;; =>
+;;;; 1 1
+;;;; 1 2
+;;;; 2 1
+;;;; 2 2
 
+;;;; (with-combinations ((a 1 2)
+;;;;                     (b 1 2))
+;;;;   (format t "~A ~A~%" a b))
+;;;; =>
+;;;; 1 1
+;;;; 1 2
+;;;; 2 2
 
 (defmacro macro-multilet ((header &rest data) form)
   (let ((forms (mapcar (lambda (row)
