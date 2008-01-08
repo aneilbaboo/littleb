@@ -68,8 +68,8 @@
     (declare (ignorable ret))
     (pathname (concatenate 'string dir "\\")))
 
-  #+(and :clisp :win32)
-  (pathname (get-win32-special-folder-location 5))
+;;;;   #+(and :clisp :win32)
+;;;;   (pathname (get-win32-special-folder-location 5))
   
   #-(or (and :lispworks :win32)
         (and :clisp :win32))
@@ -77,15 +77,30 @@
                    #-win32 #P"" 
                    (user-homedir-pathname)))
 
-(defun make-temp-file ()
-  #+:lispworks (hcl:make-temp-file)
-  #+:clisp (linux:|tempnam| "tmp" "littleb")
+(defun temp-pathname (&optional base-name (n 0))
+  (format nil "~A~A.tmp~A" 
+          #+:unix "/tmp/"
+          #+:win32 
+          (format nil "~A\\Temp\\"
+                  #+:lispworks
+                  (win32:sh-get-folder-path 
+                   0 (cdr (assoc :windows win32:*type-csidl-pairs*)) 0 0)
+                  #+:clisp
+                  (win32:|GetWindowsDirectoryA| 100)
+                  #-(or :clisp :lispworks) "C://windows//")
+          (format nil "~A~A" (or base-name "lispport")
+                  #+:unix "" #-:unix n)
+          #+:unix (format nil ".~A" n)))
 
-  #+(and :win32 (not (or :lispworks :clisp)))
-  (format nil "C:\\Windows\\Temp\\~A.tmp" (gensym "littleb"))
-  
-  #+(and :unix (not (or :lispworks :clisp)))
-  (format nil "~/tmp/~A.tmp" (gensym "littleb")))
+;;;; (defun make-temp-file ()
+;;;;   #+:lispworks (hcl:make-temp-file)
+;;;;   #+:clisp (linux:|tempnam| "tmp" "littleb")
+
+;;;;   #+(and :win32 (not (or :lispworks :clisp)))
+;;;;   (format nil "C:\\Windows\\Temp\\~A.tmp" (gensym "littleb"))
+;;;;   
+;;;;   #+(and :unix (not (or :lispworks :clisp)))
+;;;;   (format nil "~/tmp/~A.tmp" (gensym "littleb")))
 
 (defun prompt-for-yes-or-no (&optional (format "") &rest args)
   #+capi

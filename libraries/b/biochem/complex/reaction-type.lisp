@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.15 2008/01/04 23:35:47 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.16 2008/01/08 21:59:23 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -264,12 +264,14 @@
 (defun compute-rhs-new-graph (rhs-graphs lhs-verticies)
   "The RHS-NEW-GRAPH is a graph of all monomers which are created by a reaction"
   (let ((rhs-super-graph (gtools:merge-graphs rhs-graphs)))
-    (gtools:graph-delete-verticies-if 
-     rhs-super-graph
-     (lambda (i)
-       (find (gtools:graph-vertex-label rhs-super-graph i)
-             lhs-verticies
-             :test #'named-vertex=)))))
+    (if rhs-super-graph
+        (gtools:graph-delete-verticies-if 
+         rhs-super-graph
+         (lambda (i)
+           (find (gtools:graph-vertex-label rhs-super-graph i)
+                 lhs-verticies
+                 :test #'named-vertex=)))
+      (make-complex-graph))))
 
 (defun graph-list-labels (glist)
   (apply #'concatenate 'simple-vector (mapcar #'gtools:graph-labels glist)))
