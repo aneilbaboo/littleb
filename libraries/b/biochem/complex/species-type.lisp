@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.23 2008/01/08 04:25:41 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.24 2008/01/08 21:59:09 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -1017,11 +1017,28 @@
 ;;;;
 ;;;; DOT SCRIPT CONVERTER:
 ;;;; 
+(defconstant +curfile+ (or *load-truename* *compile-file-truename*))
+
+(defvar *complex-graph-dot-script-temp-file*  (merge-pathnames ".lbgraph.dot" +curfile+))
+(defvar *complex-graph-dot-image-temp-file* (merge-pathnames ".lbgraph.png" *complex-graph-dot-script-temp-file*))
 (defield complex-graph-concept.show ()
-  (complex-graph-show-dotty .id))
+  (complex-graph-show-image .id))
 
 (defield complex-graph-concept.compute-dot-script ()
   (complex-graph-dot-script .id))
+
+(defun complex-graph-show-image (cg &rest args
+                                    &key
+                                    (site-style :filled)
+                                    (site-color :white)
+                                    (monomer-style :filled)
+                                    (monomer-color :lightgrey))
+  (declare (ignorable site-style site-color monomer-style monomer-color))
+  (apply #'complex-graph-write-dot-file cg *complex-graph-dot-script-temp-file* args)
+  (asdf:run-shell-command "dot -Tpng ~A > ~A" *complex-graph-dot-script-temp-file*
+                          *complex-graph-dot-image-temp-file*)
+  (asdf:run-shell-command "firefox ~A" *complex-graph-dot-image-temp-file* ))
+  
 
 (defun complex-graph-show-dotty (cg &rest args
                                     &key
@@ -1030,15 +1047,26 @@
                                     (monomer-style :filled)
                                     (monomer-color :lightgrey))
   (declare (ignorable site-style site-color monomer-style monomer-color))
-  (with-open-file (stream "~/.lbgraph.dot"
+  (apply #'complex-graph-write-dot-file *complex-graph-dot-script-temp-file*
+         args)
+  (asdf:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
+
+(defun complex-graph-write-dot-file (cg file &rest args
+                                    &key
+                                    (site-style :filled)
+                                    (site-color :white)
+                                    (monomer-style :filled)
+                                    (monomer-color :lightgrey))
+  (declare (ignorable site-style site-color monomer-style monomer-color))
+  (with-open-file (stream file
                           :if-exists :supersede
                           :if-does-not-exist :create
                           :direction :io)
     (pprint-logical-block (stream () :prefix "graph complex {" :suffix "}")
       (pprint-newline :mandatory stream)
+      (format stream "size=\"4,4\";~:@_")
       (apply #'print-complex-graph-dot-script cg stream args))
-    (fresh-line stream))
-  (asdf:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
+    (fresh-line stream)))
 
 (defun print-complex-graph-dot-script (cg stream 
                                           &key
