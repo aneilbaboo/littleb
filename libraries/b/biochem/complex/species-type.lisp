@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.22 2008/01/04 23:38:16 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.23 2008/01/08 04:25:41 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -877,16 +877,6 @@
         when (monomer-symbol-p k)
         do (remhash k *reference-labels*)))
 
-;;;; (defun complex-pattern-from-reference-pattern (rp)
-;;;;   [complex-pattern (complex-graph-from-reference-graph rp)])
-
-;;;; (defun complex-graph-from-reference-graph (rg)
-;;;;   (let ((copy (gtools:copy-graph rg)))
-;;;;     (unreference-graph-labels copy)
-;;;;     (gtools:graph-delete-verticies-if
-;;;;      copy
-;;;;      (lambda (i)
-;;;;        (selector-graph-ignorable-vertex-p rg i)))))
                                    
 (defun selector-graph-ignorable-vertex-p (rg i)
   (let ((label (gtools:graph-vertex-label rg i)))
