@@ -83,8 +83,8 @@
           #+:win32 
           (format nil "~A\\Temp\\"
                   #+:lispworks
-                  (win32:sh-get-folder-path 
-                   0 (cdr (assoc :windows win32:*type-csidl-pairs*)) 0 0)
+                  (sh-get-folder-path 
+                   0 (cdr (assoc :windows win32::*type-csidl-pairs*)) 0 0)
                   #+:clisp
                   (win32:|GetWindowsDirectoryA| 100)
                   #-(or :clisp :lispworks) "C://windows//")

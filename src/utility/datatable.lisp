@@ -151,13 +151,15 @@
 
 ;; WITH-PERMUTATIONS:          
 (defmacro with-permutations (substitution-sets &body body)
-  "Where Bindings = ((v1 m1 m2 m3 ..)
-                     (v2 m4 m5 m6 ...)
-                     ...)"
+  "Substitution-sets = ((V1 S11 S12 ..S1n) (V2 S21 ...S2n) ...)
+   Where Body is evaluated for each permutation possible 
+     where Vi is substituted for Sij"
   `(with-substitutions ,(compute-permuted-substitutions substitution-sets) ,@body))
 
 (defmacro with-combinations (substitution-sets &body body)
-  "Like with-permutations, but combinations of arguments (see examples below"
+  "Substitution-sets = ((V1 S11 S12 ..S1n) (V2 S21 ...S2n) ...)
+   Where Body is evaluated for each combination possible 
+     where Vi is substituted for Sij"
   (let* ((psets (compute-permuted-substitutions substitution-sets))
          (csets (remove-duplicates 
                  psets 
@@ -175,7 +177,6 @@
 ;;;; 1 2
 ;;;; 2 1
 ;;;; 2 2
-;;;; NIL
 
 ;;;; (with-combinations ((a 1 2)
 ;;;;                     (b 1 2))
