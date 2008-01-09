@@ -157,7 +157,7 @@
   `(with-substitutions ,(compute-permuted-substitutions substitution-sets) ,@body))
 
 (defmacro with-combinations (substitution-sets &body body)
-  "Calculates all 
+  "Like with-permutations, but combinations of arguments (see examples below"
   (let* ((psets (compute-permuted-substitutions substitution-sets))
          (csets (remove-duplicates 
                  psets 
@@ -175,6 +175,7 @@
 ;;;; 1 2
 ;;;; 2 1
 ;;;; 2 2
+;;;; NIL
 
 ;;;; (with-combinations ((a 1 2)
 ;;;;                     (b 1 2))
