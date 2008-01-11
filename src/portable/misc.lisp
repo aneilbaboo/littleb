@@ -24,83 +24,96 @@
 
 (in-package portable)
 
-#+(and :clisp :win32)
-(progn
-(ffi:default-foreign-language :stdc )
-
-(ffi:def-call-out sh-get-special-folder-location
-    (:arguments (hwnd ffi:long)
-		(nfolder ffi:long)
-		(ppidl (ffi:c-ptr ffi:c-pointer) :out))
-  (:return-type ffi:long)
-  (:name "SHGetSpecialFolderLocation")
-  (:library "Shell32.dll"))
-
-
-
-(ffi:def-call-out sh-get-path-from-id-list
-    (:arguments (pidl ffi:c-pointer)
-                ;; FFI creates a 2048 len string automatically, returns the trunced results:
-		(str (ffi:c-ptr (ffi:c-array ffi:character 2048)) :out :alloca)) 
-  (:return-type ffi:long)
-  (:name "SHGetPathFromIDList")
-  (:library "Shell32"))
-
-(defun get-win32-special-folder-location (n)
-  (multiple-value-bind (x ptr) 
-      (sh-get-special-folder-location 0 n) 
-    (declare (ignorable x))
-    (multiple-value-bind (retval str)
-	(sh-get-path-from-id-list ptr)
-      (declare (ignorable retval))
-      (prog1
-          (concatenate 'string
-                       (string-right-trim '#.(list (code-char 0) #\/ #\\)  str)
-                       "\\")
-        (ffi:foreign-free ptr)))))
-)
-      
-(defun user-documents-folder ()   
-  #+(and :lispworks :win32)
-  (multiple-value-bind (ret dir)  
-      (win32::sh-get-folder-path 
-       0 (cdr (assoc :my-documents win32::*type-csidl-pairs*)) 0 0)
-    (declare (ignorable ret))
-    (pathname (concatenate 'string dir "\\")))
-
-;;;;   #+(and :clisp :win32)
-;;;;   (pathname (get-win32-special-folder-location 5))
-  
-  #-(or (and :lispworks :win32)
-        (and :clisp :win32))
-  (merge-pathnames #+win32 #P"My Documents/" 
-                   #-win32 #P"" 
-                   (user-homedir-pathname)))
+(defun user-documents-folder () 
+  #+:win32 (get-windows-named-folder :my-documents)
+  (user-homedir-pathname))
 
 (defun temp-pathname (&optional base-name (n 0))
   (format nil "~A~A.tmp~A" 
           #+:unix "/tmp/"
-          #+:win32 
-          (format nil "~A\\Temp\\"
-                  #+:lispworks
-                  (sh-get-folder-path 
-                   0 (cdr (assoc :windows win32::*type-csidl-pairs*)) 0 0)
-                  #+:clisp
-                  (win32:|GetWindowsDirectoryA| 100)
-                  #-(or :clisp :lispworks) "C://windows//")
+          #+:win32 (merge-pathnames (get-windows-named-folder :windows)
+                                    "temp/")
           (format nil "~A~A" (or base-name "lispport")
                   #+:unix "" #-:unix n)
-          #+:unix (format nil ".~A" n)))
+          #+:unix (format nil ".~A" n)
+          #-:unix ""))
 
-;;;; (defun make-temp-file ()
-;;;;   #+:lispworks (hcl:make-temp-file)
-;;;;   #+:clisp (linux:|tempnam| "tmp" "littleb")
+(defvar *browser-path* ())
 
-;;;;   #+(and :win32 (not (or :lispworks :clisp)))
-;;;;   (format nil "C:\\Windows\\Temp\\~A.tmp" (gensym "littleb"))
-;;;;   
-;;;;   #+(and :unix (not (or :lispworks :clisp)))
-;;;;   (format nil "~/tmp/~A.tmp" (gensym "littleb")))
+(defun determine-browser-path ()
+  (or 
+   #+:unix #+:mac (or (probe-file "/Applications/safari")
+                      (probe-file "/Applications/firefox")
+                      (probe-file "/Applications/iexplore"))
+           #-:mac (or (probe-file "/usr/bin/firefox")
+                      (probe-file "/usr/bin/mozilla")
+                      (probe-file "/usr/bin/opera"))
+           #+:win32 (or (probe-file 
+                         (get-windows-pathname 
+                          :program-files 
+                          "Internet Explorer\\iexplore.exe"))
+                        (probe-file 
+                         (get-windows-pathname 
+                          :program-files 
+                          "Mozilla Firefox\\firefox.exe")
+                         (probe-file 
+                          (get-windows-pathname
+                           :program-files 
+                           "Opera\\opera.exe"))))
+           (error "Cannot determine location of web browser.  Set ~S to the location of your preferred web browser."  '*browser-path*)))
+(defun browse (url)
+  (run-shell-command "\"~A\" \"~A\"" (or *browser-path* 
+                                 (setf *browser-path* (determine-browser-path)))
+                     url))
+
+(defvar *verbose-out* nil)
+;;;;
+;;;; RUN-SHELL-COMMAND: lifted from ASDF
+;;;;
+(defun run-shell-command (control-string &rest args)
+  "Interpolate ARGS into CONTROL-STRING as if by FORMAT, and
+synchronously execute the result using a Bourne-compatible shell, with
+output to *VERBOSE-OUT*.  Returns the shell's exit code."
+  (let ((command (apply #'format nil control-string args)))
+    (format *verbose-out* "; $ ~A~%" command)
+    #+sbcl
+    (sb-ext:process-exit-code
+     (sb-ext:run-program  
+      #+win32 "sh" #-win32 "/bin/sh"
+      (list  "-c" command)
+      #+win32 #+win32 :search t
+      :input nil :output *verbose-out*))
+    
+    #+(or cmu scl)
+    (ext:process-exit-code
+     (ext:run-program  
+      "/bin/sh"
+      (list  "-c" command)
+      :input nil :output *verbose-out*))
+
+    #+allegro
+    (excl:run-shell-command command :input nil :output *verbose-out*)
+    
+    #+lispworks
+    (system:call-system-showing-output
+     command
+     :shell-type "/bin/sh"
+     :output-stream *verbose-out*)
+    
+    #+clisp				;XXX not exactly *verbose-out*, I know
+    (ext:run-shell-command  command :output :terminal :wait t)
+
+    #+openmcl
+    (nth-value 1
+	       (ccl:external-process-status
+		(ccl:run-program "/bin/sh" (list "-c" command)
+				 :input nil :output *verbose-out*
+				 :wait t)))
+    #+ecl ;; courtesy of Juan Jose Garcia Ripoll
+    (si:system command)
+    #-(or openmcl clisp lispworks allegro scl cmu sbcl ecl)
+    (error "RUN-SHELL-PROGRAM not implemented for this Lisp")
+    )) 
 
 (defun prompt-for-yes-or-no (&optional (format "") &rest args)
   #+capi

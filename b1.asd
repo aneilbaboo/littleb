@@ -23,10 +23,9 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; File: b.asd
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.16 2008/01/08 06:40:44 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.17 2008/01/11 18:25:22 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -71,7 +70,8 @@
                  (:file "pkgconstants"))
     :serial t)
    (:module #:portable
-    :components ((:file "dspec")
+    :components (#+:win32 (:file "windows")
+                 (:file "dspec")
                  (:file "misc")
                  (:file "clos"))
     :serial t)

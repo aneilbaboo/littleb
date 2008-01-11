@@ -25,7 +25,7 @@
 ;;; File: portable-pkg
 ;;; Description: much of the code within lifted from the CLOCC PORTABLE project
 
-;;; $Id: portable-pkg.lisp,v 1.3 2008/01/08 04:26:14 amallavarapu Exp $
+;;; $Id: portable-pkg.lisp,v 1.4 2008/01/11 18:25:22 amallavarapu Exp $
 ;;;
 (defpackage portable
   (:use cl)
@@ -57,7 +57,7 @@
    #:*file-extensions* #:destroy-symbol #:destroy-dspec
 
    ;; misc
-   #:user-documents-folder
-   #:make-temp-file
+   #:user-documents-folder #+:win32 #:get-windows-pathname
+   #:make-temp-file        #+:win32 #:*win32-folder-ids*
    #:allowing-redefinitions)
   (:nicknames port))
