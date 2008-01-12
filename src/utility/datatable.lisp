@@ -36,16 +36,21 @@
      ((v1 l1) (v2 l2)...);  binding-sets is a list of such lists.
     Each binding-set is used to substitute the variables (Vi) 
     with the corresponding values (Li) everywhere in BODY"
-  (let ((subst-bodies (mapcan
-                       (lambda (substs)
-                         (mutils:mapatoms 
-                          (lambda (atom)
-                            (let ((sub (assoc atom substs)))
-                              (if sub (second sub)
-                                atom)))
-                          body))
-                       binding-sets)))
-    `(progn ,@subst-bodies)))
+  (flet ((at-symbol-p (x) (and (symbolp x)
+                               (char= #\@ 
+                                      (char (symbol-name x) 0)))))
+    (let ((subst-bodies (mapcan
+                         (lambda (substs)
+                           (mutils:mapatoms 
+                            (lambda (atom)
+                              (let ((sub (assoc atom substs)))
+                                (if sub 
+                                    (values (second sub)
+                                            (at-symbol-p atom))
+                                  atom)))
+                            body))
+                         binding-sets)))
+      `(progn ,@subst-bodies))))
 
 ;;;; FOR EXAMPLE:
 ;;;; (with-substitutions
@@ -85,7 +90,7 @@
   (let ((binding-sets (mapcar (lambda (row)
                                 (mapcar #'list
                                         (if (listp header) header (list header))
-                                        (if (listp row) row (list row))))
+                                        (if (listp header) row (list row))))
                               data)))
     `(with-substitutions ,binding-sets
        ,@body)))

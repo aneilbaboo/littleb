@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.10 2008/01/08 04:27:05 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.11 2008/01/12 16:03:57 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -492,10 +492,12 @@ E.g., (let+ ((a     1)
            (if (listp s) (maptree fun s) (funcall fun s))))
     (mapcar #'xform tree)))
 
-(defun mapatoms (fn tree &key (return :tree) (list-test (constantly t)))
-  "Applies FN to every non-list in TREE.  Return may be one of :list :tree, or NIL.
-Only values which pass list-test are included in the list (default is to include every
-returned value in the final list)"
+(defun mapatoms (fn tree
+                  &key
+                  (return :tree) 
+                  (list-test (constantly t)))
+  "Applies FN to every non-list in TREE.  Return may be one of :LIST :TREE, or NIL.
+Only values which pass LIST-TEST are included in the list (default is to include every returned value in the final list). FN is a function which takes the atom (A) as an argument and which returns VALUE, SPLICE - where splice indicates that A is a list to be spliced."
   (labels ((includep (o)
              (funcall list-test o))
            (map-fn (obj)
@@ -503,12 +505,14 @@ returned value in the final list)"
               ((atom obj) (funcall fn obj))
               
               (t
-               (let* ((car       (car obj))
-                      (car-val   (map-fn car))
-                      (cdr       (cdr obj))
-                      (cdr-val   (if cdr (map-fn cdr))))
+               (let+ ((car                  (car obj))
+                      ((car-val car-splice) (map-fn car))
+                      (cdr                  (cdr obj))
+                      ((cdr-val cdr-splice) (if cdr (map-fn cdr))))
+                 (if cdr-splice
+                     (setf cdr-val (append (first cdr-val) (rest cdr-val))))
                  (case return
-                   ((:tree 'tree)  (cons car-val cdr-val))
+                   ((:tree 'tree)  (values (cons car-val cdr-val) car-splice))
                    ((:list 'list)  (let* ((incl-car (includep car-val))
                                           (incl-cdr (includep cdr-val))
                                           (cdr-val  (when incl-cdr 
