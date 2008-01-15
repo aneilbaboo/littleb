@@ -111,35 +111,35 @@
 ;;;; 
                
 ;;;; EXAMPLE
-;;;; (with-data-table (:row V1! :col V2! :data D!)
+;;;; (with-data-table (:cols V1 :rows V2 :cells v3)
 ;;;;     ((   'a 'b 'c)
-;;;;      ('a  1  2  3)
-;;;;      ('b  4  5  6)
-;;;;      ('c  7  8  9))
-;;;;   (format t "~S ~S ~S, " v1! v2! D!))
+;;;;      ('d  1  2  3)
+;;;;      ('e  4  5  6)
+;;;;      ('f  7  8  9))
+;;;;   (format t "~S ~S ~S, " v1 v2 v3))
 ;;;; =>
-;;;  A A 1, A B 1, A C 3, B A 4, B B 5 ...
+;;;; A D 1, B D 2, C D 3, A E 4, B E 5, C E 6, A F 7, B F 8, C F 9, 
        
-(defmacro with-data-table ((&key row col data ignore) (colnames &rest rows) &body body)
-  "ROW COL and DATA are substituted in the code (BODY).  If a cell contains the ignore symbol,
+(defmacro with-data-table ((&key rows cols cells ignore) (colnames &rest rowdata) &body body)
+  "ROWS COLS and DATA are substituted in the code (BODY).  If a cell contains the ignore symbol,
    no substitutions will be performed.  By default, IGNORE is NIL.
-   ROW, COL and DATA may be either a symbol or a list of symbols.  
+   ROWS, COLS and DATA may be either a symbol or a list of symbols.  
    In the later case, the corresponding element in the table must be a list of the same length."
-  (let* ((row        (or row (gensym "row")))
-         (col        (or col (gensym "col")))
-         (data       (or data (gensym "data")))
+  (let* ((rows        (or rows (gensym "rows")))
+         (cols        (or cols (gensym "cols")))
+         (cells       (or cells (gensym "cells")))
          (sub-table  (mapcan
                       (lambda (rowlist)
                         (loop with rowname = (first rowlist)
                               for colname in colnames
-                              for d in (rest rowlist)
-                              unless (eq d ignore)
-                              collect `(,@(if (listp col) colname (list colname))
-                                        ,@(if (listp row) rowname (list rowname))
-                                        ,@(if (listp data) d (list d)))))
-                     rows)))
+                              for cell in (rest rowlist)
+                              unless (eq cell ignore)
+                              collect `(,@(if (listp cols) colname (list colname))
+                                        ,@(if (listp rows) rowname (list rowname))
+                                        ,@(if (listp cells) cell (list cell)))))
+                     rowdata)))
     `(with-substitution-table 
-         ((,@(ensure-list col) ,@(ensure-list row) ,@(ensure-list data))
+         ((,@(ensure-list cols) ,@(ensure-list rows) ,@(ensure-list cells))
           ,@sub-table)
            ,@body)))
 
