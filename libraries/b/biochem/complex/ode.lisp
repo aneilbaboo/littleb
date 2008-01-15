@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.8 2007/11/15 00:47:30 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.9 2008/01/15 06:37:08 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -64,6 +64,11 @@
                            stoichiometries
                            dimensions))))
   
+
+(defield reversible-complex-reaction-type.set-rate-function (fn &key fwd rev)
+  (values .fwd.(apply :set-rate-function fn (ensure-list fwd))
+          .rev.(apply :set-rate-function fn (ensure-list rev))))
+
 (defun entity-dimension (e)
   (etypecase e
     (localization (entity-dimension e.entity))

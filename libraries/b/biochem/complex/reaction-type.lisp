@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.16 2008/01/08 21:59:23 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.17 2008/01/15 06:37:08 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -52,6 +52,24 @@
           .rhs (apply #'s+ rhs)
           .location-class lclass)))
 
+(defcon reversible-complex-reaction-type ()
+  (lhs rhs &optional location-class
+       &property
+       (fwd :#= [complex-reaction-type .lhs .rhs .location-class])
+       (rev :#= [complex-reaction-type .rhs .lhs .location-class])))
+  
+
+(defoperator <<->> ((+ 1 (operator-precedence '+)) :xfy :macro)
+    (lhs rhs)
+  (let ((lhsvar '#:lhs)
+        (rhsvar '#:rhs)
+        (lclass '#:lclass))
+    `(with-complex-reaction-type-parts ((,lhsvar ,lhs) (,rhsvar ,rhs))
+       (let+ (((,lhsvar ,lclass) (if (localization-p ,lhsvar)
+                                     (values ,.lhsvar.entity ,.lhsvar.location)
+                                   (values ,lhsvar nil))))
+         [reversible-complex-reaction-type ,lhsvar ,rhsvar ,lclass]))))
+
 ;;;;
 ;;;; PRINTING:
 
@@ -63,6 +81,11 @@
            ((o complex-reaction-type)
             &optional (stream *standard-output*) (outer-op t))
   (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
+
+(defmethod print-math-expression 
+           ((o reversible-complex-reaction-type)
+            &optional (stream *standard-output*) (outer-op t))
+  (pprint-math-form `{,o.lhs <<->> ,o.rhs} stream outer-op))
 
 ;;;;
 ;;;; REACTION-TYPE ARGUMENT PARSING, VALIDATION:
