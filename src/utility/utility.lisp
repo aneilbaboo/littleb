@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.12 2008/01/17 00:11:58 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.13 2008/01/17 01:55:44 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -641,6 +641,14 @@ Only values which pass LIST-TEST are included in the list (default is to include
     (if new-pos
         (nconc (list new-pos)
                (positions item sequence  :start (+ 1 new-pos))))))
+
+(defun positions-if (fn sequence &key (start 0))
+  "Returns a list containing the 0-based positions where item is found in sequence"
+  (let ((new-pos (position-if fn sequence :start start)))
+    (if new-pos
+        (nconc (list new-pos)
+               (positions fn sequence  :start (+ 1 new-pos))))))
+
 
 (defun unprefix (prefix symbol) 
   "Removes the prefix from the printed representation of symbol, and returns the symbol with the resulting name.  If symbol doesn't contain the prefix, then symbol is returned unmodified.  E.g., (unprefix 'AB 'ABCD) => CD"

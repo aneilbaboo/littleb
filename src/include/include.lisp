@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.7 2008/01/17 00:11:58 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.8 2008/01/17 01:55:43 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -199,7 +199,7 @@
 #-:clisp
 (defun platform-load-file (file type)
   (declare (ignorable type))
-  (load file :verbose nil))
+  (load-file-with-line-numbers file type))
 
 #+:clisp
 (defun platform-load-file (file type)
@@ -225,8 +225,9 @@
                            (binaryp (copy-readtable +b-standard-tokens-readtable+))
                            (subst-readtable-p *working-readtable*))))
       (cond
-       (new-readtable (let ((*readtable* new-readtable)) (load file :verbose nil)))
-       (t             (load file :verbose nil))))))
+       (new-readtable (let ((*readtable* new-readtable)) 
+                        (load-file-with-line-numbers file type)))
+       (t             (load-file-with-line-numbers file type))))))
 
 ;;;
 ;;; SANITY CHECKS:
@@ -316,28 +317,6 @@
 (set-dispatch-macro-character #\# #\/ 'include-symbol-reader +b-readtable+)
 (set-dispatch-macro-character #\# #\/ 'include-symbol-reader +b-standard-tokens-readtable+)
 
-
-
-;;;; (defun read-ipath-file-package-ipath (ipathfile)
-;;;;   "Returns the package used by ipathfile by reading the first IN-PACKAGE form of the file"
-;;;;   (let ((result     (with-dummy-b-package
-;;;;                       (let+ (((ipath lib)     (include-path-from-pathname ipathfile))
-;;;;                              (in-pkg-ipath    (include-path (read-in-package-name-from-file ipathfile))))
-;;;;                         (if (or (equalp in-pkg-ipath ipath)
-;;;;                                 (include-path-ancestor-p ipath in-pkg-ipath)
-;;;;                                 (equalp in-pkg-ipath #.(include-path "B-USER")))
-;;;;                             in-pkg-ipath
-;;;;                           (list :error ipath lib in-pkg-ipath))))))
-;;;;     (if (and (consp result) (eq (first result) :error))
-;;;;         (destructuring-bind (err ipath lib in-pkg-ipath) result
-;;;;           (declare (ignorable err)) ; always the symbol :ERROR
-;;;;           (error "(IN-PACKAGE ~A) is invalid in file ~A (library ~A).  The package of this file must be either ~A, or a parent (~A)~
-;;;;                   ~:[~; or some other ancestor~]."                
-;;;;                  in-pkg-ipath ipath lib ipath 
-;;;;                  #1=(include-path-parent ipath) 
-;;;;                  (if (include-path-ancestors #1#) 0 1)))
-;;;;       result)))
-
 (defun read-file-to-string (file)
   (with-output-to-string (string)
     (with-open-file (stream file :direction :input :if-does-not-exist :error)
@@ -346,16 +325,38 @@
             until (eq eof line)
             do (write-line line string)))))
 
-(defun eval-file-carefully (file)
-  (let ((code            (read-file-to-string file))
-        (*load-pathname* file)
-        (*load-truename* (pathname (enough-namestring file))))
-    (loop with eof = '#:eof
-          with start = 0
-          for (form end) = (multiple-value-list (read-from-string code nil eof start))
-          until eof
-          do (handler-case (eval form)
-               (error (e) (b-error "Error while evaluating ~S: ~
-                                    ~&~A" form e))))))
+(defun load-file-with-line-numbers (file type)
+  (cond
+    ((or (eq type :binary)
+         *debugger-enabled*)  (load file :verbose nil))
+    (:source  
+     (let ((code            (read-file-to-string file))
+           (*package*       *package*)
+           (*load-pathname* file)
+           (*load-truename* (pathname (enough-namestring file))))
+       (loop with eof = '#:eof
+             with start = 0
+             for (form end) = (multiple-value-list (read-from-string code nil eof :start start))
+             until (eq form eof)
+             do (handler-case (eval form)
+                  (error (e) 
+                    (b-error "Error in ~A (lines ~S-~S): ~
+                           ~&~A~
+                           ~&in ~A"
+                             file
+                             (1+ (line-number-from-position code start))
+                             (1+ (line-number-from-position code end))
+                             e
+                             (if (listp form) 
+                                 (format nil "(~A ~A ...)"  (first form) (second form))
+                               (format nil "~A" form)))))
+             (setf start end))))))
 
-    
+(defun line-number-from-position (string pos &key (start 0))
+  "Returns 0-based line number of position POS in string"
+  (or (count-if (lambda (x) (>= pos x))
+                (mutils:positions 
+                 #\newline 
+                 string
+                 :start start))
+      0))

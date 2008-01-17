@@ -25,7 +25,7 @@
 ;;; File: mallavar-utility-pkg.lisp
 ;;; Description: 
 
-;;; $Id: mallavar-utility-pkg.lisp,v 1.5 2008/01/08 23:58:44 amallavarapu Exp $
+;;; $Id: mallavar-utility-pkg.lisp,v 1.6 2008/01/17 01:55:43 amallavarapu Exp $
 
 ;;;
 
@@ -43,7 +43,8 @@
    delim-mkstr #:delim-sym #:mkstr #:find-extra #:remove-position
    make-type-sort-predicate #:quoted-p #:pushend #:pushnew-first
    sym #:reread #:key #:maptree #:mapatoms #:map-plist #:mapp #:assoc-list-from-plist #:keyword-list-p
-   tok #:positions #:unprefix #:external #:symbol-external-p #:maphash-to-list #:compose
+   #:tok #:unprefix #:external #:symbol-external-p #:maphash-to-list #:compose
+   #:positions #:positions-if
    mvbind #:mvlist #:mvsetq #:mvcall #:mvprog1 #:parse-key-list
    xor #:bool #:print-class-unreadably #:careful-expt #:with 
    delete-directory #:pathname-descendent-p #:pathname-directory-p #:normalize-pathname #:pathname-equal #:pathname-parent #:pathname-ancestors
