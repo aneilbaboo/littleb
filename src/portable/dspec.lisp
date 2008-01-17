@@ -173,10 +173,17 @@
             unknown (as in *features* not known), attempts to discover filetype dynamically.")
 
 (defmacro allowing-redefinitions (&body body)
-  #+:lispworks `(let ((hcl:*packages-for-warn-on-redefinition* nil)
-                      (LISPWORKS:*HANDLE-WARN-ON-REDEFINITION* :QUIET)
-                      (LISPWORKS:*REDEFINITION-ACTION* :QUIET)) ,@body)
-  #+:clisp `(let ((custom:*suppress-check-redefinition* t)) ,@body)
-  #+(or :mcl (and :CCL (not :lispworks))) `(let ((ccl:*warn-if-redefine-kernel* nil)) ,@body)
-  #+(and :allegro-version>= (:version>= 4 1)) `(excl:without-package-locks ,@body))
+  (or
+   #+:lispworks `(let ((hcl:*packages-for-warn-on-redefinition* nil)
+		       (LISPWORKS:*HANDLE-WARN-ON-REDEFINITION* :QUIET)
+		       (LISPWORKS:*REDEFINITION-ACTION* :QUIET)) ,@body)
+   #+:clisp `(let ((custom:*suppress-check-redefinition* t)) ,@body)
+   #+(or :mcl (and :CCL (not :lispworks))) `(let ((ccl:*warn-if-redefine-kernel* nil)) ,@body)
+   #+(and :allegro-version>= (:version>= 4 1)) `(excl:without-package-locks ,@body)
+   #+:cmu `(extensions:without-package-locks ,@body)
+   `(progn ,@body)))
+   
+   
+   
+
    
