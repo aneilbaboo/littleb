@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.12 2007/12/12 15:33:39 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.13 2008/01/17 23:56:25 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -46,7 +46,7 @@
    RETURNS: LHS-PATTERNS (complex-graphs representing the patterns)
             RULE-LHS
             RULE-RHS"
-  (multiple-value-bind (bonds lost-bonds relabels deletions lhs-patterns rhs-patterns rhs-new-graph
+  (multiple-value-bind (bonds lost-bonds relabels keepers losers lhs-patterns rhs-patterns rhs-new-graph
                               crt-lhs-entities rhs-monomer-locs)
       (compute-complex-reaction-type-changes cr)
     (declare (ignorable rhs-patterns))
@@ -68,7 +68,8 @@
                                     ',bonds              ; bonds to create
                                     ',lost-bonds         ; bonds to delete
                                     ',relabels           ; relabellings
-                                    ',deletions          ; verticies to delete
+                                    ',keepers            ; rhs verticies that must be kept
+                                    ',losers             ; verticies to delete
                                     ',rhs-monomer-locs)  ; 
                                   )))))
 
@@ -94,8 +95,7 @@
                   (t {[complex-species-type (gtools:canonical-graph graph)] @ (first sublocations)})))))
 
 (defun create-reaction-type-from-complex-reaction-type 
-       (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms bonds lost-bonds relabels deletions
-           rhs-monomer-localizations)
+       (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms new-bonds lost-bonds relabels keepers losers rhs-monomer-localizations)
   (flet ((copy-localization-to-complex-species-type (lcp cst)
            (if (localization-p lcp) {cst @ lcp.location}
              cst)))
@@ -107,10 +107,11 @@
                                                                    rhs-new-graph
                                                                    lhs-graphs)
                                                             isomorphisms
-                                                            bonds
+                                                            new-bonds
                                                             lost-bonds
                                                             relabels
-                                                            deletions
+                                                            keepers
+                                                            losers
                                                             rhs-monomer-localizations)))
            (rtype      [reaction-type 
                         localized-lhs-csts

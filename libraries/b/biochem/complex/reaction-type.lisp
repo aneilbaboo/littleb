@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.18 2008/01/17 20:29:36 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.19 2008/01/17 23:56:25 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -375,6 +375,7 @@
                    (error "BUG: LABEL ~S not FOUND" label)))
              (map-named-vertex->graph-index (seq)
                (map (type-of seq) #'named-vertex->graph-index seq))
+             (kept-verticies () (map-named-vertex->graph-index (coerce rhs-verticies 'list)))
              (lost-verticies ()
               (map-named-vertex->graph-index
                 (compute-vertex-set-difference (coerce lhs-verticies 'list)
@@ -389,6 +390,7 @@
        (mapcar (lambda (lchange)                           ;; label changes
                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
                label-changes)
+       (kept-verticies)
        (lost-verticies)
        deref-lhs-patterns
        deref-rhs-patterns
@@ -396,7 +398,8 @@
        lhs-rxn-vars
        (mapcar #'named-localization->graph-index-localization rhs-monomer-locs)))))
 
-(defun compute-rhs-graphs (input-graphs isomorphisms new-bonds lost-bonds relabels remove 
+(defun compute-rhs-graphs (input-graphs isomorphisms new-bonds lost-bonds relabels 
+                                        keep lose 
                                         sublocations)
   "Returns: RHS-GRAPHS, RHS-LOCALIZATIONS
    Where RHS-GRAPHS is a list of complex-graph objects
@@ -412,7 +415,8 @@
          LOST-BONDS - bonds to be destroyed (a list of graph index pairs)
          RELABELS - relabellings (representing state site value changes
                     (a list of the form (GI OLD-LABEL NEW-LABEL))
-         REMOVE   - verticies to be deleted from the output
+         KEEP     - RHS verticies to be kept (plus all connected verticies)
+         LOSE     - verticies to be deleted from the output
                     (a list of graph indicies)
          SUBLOCATIONS - sublocations of some verticies (representing the monomers); 
                     each output graph will contain one or more denoted verticies.  
@@ -421,14 +425,25 @@
                     these monomers do not share the same sublocation, we have a problem.
                     This is resolved in favor of the NIL sublocation if that is present; 
                     otherwise, an error occurs (currently - fail to generate rxn in future?)."
-  (let* ((graph-copies (map 'simple-vector #'gtools:copy-graph input-graphs)))
+  (let* ((graph-copies (map 'vector #'gtools:copy-graph input-graphs))
+         (offsets      ()))
     (labels ((graph (n) (svref graph-copies n))
              (vertex (g i) ;; using the isomorphisms, gets the true vertex i of graph g
                (case g
                  (0 i)  ;; the 0th graph is the RHS graph - no isomorphism
                  (t (svref (svref isomorphisms (1- g)) i))))
+             (offset (g) 
+               (svref (or offsets
+                          (apply #'vector 
+                                 (loop for sum = 0 then (+ sum (gtools:graph-vertex-count graph))
+                                       for graph across graph-copies
+                                       collect sum)))
+                      g))
              (gvertex (gi) (let ((g (car gi))) ; converts graph-index using isomorphisms
                              (cons g (vertex g (cdr gi)))))
+             (svertex (gi) (let* ((gv (gvertex gi)))
+                             (+ (offset (car gv))
+                                (cdr gv))))
              (bond (b) (mapcar #'gvertex b))) ; converts a bond using isomorphisms
 
       ;; label monomer sublocations
@@ -453,11 +468,12 @@
                                         (vertex g v)))
                      to))
 
-      ;; merge the graphs, connect edges between them
+      ;; merge the graphs, connect edges between them, and delete verticies
       (let* ((rhs-super-graph (gtools:merge-graphs (coerce graph-copies 'list) 
                                                   :edges (mapcar #'bond new-bonds)
-                                                  :remap `((nil ,@(mapcar #'gvertex remove))))))
+                                                  :remap `((nil ,@(mapcar #'gvertex lose))))))
 
         ;; and return the distinct complexes resulting from this operation:
-        (gtools:unconnected-subgraphs rhs-super-graph)))))
+        ;; keeping only the RHS verticies:
+        (gtools:unconnected-subgraphs rhs-super-graph :containing (mapcar #'svertex keep))))))
 
