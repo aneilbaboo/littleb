@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.8 2008/01/17 01:55:43 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.9 2008/01/17 07:16:51 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -340,18 +340,39 @@
              until (eq form eof)
              do (handler-case (eval form)
                   (error (e) 
-                    (b-error "Error in ~A (lines ~S-~S): ~
-                           ~&~A~
-                           ~&in ~A"
-                             file
-                             (1+ (line-number-from-position code start))
-                             (1+ (line-number-from-position code end))
-                             e
-                             (if (listp form) 
-                                 (format nil "(~A ~A ...)"  (first form) (second form))
-                               (format nil "~A" form)))))
+                    (let+ ((start-line (line-number-from-position code start))
+                           ((start-offset end-offset lines) 
+                            (code-start-end-lines code :start start :end end)))
+                      (b-error "While evaluating lines ~S-~S in ~A.~
+                                ~&FORM: ~<~A~&~A~&...~>~
+                                ~_~A"
+                               (+ start-line start-offset)
+                               (+ start-line end-offset)
+                               file
+;                               (if (listp form) 
+;                                   (format nil "(~A ~A ...)"  (first form) (second form))
+;                                 (format nil "~A" form))
+                               (nth start-offset lines) 
+                               (nth (1+ start-offset) lines)
+                               e))))
              (setf start end))))))
 
+(defun code-start-end-lines (string &key (start 0) (end 0))
+  (flet ((code-line-p (str)
+           (with-input-from-string (stream str)
+             (consume-whitespace stream)
+             (let ((c (read-char stream nil nil nil)))
+               (not (or (null c)
+                        (char= c #\;)))))))
+    (let* ((lines  (with-input-from-string (stream string :start start :end end)
+                     (loop for line = (read-line stream nil nil nil)
+                           while line
+                           collect line)))
+           (clinesp (mapcar #'code-line-p lines)))
+      (values (position t clinesp)
+              (position t clinesp :from-end t)
+              lines))))
+          
 (defun line-number-from-position (string pos &key (start 0))
   "Returns 0-based line number of position POS in string"
   (or (count-if (lambda (x) (>= pos x))
