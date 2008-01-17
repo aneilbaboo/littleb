@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.9 2008/01/17 07:16:51 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.10 2008/01/17 07:43:38 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -344,14 +344,11 @@
                            ((start-offset end-offset lines) 
                             (code-start-end-lines code :start start :end end)))
                       (b-error "While evaluating lines ~S-~S in ~A.~
-                                ~&FORM: ~<~A~&~A~&...~>~
-                                ~_~A"
+                                ~&FORM: ~A~@[~&~6T~A~6T...~]~
+                                ~&~A"
                                (+ start-line start-offset)
                                (+ start-line end-offset)
                                file
-;                               (if (listp form) 
-;                                   (format nil "(~A ~A ...)"  (first form) (second form))
-;                                 (format nil "~A" form))
                                (nth start-offset lines) 
                                (nth (1+ start-offset) lines)
                                e))))
