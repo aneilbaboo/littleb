@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.8 2008/01/17 07:16:38 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.9 2008/01/17 17:20:08 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -152,7 +152,11 @@
      ((null loc-classes)
       (b-error "Unable to determine location class for {~{~S~^ + ~} ~A ~{~S~^ + ~}}."
                clhs op crhs))
-     ((set-difference sublocs (mapcar #'fieldinfo-symbol (location-class-sublocations loc-class)))
+     ((remove-if #'null
+                 (set-difference 
+                  sublocs 
+                  (mapcar #'fieldinfo-symbol
+                          (location-class-sublocations loc-class))))
       (b-error "Invalid sublocation for ~S: ~{~S~^, ~}."
                loc-class (set-difference sublocs (location-class-sublocations loc-class)))))
     (values clhs crhs loc-class)))
