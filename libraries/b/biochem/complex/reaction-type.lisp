@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.17 2008/01/15 06:37:08 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.18 2008/01/17 20:29:36 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -81,6 +81,10 @@
            ((o complex-reaction-type)
             &optional (stream *standard-output*) (outer-op t))
   (pprint-math-form `{,o.lhs ->> ,o.rhs} stream outer-op))
+
+(defmethod print-concept ((o reversible-complex-reaction-type) &optional stream)
+  (if *debug-printing* (call-next-method)
+    (print-math-expression o stream t)))
 
 (defmethod print-math-expression 
            ((o reversible-complex-reaction-type)
