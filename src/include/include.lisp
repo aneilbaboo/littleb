@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.6 2007/11/19 00:36:21 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.7 2008/01/17 00:11:58 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -337,3 +337,25 @@
 ;;;;                  #1=(include-path-parent ipath) 
 ;;;;                  (if (include-path-ancestors #1#) 0 1)))
 ;;;;       result)))
+
+(defun read-file-to-string (file)
+  (with-output-to-string (string)
+    (with-open-file (stream file :direction :input :if-does-not-exist :error)
+      (loop with eof = '#:eof
+            for line = (read-line stream nil eof nil)
+            until (eq eof line)
+            do (write-line line string)))))
+
+(defun eval-file-carefully (file)
+  (let ((code            (read-file-to-string file))
+        (*load-pathname* file)
+        (*load-truename* (pathname (enough-namestring file))))
+    (loop with eof = '#:eof
+          with start = 0
+          for (form end) = (multiple-value-list (read-from-string code nil eof start))
+          until eof
+          do (handler-case (eval form)
+               (error (e) (b-error "Error while evaluating ~S: ~
+                                    ~&~A" form e))))))
+
+    

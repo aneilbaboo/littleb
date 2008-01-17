@@ -125,23 +125,33 @@
    no substitutions will be performed.  By default, IGNORE is NIL.
    ROWS, COLS and DATA may be either a symbol or a list of symbols.  
    In the later case, the corresponding element in the table must be a list of the same length."
-  (let* ((rows        (or rows (gensym "rows")))
-         (cols        (or cols (gensym "cols")))
-         (cells       (or cells (gensym "cells")))
-         (sub-table  (mapcan
-                      (lambda (rowlist)
-                        (loop with rowname = (first rowlist)
-                              for colname in colnames
-                              for cell in (rest rowlist)
-                              unless (eq cell ignore)
-                              collect `(,@(if (listp cols) colname (list colname))
-                                        ,@(if (listp rows) rowname (list rowname))
-                                        ,@(if (listp cells) cell (list cell)))))
-                     rowdata)))
+  (flet ((destructure-arguments (params args)
+           (cond
+            ((listp params) 
+             (unless (and (listp args) 
+                          (eq (length args) (length params)))
+               (error "WITH-DATA-TABLE arguments do not match parameters. ~
+                       Expecting valuesfixed data for ~S, ~
+                       but received ~S." params args))
+             args)
+            (t (list args)))))
+    (let* ((rows        (or rows (gensym "rows")))
+           (cols        (or cols (gensym "cols")))
+           (cells       (or cells (gensym "cells")))
+           (sub-table  (mapcan
+                        (lambda (rowlist)
+                          (loop with rowname = (first rowlist)
+                                for colname in colnames
+                                for cell in (rest rowlist)
+                                unless (eq cell ignore)
+                                collect `(,@(destructure-arguments cols colname)
+                                          ,@(destructure-arguments rows rowname)
+                                          ,@(destructure-arguments cells cell))))
+                        rowdata)))
     `(with-substitution-table 
          ((,@(ensure-list cols) ,@(ensure-list rows) ,@(ensure-list cells))
           ,@sub-table)
-           ,@body)))
+           ,@body))))
 
 
 (defun compute-permuted-substitutions (substitution-sets)

@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.11 2008/01/12 16:03:57 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.12 2008/01/17 00:11:58 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -524,7 +524,7 @@ Only values which pass LIST-TEST are included in the list (default is to include
                                        (cons car-val cdr-val))
                                       (t cdr-val))))
                    ((nil)  nil)))))))
-    (map-fn tree)))
+    (if tree (map-fn tree))))
 
 (defun keyword-list-p (list)
   "Tests whether the list is of the form (:KEY1 VALUE1 :KEY2 VALUE2 ...)"
