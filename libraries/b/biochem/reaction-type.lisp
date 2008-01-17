@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.7 2008/01/17 00:11:58 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.8 2008/01/17 07:16:38 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -147,9 +147,8 @@
     (cond
      ((> (length loc-classes) 1)
       (b-error "Unable to determine location class for {~{~S~^ + ~} ~A ~{~S~^ + ~}} ~
-                -- have you forgotten to assign sublocations?  These LOCATION-CLASSES
-                were referred to in this REACTION-TYPE (expecting only 1): ~{~S~^, ~}."
-               clhs op crhs loc-classes))
+                ~&-- have you forgotten to assign sublocations (e.g., {X @ :inner})?"
+               clhs op crhs))
      ((null loc-classes)
       (b-error "Unable to determine location class for {~{~S~^ + ~} ~A ~{~S~^ + ~}}."
                clhs op crhs))
