@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.25 2008/01/17 20:33:41 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.26 2008/01/18 19:54:45 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -1027,8 +1027,8 @@
 (defield complex-graph-concept.show (&key size)
   (complex-graph-show-image .id :size size))
 
-(defield complex-graph-concept.compute-dot-script ()
-  (complex-graph-dot-script .id))
+(defield complex-graph-concept.write-dot-script-subgraph (&optional (stream *standard-output*) &rest args)
+  (apply #'print-complex-graph-dot-script .id stream args))
 
 (defun complex-graph-show-image (cg &rest args
                                     &key
@@ -1128,9 +1128,8 @@
          collect (list* i (set-difference (gtools:graph-vertex-outputs cg i)
                                           mverts)))
    :test (lambda (x y)
-           (or (equalp x y)
-               (and (= 2 (length x))
-                    (equalp x (reverse y)))))))
+           (= (length x)
+              (length (intersection x y))))))
     
 (defun complex-graph-site-bonds (g mindex sindex)
   "For 0-based monomer MINDEX and 0-based site SINDEX, returns a list of 
