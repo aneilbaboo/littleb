@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.19 2008/01/17 23:56:25 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.20 2008/01/18 01:05:44 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -470,10 +470,21 @@
 
       ;; merge the graphs, connect edges between them, and delete verticies
       (let* ((rhs-super-graph (gtools:merge-graphs (coerce graph-copies 'list) 
-                                                  :edges (mapcar #'bond new-bonds)
-                                                  :remap `((nil ,@(mapcar #'gvertex lose))))))
+                                                  :edges (mapcar #'bond new-bonds)))
+                                                 ;:remap `((nil ,@(mapcar #'gvertex lose))))))
+             ;; and return the distinct complexes resulting from this operation:
+             ;; keeping only the RHS verticies: 
+             (disconnected-graphs (gtools:unconnected-subgraphs rhs-super-graph :containing (mapcar #'svertex keep))))
+        (if lose (mapcar #'fix-bond-sites disconnected-graphs)
+          disconnected-graphs)))))
 
-        ;; and return the distinct complexes resulting from this operation:
-        ;; keeping only the RHS verticies:
-        (gtools:unconnected-subgraphs rhs-super-graph :containing (mapcar #'svertex keep))))))
-
+(defun fix-bond-sites (cg)
+  "Connects bond sites which have no bonds (other than to the monomer symbol) to themselves.
+   This is necessary when monomers have been destroyed, leaving unconnected verticies."
+  (loop for i from 0 below (gtools:graph-vertex-count cg)
+        for lab = (gtools:graph-vertex-label cg i)
+        when (and (site-label-p lab)
+                  (not (site-label-has-state-p lab))
+                  (= 1 (length (gtools:graph-vertex-outputs cg i))))
+        do (setf (gtools:graph-vertex-edge-p cg i i) t)
+        finally return cg))
