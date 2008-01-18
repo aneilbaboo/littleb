@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.9 2007/12/12 23:56:50 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.10 2008/01/18 17:32:01 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -630,9 +630,57 @@
   "Accesses an element of an array"
   (setf (apply #'aref o indexes) value))
 
-;;;
-;;; .LENGTH
-;;;
-(defmethod fld ((o sequence) (field (eql :length)) &rest args)
-  (declare (ignore field args))
-  (length o))
+(defmacro def-lisp-field (type fn-name &key (field-name (key fn-name)) (object 0))
+  `(defmethod fld ((object ,type) (field (eql ,field-name)) &rest args)
+     (declare (ignore field))
+     ,(ecase object
+      (0
+       `(apply #',fn-name object args))
+      (1
+       `(apply #',fn-name (first args) object (rest args)))
+      (2
+       `(apply #',fn-name (first args) (Second args) object (cddr args))))))
+
+(defmacro def-lisp-fields (type &rest flddefs)
+  `(progn 
+     ,@(mapcar (lambda (flddef)
+                 `(def-lisp-field ,type ,@(ensure-list flddef)))
+               flddefs)))
+                         
+(def-lisp-fields sequence
+                 length
+                 fill
+                 subseq
+                 (map :object 2)
+                 map-into
+                 (reduce :object 1)
+                 (count :object 1)
+                 (count-if :object 1)
+                 (count-if-not :object 1)
+                 reverse nreverse
+                 sort stable-sort
+                 (find :object 1)
+                 (find-if :object 1)
+                 (find-if-not :object 1)
+                 (position :object 1)
+                 (position-if :object 1)
+                 (position-if-not :object 1)
+                 (search :object 1)
+                 (mismatch :object 1)
+                 (replace :object 1)
+                 (substitute :object 2) 
+                 (substitute-if :object 2) 
+                 (substitute-if-not :object 2) 
+                 (nsubstitute :object 2) 
+                 (nsubstitute-if :object 2)  
+                 (nsubstitute-if-not :object 2) 
+;               (concatenate 
+;               merge
+                 (remove :object 1)
+                 (remove-if :object 1)
+                 (remove-if-not :object 1)
+                 (delete :object 1)
+                 (delete-if :object 1)
+                 (delete-if-not :object 1)
+                 remove-duplicates 
+                 delete-duplicates)
