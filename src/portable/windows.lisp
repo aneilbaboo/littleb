@@ -89,7 +89,7 @@
     (:system32 37)
     (:program-files 38)
     (:my-pictures 39)
-    (:user 40)
+    (:documents-and-settings 40)
     (:system32 41)
     (:program-files-common-files 43)
     (:all-users-templates 45)
@@ -100,25 +100,62 @@
     (:all-users-my-pictures 54)
     (:all-users-my-videos 55)
     (:resources 56)
-    (:cd-burning 59)))
+    (:cd-burning 59)
+    (:temp       36 "Temp")))
 
 
-(defun get-windows-pathname (folder-id &optional str args)
-  (let ((num   (second (assoc folder-id *win32-folder-ids*))))
+(defun get-windows-pathname (folder-id &optional str &rest args)
+  (let* ((assoc         (assoc folder-id *win32-folder-ids*))
+         (num           (second assoc))
+         (id-subfolders (cddr assoc)))
     (assert num (folder-id)
       "Invalid argument to ~S: ~S is not one of ~S"
       'get-windows-named-folder 
       folder-id
       (mapcar #'car *win32-folder-ids*))
     
-    (let ((path #+:lispworks (second (multiple-value-list 
-                                      (win32::sh-get-folder-path 0 num 0 0)))
+    (let ((path #+:lispworks (nth-value 1 
+                                        (win32::sh-get-folder-path 0 num 0 0))
                 #+:clisp     (get-win32-special-folder-location num)
                 #-(or :clisp :lispworks)
-                              (substitute #\\  #\/ 
-                                          (format nil "~AMy Documents/"
-                                                  (user-homedir-pathname)))))
-    (pathname (format nil "~A\\~?"
-                      (string-right-trim '#.(list (code-char 0) #\/ #\\)
-                                         path)
-                      str args)))))
+                (enough-namestring
+                 (get-windows-pathname-unsupported 
+                  (first (find num *win32-folder-ids* :key #'second))))))
+      (pathname (format nil "~A\\~{~A\\~}~@[~?~]"
+                        (string-right-trim '#.(list (code-char 0) #\/ #\\)
+                                           path)
+                        id-subfolders
+                        str args)))))
+
+(defun get-windows-pathname-unsupported (folder-id)
+  (labels ((ds (subpath) (rec 
+                          :documents-and-settings
+                          "~A\\" (list subpath)))
+           (rec (folder-id &optional str args) 
+             (merge-pathnames (apply #'format nil str args)
+                              (get-windows-pathname-unsupported folder-id)))
+           (find-path (x)
+             (loop for drive from (char-code #\C) to (char-code #\Z)
+                   for path = (ignore-errors 
+                                (probe-file (format nil "~A:\\~A\\" 
+                                                    (code-char drive) x)))
+                   when path return path)))
+    (ecase  folder-id
+      (:desktop (ds "Desktop"))
+      (:start-menu-programs (ds "Start Menu"))
+      (:my-documents (ds "My Documents"))
+      (:favorites (ds "Favorites"))
+      (:start-menu-programs-startup (rec :start-menu "Programs\\Startup\\"))
+      (:recent (ds "Recent"))
+      (:sendto (ds "SendTo"))
+      (:start-menu (ds "Start Menu"))
+      (:my-music (ds "My Music"))
+      (:my-videos (ds "My Videos"))
+      (:nethood (ds "Net Hood"))
+      (:fonts (rec :windows "Fonts"))
+      (:system32 (rec :windows "System32"))
+      (:windows (find-path "Windows"))    
+      (:program-files (find-path "Program Files"))
+      (:documents-and-settings  (substitute #\\  #\/ 
+                                            (format nil "~AMy Documents/"
+                                                    (user-homedir-pathname))))))) 

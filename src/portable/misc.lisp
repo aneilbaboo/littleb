@@ -24,14 +24,14 @@
 
 (in-package portable)
 
-(defun user-documents-folder () 
-  #+:win32 (get-windows-named-folder :my-documents)
+(defun user-documents-folder (&optional (str "") &rest args) 
+  #+:win32 (apply #'get-windows-pathname :my-documents str args)
   (user-homedir-pathname))
 
 (defun temp-pathname (&optional base-name (n 0))
   (format nil "~A~A.tmp~A" 
           #+:unix "/tmp/"
-          #+:win32 (merge-pathnames (get-windows-named-folder :windows)
+          #+:win32 (merge-pathnames (get-windows-pathname :windows)
                                     "temp/")
           (format nil "~A~A" (or base-name "lispport")
                   #+:unix "" #-:unix n)

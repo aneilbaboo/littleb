@@ -62,7 +62,8 @@
                                    (src-time (file-write-date src)))
                               (or 
                                (not (and cpl
-                                         (<= *b-core-signature* (file-write-date cpl))
+                                         (<= (or *b-core-signature* 0)
+                                             (file-write-date cpl))
                                          (equalp src-time (signature-write-time src-sig))
                                          (equalp src-sig (include-path-compiled-signature ipath))))
                                (and recursive 
