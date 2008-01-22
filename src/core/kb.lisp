@@ -25,10 +25,13 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.6 2008/01/22 18:01:01 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
+    
+(defvar *kb-monitors* ()
+  "A list of single-argument functions which are called when an object is added to the database.")
 
 (defun kb-type-count ()
   (loop with table = (make-hash-table)
@@ -42,7 +45,6 @@
 (defun kb-add-object (hashkey object)
   (let ((class (class-of object)))
     (cond
-
      ;; object is matched by a pattern:
      ((kb-class-matchable-p class)        
       (push (cons :add object) *kb-command-queue*)) 
@@ -98,15 +100,10 @@
         while object
         do (lisa:assert-instance object)))
 
-;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
-(defun cclass-create-from-hashkey (hashkey)
-  (let ((cclass   (first hashkey))
-        (id-vals  (rest hashkey)))
-    (cclass-create-instance
-     cclass
-     (loop for id-fld in (cclass-id-field-order cclass)
-           for val    in id-vals
-           nconc (list id-fld val)))))
+(defun kb-do-add-command (object)
+  (dolist (monitor *kb-monitors*) (funcall monitor object))
+  (lisa:assert-instance object)
+  object)
 
 (defun kb-reset ()
   (maphash (lambda (k v)
@@ -135,7 +132,7 @@
           (property-value prop))))
 
 ;;;
-;;; TRACING SYSTEM
+;;;  SYSTEM
 ;;;
 (defun traceable-object-p (o)
   (let ((class (class-of o)))
@@ -145,7 +142,7 @@
 (defun verbose-trace (o)
   (cond 
    ((traceable-object-p o) (format t "~&(new) ~S~%" o))
-   (t                      (quiet-trace o))))
+   (t                      (princ #\+ o))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (defun quiet-tracing (n)
@@ -178,13 +175,17 @@
                          (type-count-difference type-count-new type-count))
                  (setf type-count type-count-new))))
         #'difference-trace))))
-    
-(defvar *kb-monitor* (quiet-tracing 10)
-  "A function of one argument which is called when an object is added to the database.")
-  
-(defun kb-do-add-command (object)
-  (when *kb-monitor* (funcall *kb-monitor* object))
-  (lisa:assert-instance object)
-  object)
 
+(setf *kb-monitors* (list (quiet-tracing 10)))
+
+
+;;;; ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
+;;;; (defun cclass-create-from-hashkey (hashkey)
+;;;;   (let ((cclass   (first hashkey))
+;;;;         (id-vals  (rest hashkey)))
+;;;;     (cclass-create-instance
+;;;;      cclass
+;;;;      (loop for id-fld in (cclass-id-field-order cclass)
+;;;;            for val    in id-vals
+;;;;            nconc (list id-fld val)))))
 
