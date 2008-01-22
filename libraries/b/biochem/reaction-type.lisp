@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.9 2008/01/17 17:20:08 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.10 2008/01/22 17:18:28 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -72,7 +72,7 @@
 ;;;
 ;;; reaction-type-requirement - 
 ;;;
-(defcon reaction-type-requirement ()
+(defcon reaction-type-requirement (:notrace)
   (reaction-type         
     side                   ; :lhs or :rhs
     species-type           ; species-type required
@@ -170,7 +170,6 @@
 ;;; END ARGUMENT PARSING
 ;;;
 
-(hide-classes reaction-type-requirement |REACTION-TYPE.LHS-REQUIREMENTS| |REACTION-TYPE.RHS-REQUIREMENTS|)
 
 
 (defoperator -> ((+ 2 (operator-precedence '+)) :xfy)
