@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.10 2008/01/22 17:18:28 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.11 2008/01/22 17:47:24 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -170,8 +170,6 @@
 ;;; END ARGUMENT PARSING
 ;;;
 
-
-
 (defoperator -> ((+ 2 (operator-precedence '+)) :xfy)
   (lhs rhs)
   (if (localization-p lhs)
@@ -232,34 +230,40 @@
       (print-operator '<-> (list lhs-printable rr.rhs) stream outer-op))))
 
 
+;;;;
+;;;; THE OLD WAY:
+;;;;
+(defield reaction-type.satisfied-at (loc)
+  (eq (length (gethash loc .reactants)) 
+      (length .lhs-requirements)))
 
-;;;; (defield reaction-type.lhs-species (loc req)
-;;;;   (get-reaction-type-species object loc req .reactants))
+(defield reaction-type.lhs-species (loc req)
+  (get-reaction-type-species object loc req .reactants))
 
-;;;; (defield (setf reaction-type.lhs-species) (value loc selector)
-;;;;   (setf (get-reaction-type-species object loc selector .reactants) value))
+(defield (setf reaction-type.lhs-species) (value loc selector)
+  (setf (get-reaction-type-species object loc selector .reactants) value))
 
-;;;; (defield reaction-type.rhs-species (loc selector)
-;;;;   (get-reaction-type-species object loc selector .products))
+(defield reaction-type.rhs-species (loc selector)
+  (get-reaction-type-species object loc selector .products))
 
-;;;; (defield (setf reaction-type.rhs-species) (value loc req)
-;;;;   (setf (get-reaction-type-species object loc req .products) value))
+(defield (setf reaction-type.rhs-species) (value loc req)
+  (setf (get-reaction-type-species object loc req .products) value))
 
-;;;; (defun get-reaction-type-species (rt loc selector ht)
-;;;;   (let* ((key (etypecase selector
-;;;;                 (reaction-type-requirement nil)
-;;;;                 (location-requirement      ?.location-requirement)
-;;;;                 (species-type              ?.species-type)))
-;;;;          (retval (assoc (gethash loc ht) selector :key key)))
-;;;;     (unless retval (b-error "Invalid selector (~S). No matching species in ~S." selector rt))))
+(defun get-reaction-type-species (rt loc selector ht)
+  (let* ((key (etypecase selector
+                (reaction-type-requirement nil)
+                (localization              (lambda (rt)
+                                             [localization rt.species-type 
+                                                           rt.sublocation]))
+                (species-type              ?.species-type)))
+         (retval (cdr (assoc selector (gethash loc ht) :key key))))
+    (or retval
+        (b-error "Invalid selector (~S). No matching species in ~S." selector rt))))
 
-;;;; (defun (setf get-reaction-type-species) (rct rt loc req ht)
-;;;;   (assert (and (species-p rct) (eq req.reaction-type rt)))
-;;;;   (pushnew (cons req rct) (gethash loc ht) :key #'car))
+(defun (setf get-reaction-type-species) (rct rt loc req ht)
+  (assert (and (species-p rct) (eq req.reaction-type rt)))
+  (pushnew (cons req rct) (gethash loc ht) :key #'car))
 
-;;;; (defield reaction-type.satisfied-at (loc)
-;;;;   (eq (length (gethash loc .reactants)) 
-;;;;       (length .lhs-requirements)))
 
 
 
