@@ -26,7 +26,7 @@
 ;;; Description: defrule, defines b rules
 ;;;
 
-;;; $Id: defrule.lisp,v 1.5 2007/12/12 15:06:08 amallavarapu Exp $
+;;; $Id: defrule.lisp,v 1.6 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -84,7 +84,7 @@
            (dolist (,cvar ',(rule-parse-classes rule-parse))
              (kb-register-matchable-class ,cvar) t)
            
-           (kb-run))
+           (kb-transaction))
        
          ',name))))
 

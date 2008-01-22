@@ -26,7 +26,7 @@
 ;;; Description: defcon, the definer of concepts 
 ;;;
 
-;;; $Id: defcon.lisp,v 1.2 2007/11/21 07:10:58 amallavarapu Exp $
+;;; $Id: defcon.lisp,v 1.3 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -118,10 +118,8 @@
              ;; initialize the class
              (initialize-cclass-object ,name ',ctor-symbol #',pattern-args-fn 
                                        ',id-fieldinfos ',ordered-id-flds ,abstract ,exposure
-                                       ',where-pattern ',pred-fn ,class-property)
-
-             ,(if traceable `(unhide-classes ,name)
-                `(hide-classes,name))
+                                       ',where-pattern ',pred-fn ,class-property
+                                       ,traceable)
 
              ;; define the predicate:
              (defun ,pred-fn (,pred-obj)
@@ -264,7 +262,8 @@
 
 (defun initialize-cclass-object (cclass object-ctor pattern-args-fn 
                                         fieldinfos id-order abstract exposure 
-                                        where-patterns pred-fn-name base-property)
+                                        where-patterns pred-fn-name base-property
+                                        traceablep)
   ; (cclass-reset-definition cclass) - no longer reset the cclass definition
   (cclass-init-slots cclass object-ctor pattern-args-fn id-order
                      abstract exposure where-patterns base-property)
@@ -273,7 +272,8 @@
   (cclass-check-id-fieldinfos cclass)
   (kb-class-init cclass)            
   (process-name-exposure (class-name cclass) exposure)
-  (process-name-exposure pred-fn-name exposure))
+  (process-name-exposure pred-fn-name exposure)
+  (setf (kb-class-traceable-p cclass) traceablep))
 
 (defun cclass-add-id-fieldinfos (cclass fieldinfos)
   (mapc (lambda (fi)

@@ -26,7 +26,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.6 2007/12/12 15:06:07 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.7 2008/01/22 16:42:40 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -97,45 +97,21 @@ on (RESET) or (INIT).  Useful for storing an object which must be used as an ide
 (defparameter *kb-undo-stack* nil)
 (defparameter *kb-command-queue* nil)
 
-(defvar *kb-trace-new-objects* t)
-(defvar *kb-trace-delete-objects* t)
-(defvar *kb-trace-update-objects* nil)
-(defvar *kb-trace-rules* nil)
-
 (defparameter *debug-printing* nil)
-
-;; TRACE VARS
-(defvar *tracing* nil) ;; replaces *trace-depth*
-(defvar *trace-stack-location* (list ()))
-(defconstant *hidden-classes* (make-hash-table)) ;; traceability & visibility in (objects)
-
 
 (defmacro kb-transaction (&body body)
   "ensures that any changes to the kb made in body are completed before 
 any rules are triggered."
-  (let ((kb-halted (gensym "KB-HALTED"))
-        (val       (gensym "VAL")))
-    `(let* ((,kb-halted *kb-halt*)
-            (*kb-halt*  t)
-            (,val       (macrolet ((kb-transaction (&body b) `(progn ,@b)))
-                          (progn ,@body))))
-           (declare (optimize (speed 3)))
-           (unless ,kb-halted 
-             (kb-run)
-             (flush-trace))
-           ,val)))
-
-(defun retrieve-trace-stack (&optional (loc *trace-stack-location*))
-  (reverse (first loc)))
-
-(defun clear-trace-stack ()
-  (setf *trace-stack-location* (list (list))))
-
-(defun trace-stack-has-items-p ()
-  (first *trace-stack-location*))
+  (let ((val       (gensym "VAL")))
+    `(let* ((,val       (macrolet ((kb-transaction (&body b) `(progn ,@b)))
+                          (let ((*kb-halt* t)) ,@body))))
+       (declare (optimize (speed 3)))
+       (unless *kb-halt*
+         (let ((*kb-halt* t))
+           (kb-run)))
+       ,val)))
 
 (defun reset-state-vars ()
-  (clear-trace-stack)
   (clrhash +objects+)
   (clrhash +names+))
 

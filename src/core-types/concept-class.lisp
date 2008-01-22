@@ -25,7 +25,7 @@
 ;;; File: concept-class
 ;;; Description: Defines the meta-class CONCEPT-CLASS. 
 
-;;; $Id: concept-class.lisp,v 1.4 2007/11/15 01:57:37 amallavarapu Exp $
+;;; $Id: concept-class.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -34,7 +34,8 @@
 
 (defclass kb-class (standard-class)
   ((matchable-p :reader kb-class-matchable-p :initform nil)
-   (unmatched-instances :accessor kb-class-unmatched-instances :initform nil)))
+   (unmatched-instances :accessor kb-class-unmatched-instances :initform nil)
+   (traceable-p :accessor kb-class-traceable-p :initform nil)))
 
 (defgeneric kb-object-hashkey (object)
   (:method (object) (declare (ignorable object)) nil))

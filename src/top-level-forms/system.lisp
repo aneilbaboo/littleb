@@ -26,7 +26,7 @@
 ;;; Description: misc system functions accessible to the user
 ;;;
 
-;;; $Id: system.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: system.lisp,v 1.2 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -35,13 +35,6 @@
   (if (conceptp o)
       (kb-retract o)
     (error "Attempt to retract ~A, which is not a concept object." o)))
-
-(defun hidden-p (o)
-  (typecase o
-    (standard-class (gethash o *hidden-classes*))
-    (symbol         (gethash o *hidden-classes*))
-    (rule           (gethash o *hidden-classes*))
-    (t              (gethash (class-of o) *hidden-classes*))))
 
 (defmacro with-relevance (r &body body)
   `(let ((*relevance* ,r))

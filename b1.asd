@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.17 2008/01/11 18:25:22 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.18 2008/01/22 16:42:39 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -94,7 +94,7 @@
                  (:file "fieldinfo")
                  (:file "field" :depends-on ("constants"))
                  (:file "name" :depends-on ("field"))
-                 (:file "trace" :depends-on ("field" )) ;"name"))
+                 ;(:file "trace" :depends-on ("field" )) ;"name"))
                  (:file "reader-core" :depends-on ("field")))
     :serial t)
    (:module #:reader

@@ -25,7 +25,7 @@
 ;;; File: Var
 ;;; Description: Vars - named variables for building ODE models
 
-;;; $Id: ode-var.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: ode-var.lisp,v 1.2 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 
@@ -41,7 +41,7 @@
    (b-error "Assigning {~S.(rate-of ...) := ~S}.  Invalid dimension (~S) computed by ~S.  Expecting a quantity of ~S."
             var {val / *time-dimension*} {(dimension-of val) / *time-dimension*} cause {var.dimension / *time-dimension*})))
 
-(defcon ode-var (base-var) ;; a time-variant value
+(defcon ode-var (:notrace base-var) ;; a time-variant value
   (&optional (id := *name*)
    &property (init-cond) ; the initial-condition
              (rate-influences := nil))) ; an assoc list of cons pairs: (CAUSE . INFLUENCE)
@@ -97,5 +97,3 @@
 
 (defmethod set-default-field ((tv ode-var) val)
   (setf tv.t0 val))
-
-(hide-classes ode-var)

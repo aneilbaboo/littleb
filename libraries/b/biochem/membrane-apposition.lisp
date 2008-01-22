@@ -27,7 +27,7 @@
 (include (@>/biochem) :expose)
 (include @library/biochem/dimensionalization)
 
-(defcon membrane-apposition (location)
+(defcon membrane-apposition (:notrace location)
   "A relationship between two membranes which states that they are on opposite sides of an interstitial compartment and that they interact with each other through reactions."
   ((m1 membrane)
    (m2 membrane)

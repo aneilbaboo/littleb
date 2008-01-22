@@ -25,26 +25,30 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.4 2007/12/12 15:06:07 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
+(defun kb-type-count ()
+  (loop with table = (make-hash-table)
+        for o being the hash-values of +objects+
+        do (incf (gethash (type-of o) table 0))
+        finally return (maphash-to-list table)))
+        
 (defun kb-find-object (hashkey)
   (gethash hashkey +OBJECTS+))
 
 (defun kb-add-object (hashkey object)
   (let ((class (class-of object)))
     (cond
+
+     ;; object is matched by a pattern:
      ((kb-class-matchable-p class)        
-      (assert (not (kb-find-object hashkey)) ()
-        "BUG: Attempt to add duplicate object ~S" object)    
-      (push (cons :add object) *kb-command-queue*)) ; either add the object now
-     (t (push (cons :trace-new object) *kb-command-queue*)
-        (push object (kb-class-unmatched-instances class))
-        )) ; or save this instance for later
+      (push (cons :add object) *kb-command-queue*)) 
+
+     ;;; store this instance in the unmatched list
+     (t (push object (kb-class-unmatched-instances class))))
     (setf (gethash hashkey +objects+) object
           (kb-object-hashkey object) hashkey)
     object))
@@ -65,20 +69,20 @@
 
 (defun kb-update-object (object)
   (when (kb-class-matchable-p (class-of object))
-    (push (cons :update object) *kb-command-queue*)
-    (add-object-trace :update object))
+    (push (cons :update object) *kb-command-queue*))
   object)
 
+
 (defun kb-run ()
-  (let ((transaction ()))
-    (loop while *kb-command-queue*
+  (when *kb-command-queue*
+    (loop with transaction = ()
+          while *kb-command-queue*
           do (setf transaction (nreverse *kb-command-queue*)
                    *kb-command-queue* nil)
           when transaction
-          sum (loop for cmd = (pop transaction)
-                    do (kb-do-command cmd)
-                    sum (lisa:run)
-                    while transaction))))
+          do (loop do (kb-do-command (pop transaction)) 
+                    while transaction)
+          	 (lisa:run))))
 
 (defun kb-do-command (cmd)
   (let ((action (car cmd))
@@ -87,26 +91,12 @@
       (:update      (lisa:mark-instance-as-changed object))
       (:add         (kb-do-add-command object))
       (:add-class   (kb-add-unmatched-instances object))
-      (:trace-new   (kb-do-trace-object-command object))
       (:request-run ()))))
-
-(defun kb-do-add-command (object)
-  (lisa:assert-instance object)
-  (add-object-trace :new object)
-  object)
-
-
-(defun kb-do-trace-object-command (object)
-  (add-object-trace :new object)
-  object)
 
 (defun kb-add-unmatched-instances (class)
   (loop for object = (pop (kb-class-unmatched-instances class))
         while object
         do (lisa:assert-instance object)))
-
-;;;; (defun add-object-undo-info (fact)
-;;;;   (add-undo (lambda () (kb-retract (lisa::find-instance-of-fact fact)))))
 
 ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
 (defun cclass-create-from-hashkey (hashkey)
@@ -135,7 +125,6 @@
     (cond ((gethash hashkey +OBJECTS+)  
            (setf (gethash hashkey +OBJECTS+) nil)
            (lisa:retract-instance o)
-           (add-object-trace :delete o)
            t)
           (t nil))))
 
@@ -145,7 +134,57 @@
     (setf (fld (property-object prop) (pclass-field-symbol (class-of prop)))
           (property-value prop))))
 
-)
+;;;
+;;; TRACING SYSTEM
+;;;
+(defun traceable-object-p (o)
+  (let ((class (class-of o)))
+    (and (subtypep (type-of class) 'kb-class)
+       (kb-class-traceable-p class))))
 
+(defun verbose-trace (o)
+  (cond 
+   ((traceable-object-p o) (format t "~&(new) ~S~%" o))
+   (t                      (quiet-trace o))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+(defun quiet-tracing (n)
+  (let ((counter 0))
+    (flet ((quiet-trace (o)
+             (declare (ignore o))
+             (when (zerop (mod (incf counter) n))
+               (princ #\+))))
+      #'quiet-trace))))
+
+(defun all-trace (o)
+  (format t "~&(new) ~S~%" o))
+
+(defun difference-tracing (&key (step 100) test)
+  (flet ((type-count-difference (tc1 tc2)
+           (loop for (t1 . c1) in tc1
+                 for (nil . c2) = (or (assoc t1 tc2) '(nil . 0))
+                 when (> c1 c2)
+                 collect (list t1 (- c1 c2)))))
+    (let ((instance-counter 0)
+          (type-count (kb-type-count))
+          (type-count-new ()))
+      (flet ((difference-trace (o)
+               (incf instance-counter)
+               (if test (funcall test o))
+               (when (= (mod instance-counter step) 0)
+                 (setf type-count-new (kb-type-count))
+                 (format t "~&New entities after ~S steps:~%~
+                     ~{~S +~S~~%~}"
+                         (type-count-difference type-count-new type-count))
+                 (setf type-count type-count-new))))
+        #'difference-trace))))
+    
+(defvar *kb-monitor* (quiet-tracing 10)
+  "A function of one argument which is called when an object is added to the database.")
+  
+(defun kb-do-add-command (object)
+  (when *kb-monitor* (funcall *kb-monitor* object))
+  (lisa:assert-instance object)
+  object)
 
 

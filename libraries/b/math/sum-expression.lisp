@@ -34,12 +34,11 @@
 
 (defparameter *print-default-operator* t)
 
-(defcon sum-expression (:non-matchable math-expression)
+(defcon sum-expression (:notrace :non-matchable math-expression)
   (variable numeric)
   (unless (listp variable)
     (b-error "Invalid argument to sum-expression - ~S - expecting a list." variable)))
 
-(hide-classes sum-expression)
 
 
 ;;;

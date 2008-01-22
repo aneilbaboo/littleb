@@ -31,10 +31,8 @@
 
 (eval-when (:compile-toplevel :load-toplevel :Execute)
 
-(defcon defer-expression (math-expression)
+(defcon defer-expression (:notrace math-expression)
   (obj function &rest args))
-
-(hide-classes defer-expression)
 
 (defield defer-expression.map (fn &rest operator-substitutions)
   (map-vars object fn operator-substitutions))

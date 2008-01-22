@@ -27,7 +27,7 @@
 ;;;              Provides an object that has fields which are flexibly added.
 ;;;
 
-;;; $Id: dictionary.lisp,v 1.6 2007/12/22 18:45:54 amallavarapu Exp $
+;;; $Id: dictionary.lisp,v 1.7 2008/01/22 16:42:40 amallavarapu Exp $
 (in-package b/util)
 
 (include-declaration :expose-packages (mallavar-utility)
@@ -38,7 +38,7 @@
 (defconstant +dictionary-default-rehash-threshold+ .75)
 (defconstant +dictionary-default-size+ 10)
 
-(defcon dictionary () 
+(defcon dictionary (:notrace) 
   (&optional (id := *name*)
    &property (_hash-table := (make-hash-table :test +dictionary-default-test+
                                               :rehash-size +dictionary-default-rehash-size+ 
@@ -107,7 +107,6 @@ KEY is contained in the dictionary."
 (defield (setf dictionary.?field) (value)
   (setf (gethash ?field ( |DICTIONARY._HASH-TABLE| object)) value))
 
-(hide-classes dictionary)
 
 (defield dictionary._copy-from (d)
   "Copies the keys & values from another dictionary, d"

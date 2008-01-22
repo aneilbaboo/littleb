@@ -26,7 +26,7 @@
 
 ;;; Description: 
 ;;;
-;;; $Id: multisided-cell.lisp,v 1.4 2007/11/12 15:06:06 amallavarapu Exp $
+;;; $Id: multisided-cell.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 (include-declaration :use-packages (mallavar-utility))
@@ -47,7 +47,7 @@
 (defmethod location-class-dimensionality ((x (eql multisided-cell)))
   (1- *compartment-dimensionality*))
 
-(defcon location-interface (location)
+(defcon location-interface (:notrace location)
   "a relationship between two locations which can be used as a location in reactions which take place across their superlocation"
   ((loc1 location)
    (loc2 location)
@@ -125,33 +125,3 @@
 (defield multisided-cell.all-apposed-membranes-size ()
   (apply #'s+ (do-dictionary (m .membranes t)
                 m.size)))
-
-(hide-classes location-interface membrane-apposition membrane compartment)
-; interface
-
-
-
-
-
-;; membrane appositions
-;;;; legacy from ben's code
-;;;; (defun declare-apposition (membrane-1 membrane-2 &key (use-special-ic nil) 
-;;;;                                       (interstitial-distance 1))
-;;;;   ; THIS IS THE PROPER WAY TO CREATE A MEMBRANE-APPOSITION
-;;;;   ; or if you have a regular-lattice, use lattice.(mkapp ...)
-
-;;;;   ; this should be moved to the implication body of membrane-apposition, 
-;;;;   ; but the inverse app creation causes recursive overflow...?
-;;;;   (assert *name* (*name*) "Should be called in ID context. Use (define ID (declare-apposition ...))")
-;;;;   (assert (not-nil-or-? membrane-1 membrane-2) 
-;;;;       (membrane-1 membrane-2) "Trying to appose NIL membrane")
-;;;;   (let* ((app nil)
-;;;;          (ia {membrane-1.size * interstitial-distance}))
-;;;;     (if (not-nil-or-? use-special-ic)
-;;;;         (setf app [[membrane-apposition membrane-1 membrane-2] :ic use-special-ic])
-;;;;       (progn
-;;;;         (setf app [membrane-apposition membrane-1 membrane-2])
-;;;;         {app.ic.size := ia}))
-;;;;     { app.inverse :# [[membrane-apposition app.m2 app.m1 app.ic] :c1 app.c2 :c2 app.c1]} 
-;;;;     app))
-

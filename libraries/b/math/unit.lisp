@@ -26,7 +26,7 @@
 ;;; Description: Defines the unit concept. For supporting Joules, Newtons, etc.
 ;;;              
 
-;;; $Id: unit.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: unit.lisp,v 1.3 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -43,7 +43,7 @@
 ;;;          A binary function where the first arg is a magnitude and the second
 ;;;          number is a flag indicating the direction of the desired conversion
 ;;;          (NIL = from base-units to this unit, T = from this unit to base-units)
-(defcon unit (:non-matchable math-concept) 
+(defcon unit (:notrace :non-matchable math-concept) 
   ((dimension dimension)
    &optional (conversion := 1)
    &property (unit-system unit-system))
@@ -217,7 +217,6 @@ E.g., when SECONDS are the base-unit, (unit-conversion MINUTES 1 NIL) => 1/60
 (defun all-product-elements-in-denominator-p (pes)
   (notany (compose #'positive-p #'product-element-power) pes))
 
-(hide-classes unit)
 
 (defmethod dimension-of ((u unit)) (the unit u).dimension)
 

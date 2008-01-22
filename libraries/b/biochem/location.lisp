@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.11 2007/12/06 22:25:16 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.12 2008/01/22 16:42:40 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -40,7 +40,7 @@
 ;;;
 ;;; LOCATION:
 ;;;
-(defcon location (:abstract) 
+(defcon location (:notrace :abstract) 
   (&property 
    (size :#= (let ((lclass (class-of object)))
                [[reference-var] :dimension (location-class-dimension lclass)
@@ -113,11 +113,11 @@
               
 
 ;;;; ;; simple, atomic locations
-(defcon compartment (location)
+(defcon compartment (:notrace location)
   (&optional (id := *name*)
    &property (adjacent-compartments)))
 
-(defcon membrane (location)
+(defcon membrane (:notrace location)
   (&optional (id := *name*)
    &property (outer (allow compartment) :relevance t)
              (inner (allow compartment) :relevance t)))

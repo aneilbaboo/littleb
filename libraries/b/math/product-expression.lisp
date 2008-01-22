@@ -31,12 +31,11 @@
           @FOLDER/DTYPE
           @FOLDER/math-expression))
 
-(defcon product-expression (:non-matchable math-expression)
+(defcon product-expression (:notrace :non-matchable math-expression)
   (variable)
   (unless (listp variable)
     (b-error "Invalid argument to sum-expression - ~S - expecting a list." variable)))
 
-(hide-classes product-expression)
 
 (defun product-expression (factors)
   (flet ((single-simple-factor-p (elts)
@@ -136,35 +135,4 @@
                                  (map-subst (product-element-var pe) fn)
                                  (map-subst (product-element-power pe) fn)))
                               (|PRODUCT-EXPRESSION.VARIABLE| o))])
-(hide-classes product-expression)
         
-
-;;;; (defun next-expansion-step (n)
-;;;;   (if n (1- n)))
-
-;;;; (defmethod expand :around ((o t) &optional n)
-;;;;   (if (or (null n) (> n 0))
-;;;;       (call-next-method o n)
-;;;;     o))
-
-;;;; (defmethod expand ((o product-expression) &optional n)
-;;;;   (loop for pe in (|PRODUCT-EXPRESSION.VARIABLE| o)
-;;;;         for var = (product-element-var pe)
-;;;;         for power = (product-element-power pe)
-;;;;         collect (expand-power var power (next-expansion-step n))))
-
-;;;; (defmethod expand-power ((o t) power &optional n)
-;;;;   (product-expression (list (product-element o power))))
-
-;;;; (defmethod expand-power ((o sum-expression) power &optional n)
-;;;;   ;;; not yet implemented
-;;;;   o)
-
-;;;; (defmethod expand-power ((o product-expression) power &optional n)
-;;;;   ;;; not yet implemented
-;;;;   o)
-
-
-;;;;         
-;;;;         
-;;;;         

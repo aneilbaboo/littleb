@@ -26,12 +26,12 @@
 ;;; Description: Defines the Quantity concept, a representation of a dimensional
 ;;;              quantity (such as 5 joules).
 
-;;; $Id: quantity.lisp,v 1.2 2007/10/25 14:44:23 amallavarapu Exp $
+;;; $Id: quantity.lisp,v 1.3 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
 ;;; QUANTITIES:
-(defcon quantity (:non-matchable numeric-concept)
+(defcon quantity (:notrace :non-matchable numeric-concept)
   (base-magnitude 
    dimension))
 
@@ -159,4 +159,3 @@
 (defmethod negativep ((q quantity))
   (negativep q.base-magnitude))
 
-(hide-classes quantity)

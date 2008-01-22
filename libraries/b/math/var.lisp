@@ -25,7 +25,7 @@
 ;;; File: Var
 ;;; Description: Vars - named variables
 
-;;; $Id: var.lisp,v 1.1 2007/09/25 17:54:05 amallavarapu Exp $
+;;; $Id: var.lisp,v 1.2 2008/01/22 16:42:40 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -125,7 +125,7 @@
 ;;;
 ;;; Constant var: holds a time-invariant value:
 ;;;
-(defcon reference-var (base-var) 
+(defcon reference-var (:notrace base-var) 
   (&optional (id := *name*)))
 
 (defprop reference-var.value ()
@@ -145,7 +145,7 @@
 ;;; should be able to compute this by equation solving, but
 ;;; I don't have this functionality yet.
 
-(defcon derived-var (var)
+(defcon derived-var (:notrace var)
   ((base var) fn
    &property (inverse-fn)
              (tag)))
@@ -202,7 +202,6 @@ and the normal-base"
 (defield derived-var.rate ()
   .fn.(let .base .base.rate))
       
-(hide-classes var reference-var derived-var)
 
 (defun compute-var-substitution (vars preferred-derived-vars)
   "Filters a list of vars (VARS) against preferred-derived-vars and returns

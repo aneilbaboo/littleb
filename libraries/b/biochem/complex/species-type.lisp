@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.27 2008/01/18 20:02:08 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.28 2008/01/22 16:42:39 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -70,8 +70,12 @@
 (defprop monomer.sites ()
  (let* ((sindex -1)
         (sites (map 'vector (lambda (sspec)
-                              (apply #'make-site-info (append (if (listp sspec) sspec (list sspec))
-                                                              (list :index (incf sindex)))))
+                              (apply #'make-site-info 
+                                     (append 
+                                      (etypecase sspec
+                                        (cons sspec)
+                                        (symbol (list sspec)))
+                                      (list :index (incf sindex)))))
                     value))
         (slist (coerce sites 'list))
         (setdif (set-difference slist
@@ -340,19 +344,16 @@
                               (etypecase id
                                 (complex-graph  id)
                                 (cons           (make-complex-graph id nil)))))))
-  (complex-species-graph-size-check id)
   ;(check-complex-species-type-graph-is-valid .id)
   =>
-
-  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
+ (complex-species-graph-size-check object) 
+ (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
 (define-var *max-monomers-per-complex* 15)
-(defun complex-species-graph-size-check (cg)
+(defun complex-species-graph-size-check (o)
   (when (and *max-monomers-per-complex*
-             (> (length (remove-if-not #'monomer-symbol-p (gtools:graph-labels cg)))
-                *max-monomers-per-complex*))
-      (b-error "Attempt to create a complex with greater than ~S monomers: ~S" *max-monomers-per-complex*
-               (complex-graph-description cg))))
+             (> o.monomers.length *max-monomers-per-complex*))
+    (b-error "Attempt to create a complex with greater than ~S monomers: ~S" *max-monomers-per-complex* o)))
 
 (defun check-complex-species-type-graph-is-valid (g)
   (loop for i from 0 below (gtools:graph-vertex-count g)
