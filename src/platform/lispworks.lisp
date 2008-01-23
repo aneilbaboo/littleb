@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.7 2008/01/02 04:13:03 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.8 2008/01/23 13:54:37 amallavarapu Exp $
 
 (in-package editor)
 
@@ -83,12 +83,13 @@
   (let* ((name         (or name (prompt-for-symbol p :prompt "Symbol: ")))
          (buffer-path  (buffer-pathname (current-buffer)))    
          (buffer-ipath (b:include-path-from-pathname buffer-path :errorp nil))
-         (name-ipath   (ignore-errors
-                         (cond
-                          (buffer-ipath (let ((*package* (b:include-path-package buffer-ipath t)))
-                                          (mutils:with-load-path buffer-path
-                                            (b:include-path name))))
-                          (t            (b:include-path name)))))
+         (name-ipath   (when (b:find-library name)
+                         (ignore-errors
+                           (cond
+                            (buffer-ipath (let ((*package* (b:include-path-package buffer-ipath t)))
+                                            (mutils:with-load-path buffer-path
+                                              (b:include-path name))))
+                            (t            (b:include-path name))))))
          (name-src     (when name-ipath
                          (mutils:whenit (ignore-errors (b:include-path-source-file name-ipath))
                            (probe-file mutils:it)))))

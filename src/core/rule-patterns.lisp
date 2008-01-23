@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.5 2008/01/23 08:57:19 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.6 2008/01/23 13:54:37 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -558,7 +558,8 @@
 
             ((null pattern)
              (type-check (type-of pattern))
-             (subst-field-var `((lisa:test (null ,?field-var)))))
+             `(,field nil))
+             ;(subst-field-var `((lisa:test (null ,?field-var)))))
 
             ((typep pattern '(or number vector array (and symbol (satisfies constantp))))
              (type-check (type-of pattern))

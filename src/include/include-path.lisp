@@ -76,7 +76,7 @@
 ;;;    #3spec => source file pathname
 ;;;    #4spec => compiled file pathname
 ;;;
-;;; $Id: include-path.lisp,v 1.4 2007/11/21 07:10:58 amallavarapu Exp $
+;;; $Id: include-path.lisp,v 1.5 2008/01/23 13:54:37 amallavarapu Exp $
 ;;;
 
 
@@ -107,13 +107,10 @@
          (delete-package ,dummy-pkg))))))
 
 (defun compute-current-include-path (&optional (errorp t))
-  (flet ((tryit ()
-           (cond
-            (*compile-file-truename* (include-path-from-pathname *compile-file-truename*))
-            (*load-truename*         (include-path-from-pathname *load-truename*))
-            (t                       (error "COMPUTE-CURRENT-INCLUDE-PATH called in Listener.")))))
-    (if errorp (tryit)
-      (ignore-errors (tryit)))))
+  (cond
+   (*compile-file-truename* (include-path-from-pathname *compile-file-truename* :errorp errorp))
+   (*load-truename*         (include-path-from-pathname *load-truename* :errorp errorp))
+   (errorp                  (error "COMPUTE-CURRENT-INCLUDE-PATH called in Listener."))))
 
 
 ;;;;
