@@ -25,10 +25,11 @@
 ;;; File: littleb.lisp
 ;;; Description: Loads the little b language.
 
-;;; $Id: littleb.lisp,v 1.7 2007/12/27 21:18:52 amallavarapu Exp $
+;;; $Id: littleb.lisp,v 1.8 2008/01/23 08:57:14 amallavarapu Exp $
 ;;; $Name:  $
 
 #-:asdf+ (load (merge-pathnames "asdf/asdf+.lisp" *load-truename*))
+
 
 #+:littleb ; if little b is loaded, reset the readtable and print-dispatcher
 (setf *readtable* (with-standard-io-syntax *readtable*)
@@ -37,6 +38,11 @@
 
 (pushnew (make-pathname :name nil :type nil :defaults *load-truename*)
          asdf:*central-registry* :test #'equalp)
+
+(defun delete-littleb-binaries ()
+  (ignore-errors (asdf:delete-binaries :b1))
+  (ignore-errors (asdf:delete-binaries :graph-tools))
+  (ignore-errors (asdf:delete-binaries :lisa)))
 
 #+:clisp (setf custom:*suppress-check-redefinition* t)
 

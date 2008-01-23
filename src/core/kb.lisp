@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.6 2008/01/22 18:01:01 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.7 2008/01/23 08:57:19 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -132,20 +132,20 @@
           (property-value prop))))
 
 ;;;
-;;;  SYSTEM
+;;;  MONITORING SYSTEM:
 ;;;
-(defun traceable-object-p (o)
-  (let ((class (class-of o)))
-    (and (subtypep (type-of class) 'kb-class)
-       (kb-class-traceable-p class))))
 
-(defun verbose-trace (o)
+(defvar *monitor-interval* 10
+  "Used by some monitors - # of instances seen before a report is issued.")
+
+(defun verbose-tracer (o)
   (cond 
    ((traceable-object-p o) (format t "~&(new) ~S~%" o))
    (t                      (princ #\+ o))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-(defun quiet-tracing (n)
+(defun quiet-tracer (&optional (n *monitor-interval*))
+  "Prints a + for every N new objects."
   (let ((counter 0))
     (flet ((quiet-trace (o)
              (declare (ignore o))
@@ -153,10 +153,24 @@
                (princ #\+))))
       #'quiet-trace))))
 
-(defun all-trace (o)
+(defun memory-monitor (&optional (n *monitor-interval*))
+  (let ((counter 0))
+    (flet ((memory-trace (o)
+             (declare (ignore o))
+             (when (zerop (mod (incf counter) n))
+               (room))))
+      #'memory-trace)))
+
+(defun all-tracer (o)
+  "Prints a verbose trace of every object added to the DB"
   (format t "~&(new) ~S~%" o))
 
-(defun difference-tracing (&key (step 100) test)
+(defun traceable-object-p (o)
+  (let ((class (class-of o)))
+    (and (subtypep (type-of class) 'kb-class)
+       (kb-class-traceable-p class))))
+
+(defun difference-tracer (&key (step 100) test)
   (flet ((type-count-difference (tc1 tc2)
            (loop for (t1 . c1) in tc1
                  for (nil . c2) = (or (assoc t1 tc2) '(nil . 0))
@@ -176,7 +190,7 @@
                  (setf type-count type-count-new))))
         #'difference-trace))))
 
-(setf *kb-monitors* (list (quiet-tracing 10)))
+(setf *kb-monitors* (list (quiet-tracer)))
 
 
 ;;;; ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
