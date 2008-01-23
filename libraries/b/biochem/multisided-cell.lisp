@@ -26,7 +26,7 @@
 
 ;;; Description: 
 ;;;
-;;; $Id: multisided-cell.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: multisided-cell.lisp,v 1.6 2008/01/23 13:52:24 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 (include-declaration :use-packages (mallavar-utility))
@@ -97,7 +97,7 @@
 ;;;
 (defield multisided-cell.add-membrane (name length )
   (let ((cell object))
-    {object.membranes.,name :#= [[membrane] :c2 cell.inner {.size.value := length}]}))
+    {object.membranes.,name :#= [[membrane] :inner cell.inner {.size.value := length}]}))
 
 (defield multisided-cell.in-all-apposed-membranes (stype &optional (X ?.moles))
   "Retrieves the total X of a species type in all the apposed membranes of a cell. Where X = .moles by default."
