@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.28 2008/01/22 16:42:39 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.29 2008/01/24 19:45:18 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -143,7 +143,7 @@
 
 ;; bond sites can connect to other bond sites
 (defstruct-with-fields (bond-site-info (:include site-info))
-  type sublocation)
+  bonds sublocation)
 
 ;; state sites have values
 (defstruct-with-fields (state-site-info (:include site-info))
@@ -155,37 +155,55 @@
     (symbol (intern (symbol-name x) :keyword))
     (t      x)))
                                                                     
-(defun make-site-info (tags &rest args &key states default connector documentation sublocation index)
+(defun make-site-info (tags &rest args
+                            &key
+                            states  ; a lisp typespec, if given, site is a state site
+                            default ; default state, only used if states is non-NIL
+                            bonds ; if given, site must be a bond site
+                                  ; assumed = 1 by default
+                            documentation ; a documentation string describing site
+                            sublocation ; currently unused
+                            index)
+  "Parses the description of a site provided to defmonomer.  "
   (declare (ignorable args))
   (let* ((tags      (mapcar #'keywordify
                             (if (listp tags) tags (list tags))))
          (name      (first tags))
-         (connector (or connector (not (or states default))))
-         (states     (or states (and (not connector) (not sublocation))))
-         (default    (or default 
+         (bonds     (or bonds (unless states 1)))
+         (states    (or states (and (not bonds) (not sublocation))))
+         (default   (or default 
                          (and (member-type-p states)
                               (second states)))))
     (cond
 
-     ;; attempt to provide both connector and states definitions:
-     ((and states connector)
-      (error "Ambiguous site definition ~S - state site or a connector site?"))
+     ;; attempt to provide both bond and states definitions:
+     ((and states bonds)
+      (error "Ambiguous site definition for ~S - ~
+             :BONDS or :STATES may be given, but not both."))
 
-     ;; when it's a not a connector, check default state is valid
-     ((not (or connector
-               (typep default states)))
-      (error "Default state ~S is not of type ~S in site ~S"
-             default states name))
-
+     ;; when it's a state site, check default state is valid
+     (states
+      (unless (typep default states)
+        (cond
+         (default (b-error "Default state ~S is not of type ~S in site ~S"
+                           default states name))
+         (t       (b-error "Default state not supplied for site ~S."
+                           name))))
     
-     (states (make-state-site-info :tags tags :type states :default default :index index
-                                   :documentation documentation))
+      (make-state-site-info :tags tags :type states
+                            :default default :index index
+                            :documentation documentation))
 
-     (t      (make-bond-site-info :tags tags
-                                  :index index
-                                  :type connector
-                                  :documentation documentation
-                                  :sublocation sublocation)))))
+     ;; it's a bond site:
+     (t      
+      (assert (typep bonds '(integer 1 *)) (bonds)
+        "Site ~S supplied illegal value for :BONDS (~S).  ~
+         Expecting a positive integer." name bonds)
+      (make-bond-site-info :tags tags
+                           :index index
+                           :bonds bonds
+                           :documentation documentation
+                           :sublocation sublocation)))))
 
 (defun ensure-canonical-complex-graph (x &optional force-pattern)
   (gtools:canonical-graph
