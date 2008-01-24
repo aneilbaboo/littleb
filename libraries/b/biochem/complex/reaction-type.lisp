@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.20 2008/01/18 01:05:44 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.21 2008/01/24 19:44:34 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -471,7 +471,6 @@
       ;; merge the graphs, connect edges between them, and delete verticies
       (let* ((rhs-super-graph (gtools:merge-graphs (coerce graph-copies 'list) 
                                                   :edges (mapcar #'bond new-bonds)))
-                                                 ;:remap `((nil ,@(mapcar #'gvertex lose))))))
              ;; and return the distinct complexes resulting from this operation:
              ;; keeping only the RHS verticies: 
              (disconnected-graphs (gtools:unconnected-subgraphs rhs-super-graph :containing (mapcar #'svertex keep))))
