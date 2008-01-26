@@ -45,6 +45,7 @@
   :authors ("Aneil Mallavarapu"))
 (define-function create-ode-model (name &key 
                                         (vars (progn (format t "~&; Querying for variables...~%") (query-time-vars)))
+                                        (ode-comments-p t)
                                         (display-vars t)
                                         (overwrite :query)
                                         (integrator "ode15s")
@@ -63,6 +64,7 @@
            (mm                      (make-matlab-model name
                                                        :path path
                                                        :ode-vars vars
+                                                       :ode-comments-p ode-comments-p
                                                        :integrator integrator
                                                        :reltol reltol
                                                        :abstol abstol
@@ -226,7 +228,10 @@
     (loop for v in vars
           for i = 1 then (1+ i)
           for rate = (compute-ode-expression (nth (1- i) (matlab-model-ode-rates mm)) mm)
-          do  (with-print-context t (b-format file "~3T% ~A = ~A ~%" v rate)
+          do  (with-print-context t 
+                ;; write comment
+                (if (matlab-model-ode-comments-p mm)
+                    (b-format file "~3T% ~A = ~A ~%" v rate))
                 (with-dimensionless-math (matlab-model-base-units mm)
                     (format file "~3Tdy(~S) = ~S;~%" i rate))))
     (format file "end~%~%")))
@@ -343,7 +348,7 @@
 ;; the matlab-model structure stores information about how MATLAB code is to be generated
 ;;
 (defstruct (matlab-model (:constructor _make-matlab-model 
-                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars integrator abstol reltol)))
+                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars integrator abstol reltol ode-comments-p)))
   _name ; string indicating the name of the model
   path ; the path in which files for this model are stored
   ode-vars ; an ordered list of n ode-vars/derived-vars which map to y(1)...y(n) in the matlab ODE system
@@ -354,7 +359,8 @@
   display-vars ; a list of ode-vars/derived-vars which should be displayed in matlab
   integrator ; the matlab ode function to use (default = ode15s)
   abstol ; absolute tolerance for ode function
-  reltol) ; absolute tolerance for ode function
+  reltol ; absolute tolerance for ode function
+  ode-comments-p)  ; print comments for ode-models
  
 
 (defmethod print-object ((mm matlab-model) stream)
@@ -365,6 +371,7 @@
 (defun make-matlab-model (model-name 
                           &key 
                           (path *model-output-default-pathname*)
+                          (ode-comments-p t)
                           (ode-vars (query [ode-var ?])) 
                           (base-units nil) 
                           (abstol nil)
@@ -375,7 +382,7 @@
   (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
          (kvars (make-hash-table))) ; (order-vars (compute-kvars rates))))
     (setf (gethash :last-index kvars) 0)
-    (_make-matlab-model model-name path ode-vars rates base-units gauss-value kvars display-vars integrator abstol reltol)))
+    (_make-matlab-model model-name path ode-vars rates base-units gauss-value kvars display-vars integrator abstol reltol ode-comments-p)))
 
 (defun matlab-model-name (mm)
   (etypecase mm
