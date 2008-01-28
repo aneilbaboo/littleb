@@ -25,7 +25,7 @@
 ;;; File: fieldinfo
 ;;; Description: fieldinfo structures record arguments & type of a field
 
-;;; $Id: fieldinfo.lisp,v 1.2 2007/11/12 15:06:07 amallavarapu Exp $
+;;; $Id: fieldinfo.lisp,v 1.3 2008/01/28 23:59:58 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -75,8 +75,8 @@
 (defun method-fieldinfo-p (fi)
   (eq (fieldinfo-kind fi) :method))
 
-(defun fieldinfo (instance field)
-  (class-fieldinfo (class-of instance) field))
+(defun fieldinfo (instance field &optional errorp)
+  (class-fieldinfo (class-of instance) field :errorp errorp))
 
 (defun fieldinfos (instance)
   (class-fieldinfos (class-of instance)))
@@ -87,9 +87,10 @@
 (defun class-fields (class)
   (mapcar #'fieldinfo-symbol (class-fieldinfos class )))
 
-(defun class-fieldinfo (class field &optional ensure-initialized)
-  (find field (class-all-fieldinfos class ensure-initialized) 
-        :key #'fieldinfo-symbol))
+(defun class-fieldinfo (class field &key ensure-initialized (errorp t))
+  (or (find field (class-all-fieldinfos class ensure-initialized) 
+            :key #'fieldinfo-symbol)
+      (if errorp (b-error "No field ~S in class ~:@(~S~)" field class))))
 
 (defun (setf class-fieldinfo) (newfi class &optional (field (fieldinfo-symbol newfi)))
   (cond
@@ -141,7 +142,7 @@
     (add-fieldinfo class fi updatefn)))
 
 (defun add-fieldinfo-to-subclasses (class fi updatefn)
-  (let ((existingfi (class-fieldinfo class (fieldinfo-symbol fi) t)))
+  (let ((existingfi (class-fieldinfo class (fieldinfo-symbol fi) :ensure-initialized t :errorp nil)))
     (unless (and existingfi
                  (subtypep #1=(fieldinfo-parent existingfi) 
                            #2=(fieldinfo-parent fi))
@@ -287,7 +288,7 @@
         ((fld-form-p form)
          (let* ((class (b-compute-form-class (fld-form-object form) env error))
                 (fld   (compute-form-value (fld-form-field form) env error))
-                (fi    (when (and fld class) (class-fieldinfo class fld error))))
+                (fi    (when (and fld class) (class-fieldinfo class fld :errorp error))))
            (if fi (fieldinfo-type fi))))
 
         (t (compute-form-type form env))))

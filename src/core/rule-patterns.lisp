@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.6 2008/01/23 13:54:37 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.7 2008/01/28 23:59:58 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -292,7 +292,7 @@
       (let ((class (or (find-class class-type)
                        (b-error "~S is not a valid class in pattern ~S" obj fe))))
 
-        (case (fieldinfo-kind (class-fieldinfo class fld))
+        (case (fieldinfo-kind (class-fieldinfo class fld :errorp t))
           (:property        
            (let+ ((pclass                       (cclass-property class fld))
                   (pclass-name                  (class-name pclass))

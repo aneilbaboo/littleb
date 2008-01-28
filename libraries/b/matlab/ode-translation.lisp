@@ -45,7 +45,7 @@
   :authors ("Aneil Mallavarapu"))
 (define-function create-ode-model (name &key 
                                         (vars (progn (format t "~&; Querying for variables...~%") (query-time-vars)))
-                                        (ode-comments-p t)
+                                        (ode-comments t)
                                         (display-vars t)
                                         (overwrite :query)
                                         (integrator "ode15s")
@@ -64,7 +64,7 @@
            (mm                      (make-matlab-model name
                                                        :path path
                                                        :ode-vars vars
-                                                       :ode-comments-p ode-comments-p
+                                                       :ode-comments-p ode-comments
                                                        :integrator integrator
                                                        :reltol reltol
                                                        :abstol abstol
@@ -120,7 +120,7 @@
         :key (lambda (o) 
                (format nil "~(~A~)" o))))
 
-(defun query-time-vars (&key prefer (base-set (query [ode-var ?])))
+(defun query-time-vars (&key prefer (base-set (query ode-var)))
   (compute-ode-vars base-set prefer))
 
 (defun write-matlab-files (run-file init-file indicies-file mm path)
@@ -250,7 +250,7 @@
                (let* ((base-units (matlab-model-base-units mm))
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math base-units
-                   (m-format file "~%    ~A,... %" (print-math v.t0 nil)))
+                   (b-format file "~%    ~A,... %" (print-math v.t0 nil)))
                  (b-format file " [~A] ~A in ~A" i v the-unit))))
 
     (format file "~%];~%~%")))
@@ -288,7 +288,7 @@
 (defun b-format (stream string &rest args)
   "Prints using b print style, creating strings suitable for matlab"
   (let ((*math-print-function* 'default-math-printer))
-    (apply #'m-format stream string args)))
+    (apply #'format stream string args)))
 
 (defun write-kvars (file mm)
   (let* ((name (matlab-model-kvars-name mm))
