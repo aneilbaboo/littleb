@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.31 2008/02/02 05:32:10 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.32 2008/02/02 05:34:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -641,7 +641,7 @@
   "Records that site index is bound by variable indicated in BINDING.
   Returns nil on failure."
   (cond
-   ((wildcard-bond-label-p binding) t) ; * means no bonds - used for patterns
+   ((wildcard-binding-p binding) t) ; * means no bonds - used for patterns
 
    ((unbonded-label-p binding)
     (setf (gethash (gen-bond-label binding-table) 
