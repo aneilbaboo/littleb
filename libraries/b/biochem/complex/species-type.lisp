@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.29 2008/01/24 19:45:18 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.30 2008/02/02 05:31:06 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -479,7 +479,7 @@
 (defun wildcard-label-tags (x) (third x))
 (defun wildcard-state-label-p (x) (= (length x) 4))
 (defun wildcard-monomer-symbol-p (x) (eq x '*))
-(defun wildcard-binding-p (x) (eq x '*))
+(defun wildcard-binding-p (x)  (member x '(* :*)))
 (defun wildcard-monomer-reference-p (x) 
   (or (wildcard-monomer-symbol-p x)
       (and (fld-form-p x)
@@ -835,9 +835,6 @@
 (defun unbonded-label-p (x) 
   (member x '(_ :_)))
 
-(defun wildcard-bond-label-p (x)
-  (member x '(* :*)))
-
 (defun bond-label-p (x)
   "Objects used to denote a bond in a complex"
   (integerp x))
@@ -909,13 +906,13 @@
         when (monomer-symbol-p k)
         do (remhash k *reference-labels*)))
 
-                                   
-(defun selector-graph-ignorable-vertex-p (rg i)
-  (let ((label (gtools:graph-vertex-label rg i)))
-  (cond
-   ((site-label-has-state-p label) 
-    (eq label '*))
-   (t (= (length (gtools:graph-vertex-outputs rg i)) 1)))))
+;;;;                                    
+;;;; (defun selector-graph-ignorable-vertex-p (rg i)
+;;;;   (let ((label (gtools:graph-vertex-label rg i)))
+;;;;   (cond
+;;;;    ((site-label-has-state-p label) 
+;;;;     (eq label '*))
+;;;;    (t (= (length (gtools:graph-vertex-outputs rg i)) 1)))))
 
 ;;;
 ;;; COMPLEX-EXPANDER: implements [] syntax
