@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.30 2008/02/02 05:31:06 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.31 2008/02/02 05:32:10 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -479,11 +479,11 @@
 (defun wildcard-label-tags (x) (third x))
 (defun wildcard-state-label-p (x) (= (length x) 4))
 (defun wildcard-monomer-symbol-p (x) (eq x '*))
-(defun wildcard-binding-p (x)  (member x '(* :*)))
 (defun wildcard-monomer-reference-p (x) 
   (or (wildcard-monomer-symbol-p x)
       (and (fld-form-p x)
            (wildcard-monomer-symbol-p (fld-form-object x)))))
+(defun wildcard-binding-p (x)  (member x '(* :*)))
 
 ;;;
 ;;; GRAPH GENERATION FUNCTIONS:
