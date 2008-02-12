@@ -29,7 +29,7 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.8 2008/01/23 13:54:37 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.9 2008/02/12 14:26:18 amallavarapu Exp $
 
 (in-package editor)
 
@@ -83,7 +83,7 @@
   (let* ((name         (or name (prompt-for-symbol p :prompt "Symbol: ")))
          (buffer-path  (buffer-pathname (current-buffer)))    
          (buffer-ipath (b:include-path-from-pathname buffer-path :errorp nil))
-         (name-ipath   (when (b:find-library name)
+         (name-ipath   (when (ignore-errors(b:find-library name))
                          (ignore-errors
                            (cond
                             (buffer-ipath (let ((*package* (b:include-path-package buffer-ipath t)))
@@ -168,9 +168,9 @@
         (intern (b:include-path-spec ipath) "B-USER")
         (if src
             (b:include-path-package ipath t))
-        (if (capi:editor-pane-selected-text pane)
-            (funcall region-fn  pane)
-          (funcall point-fn pane))))))
+        (if (zerop (length (capi:editor-pane-selected-text pane)))
+            (funcall point-fn pane)
+          (funcall region-fn  pane))))))
 
 
 ;; 19 Aug 1994, AA - only display progress messages if we aren't in
@@ -441,7 +441,6 @@
     (bind-key "B Insert Space and Show Arglist" #\Space :mode "Execute")
     (bind-key "B Insert Dot and Show Fields" #\. :mode "Lisp" ) 
     (bind-key "B Insert Dot and Show Fields" #\. :mode "Execute")
-
     t))
 
 
@@ -527,3 +526,4 @@
 
 (setf dbg:*debug-print-level* 8)
 
+  

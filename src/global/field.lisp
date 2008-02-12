@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.10 2008/01/18 17:32:01 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.11 2008/02/12 14:26:17 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -72,8 +72,10 @@
 
 (defmethod fld ((o null) f &rest args)
   (declare (ignorable o args))
-  (b-error "Object missing - attempted to access ~S"
-           (list* 'fld nil f args)))
+  (cond 
+   ((next-method-p) (call-next-method))
+   (t               (b-error "Object missing - attempted to access ~S"
+                             (list* 'fld nil f args)))))
 (port:define-dspec-class defield () "")
 (port:define-dspec-form-parser defield (fe)
   (defield-dspec fe))
@@ -93,54 +95,6 @@
   (and (consp o) (eq (first o) 'setf)
        (fld-form-p (second o))))
 
-;;;; (port:define-dspec-class defield () "")
-;;;; (port:define-dspec-form-parser defield (fe &body method-body)
-;;;;   (if (fld-setf-form-p fe) `(defield (setf ,(fld-form-to-symbol (second fe))))
-;;;;     `(defield ,(fld-form-to-symbol fe))))
-
-;;;; (defmacro destructure-field-dspec ((name method-body) (&optional (dspec '#:dspec)
-;;;;                                                                  (ff '#:ff) (setfp '#:setfp)
-;;;;                                                                  (class '#:class)
-;;;;                                                                  (doc-decl '#:doc-decl)
-;;;;                                                                  (field '#:field)
-;;;;                                                                  (args '#:args)) &body body)
-;;;;   (let ((qualifiers '#:qualifiers)
-;;;;         (code '#:code)
-;;;;         (specializers '#:specializers)
-;;;;         (non-specializers '#:non-specializers)
-;;;;         (dspec-name '#:dspec-name)
-;;;;         (types '#:types))
-;;;;      `(progn
-;;;;         (unless (or (fld-form-p ,name)
-;;;;                     (setf-fld-form-p ,name)) 
-;;;;           (b-error "Invalid name to define-field: ~S.  Expecting a field form." ,name))
-;;;;   
-;;;;         (let+ (((,ff ,setfp) (if (fld-setf-form-p ,name)
-;;;;                                  (values (second ,name) t)
-;;;;                                (values ,name nil)))
-;;;;                (,class     (fld-form-object ,ff))
-;;;;                (,field     (fld-form-field ,ff)))
-;;;;           (destructure-method-body (,qualifiers ,args ,doc-decl ,code
-;;;;                                                 ,specializers ,non-specializers)
-;;;;               ,method-body
-;;;;             (check-field-def-args ,specializers)
-;;;;             (let* ((,dspec-name  (fld-form-to-symbol ,ff))
-;;;;                    (,types       (mapcar (lambda (o) (if (consp o) (second o) t)) ,specializers))
-;;;;                    (,dspec       (if setfp `(method (setf ,,dspec-name) ,@,qualifiers ,,types)
-;;;;                                    `(method ,,dspec-name ,@,qualifiers ,,types))))
-;;;;               ,@body))))))
-
-;;;; (defmacro define-field (name (type lambda-switch matchable &optional update-fn)
-;;;;                            &body method-body)
-;;;;   (destructure-field-dspec (name method-body) (dspec ff setfp class field args)
-;;;;     `(portable:dspec ,dspec
-;;;;        (portable:record-definition ',dspec (portable:location))
-;;;;        ,@(compute-field-def-forms1 class type field setfp args
-;;;;                                    qualifiers doc-decl code)
-;;;;        (add-fieldinfo-data (find-class ',class) 
-;;;;                            ,field ',args ',type ,matchable nil 
-;;;;                            ',lambda-switch ,update-fn)
-;;;;        ',fe)))
 
 
 (defmacro define-field (name (type lambda-switch matchable &optional update-fn)
@@ -385,7 +339,7 @@
                     (with-output-to-string (s) (print-name id s))
                     (with-print-context nil
                       (cond
-                       ((null (class-fieldinfo class field))
+                       ((null (class-fieldinfo class field :errorp nil))
                         (format nil "Field ~S is undefined in ~S." field class))
                        
                        (t (format nil "Field ~S may not be ~A in ~S." 
@@ -684,3 +638,53 @@
                  (delete-if-not :object 1)
                  remove-duplicates 
                  delete-duplicates)
+
+
+;;;; (port:define-dspec-class defield () "")
+;;;; (port:define-dspec-form-parser defield (fe &body method-body)
+;;;;   (if (fld-setf-form-p fe) `(defield (setf ,(fld-form-to-symbol (second fe))))
+;;;;     `(defield ,(fld-form-to-symbol fe))))
+
+;;;; (defmacro destructure-field-dspec ((name method-body) (&optional (dspec '#:dspec)
+;;;;                                                                  (ff '#:ff) (setfp '#:setfp)
+;;;;                                                                  (class '#:class)
+;;;;                                                                  (doc-decl '#:doc-decl)
+;;;;                                                                  (field '#:field)
+;;;;                                                                  (args '#:args)) &body body)
+;;;;   (let ((qualifiers '#:qualifiers)
+;;;;         (code '#:code)
+;;;;         (specializers '#:specializers)
+;;;;         (non-specializers '#:non-specializers)
+;;;;         (dspec-name '#:dspec-name)
+;;;;         (types '#:types))
+;;;;      `(progn
+;;;;         (unless (or (fld-form-p ,name)
+;;;;                     (setf-fld-form-p ,name)) 
+;;;;           (b-error "Invalid name to define-field: ~S.  Expecting a field form." ,name))
+;;;;   
+;;;;         (let+ (((,ff ,setfp) (if (fld-setf-form-p ,name)
+;;;;                                  (values (second ,name) t)
+;;;;                                (values ,name nil)))
+;;;;                (,class     (fld-form-object ,ff))
+;;;;                (,field     (fld-form-field ,ff)))
+;;;;           (destructure-method-body (,qualifiers ,args ,doc-decl ,code
+;;;;                                                 ,specializers ,non-specializers)
+;;;;               ,method-body
+;;;;             (check-field-def-args ,specializers)
+;;;;             (let* ((,dspec-name  (fld-form-to-symbol ,ff))
+;;;;                    (,types       (mapcar (lambda (o) (if (consp o) (second o) t)) ,specializers))
+;;;;                    (,dspec       (if setfp `(method (setf ,,dspec-name) ,@,qualifiers ,,types)
+;;;;                                    `(method ,,dspec-name ,@,qualifiers ,,types))))
+;;;;               ,@body))))))
+
+;;;; (defmacro define-field (name (type lambda-switch matchable &optional update-fn)
+;;;;                            &body method-body)
+;;;;   (destructure-field-dspec (name method-body) (dspec ff setfp class field args)
+;;;;     `(portable:dspec ,dspec
+;;;;        (portable:record-definition ',dspec (portable:location))
+;;;;        ,@(compute-field-def-forms1 class type field setfp args
+;;;;                                    qualifiers doc-decl code)
+;;;;        (add-fieldinfo-data (find-class ',class) 
+;;;;                            ,field ',args ',type ,matchable nil 
+;;;;                            ',lambda-switch ,update-fn)
+;;;;        ',fe)))
