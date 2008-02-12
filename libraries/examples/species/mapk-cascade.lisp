@@ -2,23 +2,11 @@
 
 (include b/biochem :use)
 
-(define mapkkk [[species-type] :location-class compartment
-                :documentation "unphosphorylated mapkkk"])
-
-(define mapkkk* [[species-type] :location-class compartment
-                 :documentation "phosphorylated mapkkk"])
-
-
-(define mapkk [[species-type] :location-class compartment
-                :documentation "unphosphorylated mapkk"])
-
-(define mapkk* [[species-type] :location-class compartment
-                 :documentation "phosphorylated mapkk"])
-
-
-(define mapk [[species-type] :location-class compartment
-                :documentation "unphosphorylated mapk"])
-
-(define mapk* [[species-type] :location-class compartment
-                 :documentation "phosphorylated mapk"])
+(def-species-types compartment
+  (mapkkk  :documentation "unphosphorylated mapkkk")
+  (mapkkk* :documentation "phosphorylated mapkkk")
+  (mapkk   :documentation "unphosphorylated mapkk")
+  (mapkk*  :documentation "phosphorylated mapkk")
+  (mapk    :documentation "unphosphorylated mapk")
+  (mapk*   :documentation "phosphorylated mapk"))
 

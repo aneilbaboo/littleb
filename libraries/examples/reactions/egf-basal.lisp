@@ -3,4 +3,4 @@
 (include (b/biochem 
           @library/species/egfr))
 
-(define egf-degradation [reaction-type {egf} {} compartment])
+(define egf-degradation {egf -> })

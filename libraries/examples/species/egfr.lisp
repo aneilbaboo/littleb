@@ -2,13 +2,12 @@
 
 (include b/biochem :use)
 
-(define egfr [[species-type] :location-class membrane
-             :documentation"a transmembrane receptor"])
+(def-species-types membrane
+  (egfr :documentation "a transmembrane receptor")
+  (egfr+egf :documentation "egf bound to egfr"))
 
-(define egf [[species-type] :location-class compartment
-                :documentation "a egf which binds to egfr"])
+(def-species-types compartment
+  (egf :documentation "a ligand which binds to egfr"))
 
-(define egfr+egf [[species-type] :location-class membrane
-                    :documentation "egf bound to egfr"])
 
 

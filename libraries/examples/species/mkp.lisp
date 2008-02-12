@@ -2,8 +2,12 @@
 
 (include b/biochem :use)
 
-(define mkp [[species-type] :location-class compartment
-                 :documentation "mapkinase phosphatase"])
+(def-species-types compartment
+  (mkp :documentation "mapkinase phosphatase")
+  (mkp-gene :documentation "mapkinase phosphatase gene"))(in-package b-user)
 
-(define mkp-gene [[species-type] :location-class compartment
-                 :documentation "mapkinase phosphatase gene"])
+(include (b/biochem 
+          @library/species/egfr))
+
+(define egf-degradation {egf -> })
+
