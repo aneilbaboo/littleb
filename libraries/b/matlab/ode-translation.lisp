@@ -257,10 +257,11 @@
 
 (defun escape-matlab-formatting-chars (str)
   (find-and-replace-all
-   "\\" "\\\\"
-   (find-and-replace-all
-    "^" "\\^"
-    (find-and-replace-all "_" "\\_" str))))
+   "^" "\\^"
+   (find-and-replace-all 
+    "_" "\\_" 
+    (find-and-replace-all
+     "\\" "\\\\"str))))
   
 (defun write-descriptions (file mm)
   (flet ((write-var (v stream)
