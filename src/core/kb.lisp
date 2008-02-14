@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.7 2008/01/23 08:57:19 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.8 2008/02/14 22:33:34 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -150,7 +150,9 @@
     (flet ((quiet-trace (o)
              (declare (ignore o))
              (when (zerop (mod (incf counter) n))
-               (princ #\+))))
+               (princ #\+)
+               #+:clisp
+               (force-output))))
       #'quiet-trace))))
 
 (defun memory-monitor (&optional (n *monitor-interval*))
