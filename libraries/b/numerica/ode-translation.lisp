@@ -78,7 +78,7 @@
         (setf *numerica-model* nm)))
 
 
-(define-function refresh-parameters (&optional (model *model*))
+(defun refresh-parameters (&optional (model *model*))
   "Rewrites the parameters/initial conditions of a model (default is *model*) to the model's initfile."  
   (let* ((name (numerica-model-init-script-name model))
          (path (numerica-model-path model))
@@ -96,7 +96,7 @@
 
 (defun numerica-file-path (name path)
   (if (streamp path) path  ; a little hack to allow redirection of output from files to a single stream
-    (normalize-pathname (merge-pathnames (mkstr name ".m") path))))
+    (normalize-pathname (merge-pathnames (mkstr name ".jac") path))))
 
 (defun compute-indicies (varlist &optional (model *model*))
   (assert model (model)
@@ -116,6 +116,7 @@
   (compute-ode-vars base-set prefer))
 
 (defun write-numerica-code (nm file)
+  (write-declare-block nm file)
   (write-model-block nm file)
   (write-simulation-block nm file)
   
@@ -126,29 +127,38 @@
 ;;; helper functions which write numerica code to a stream:
 ;;;
 
+(defun write-declare-block (nm file)
+  (declare (ignore nm))
+  (format file "DECLARE~%~
+                ~2TTYPE~%~
+                ~4TConcentration = 1 : -1e-6 : 1E20~%~
+                END~%"))
 
 (defun write-model-block (nm file)
-  (let ((ode-vars (numerica-model-ode-vars nm)))
-    (format file "MODEL ~A_odes~%~
+  (let* ((ode-vars (numerica-model-ode-vars nm))
+         (rate-code (with-output-to-string (str) ; bad hack - need to write rates first (side effect=determines kvars)
+                      (loop for v in ode-vars
+                            for i = 1 then (1+ i)
+                            for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
+                            do  (with-print-context t 
+                                  ;; write comment
+                                  (if (numerica-model-ode-comments-p nm)
+                                      (b-format str "~%~4T# ~A = ~A " v rate))
+                                  (with-dimensionless-math (numerica-model-base-units nm)
+                                    (format str "~%~4T$c(~S) = ~S;" i rate)))))))
+    
+    (format file "MODEL ~A~%~
                   ~2TPARAMETER~%~
                     ~4Tk as ARRAY(~S) OF REAL~%~
                   ~2TVARIABLE~%~
                     ~4Tc as ARRAY(~S) of Concentration~%~
-                  ~2TEQUATION~%"
+                  ~2TEQUATION~
+                  ~A~%~
+                  END~%"
             (numerica-model-model-name nm)
-            (hash-table-count (numerica-model-kvars nm))
+            (numerica-model-kvar-count nm)
             (length ode-vars)
-            (length ode-vars))
-    (loop for v in vars
-          for i = 1 then (1+ i)
-          for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
-          do  (with-print-context t 
-                ;; write comment
-                (if (numerica-model-ode-comments-p nm)
-                    (b-format file "~4T% ~A = ~A ~%" v rate))
-                (with-dimensionless-math (numerica-model-base-units nm)
-                    (format file "~4Tdy(~S) = ~S;~%" i rate))))
-    (format file "END~%")))
+            rate-code)))
 
 (defun compute-display-var-indicies (nm)
   (remove nil (mapcar (lambda (i) (ode-var-index i nm)) (numerica-model-display-vars nm))))
@@ -165,28 +175,19 @@
                   ~2TPARAMETER ~%~
                     ~4TL0 AS REAL # Used to control input function L from script~%~
                   ~2TUNIT~%~
-                    ~4Tmodel AS ~A~%~
+                    ~4Tm AS ~A~%~
                   ~2TSENSITIVITY~%~
-                    ~4Tmodel.k~%~
+                    ~4Tm.k~%~
                   ~2TSET~%~
-                    ~4TL0 := `e-9 ;~%~
-                    ~4TWITHIN model DO~%~"
+                    ~4TL0 := 1e-9 ;~%"
             (numerica-model-simulation-name nm)
             (numerica-model-model-name nm))
     ;; write the parameters:
-    (loop for v in vars
-          for i = 1 then (1+ i)
-          do (with-print-context t
-               (let* ((base-units (numerica-model-base-units nm))
-                      (the-unit v.dimension.(calculate-unit base-units)))
-                 (with-dimensionless-math base-units
-                   (b-format file "~%~6Tk(~S) := ~A; #" i (print-math v.t0 nil)))
-                 (b-format file " ~A in ~@(~A~)" i v (unless (eq null-unit the-unit)
-                                                       the-unit)))))
+    (write-kvars nm file)
 
     ;; write the initial conditions:
     (format file "~2TINITIAL~%~
-                    ~4TWITHIN model DO~%~")
+                    ~4TWITHIN m DO")
     (loop for v in vars
           for i = 1 then (1+ i)
           do (with-print-context t
@@ -194,30 +195,42 @@
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math 
                   base-units
-                  (b-format file "~6Tc(~A) := ~A ; #" i (print-math v.t0 nil)))
-                 (b-format file " [~A] ~A in ~A" i v the-unit))))
+                  (b-format file "~%~6Tc(~A) = ~A ; #" i (print-math v.t0 nil)))
+                 (b-format file " [~A] ~A~@[ in ~A~]" i v (unless (eq null-unit the-unit) the-unit)))))
 
-    (format file "~4TEND~%~
+    (format file "~%~4TEND~%~
                   ~2TSCHEDULE~%~
                   ~4TCONTINUE FOR 30~%~
                   END~%")))
 
 
-(defun write-initconds (file nm)
-  (let ((vars (numerica-model-ode-vars nm)))
-    (format file "~A = [ ..." (numerica-model-initconds-var-name nm))
-    
-    (loop for v in vars
-          for i = 1 then (1+ i)
-          do (with-print-context t
-               (let* ((base-units (numerica-model-base-units nm))
-                      (the-unit v.dimension.(calculate-unit base-units)))
-                 (with-dimensionless-math base-units
-                   (b-format file "~%    ~A,... %" (print-math v.t0 nil)))
-                 (b-format file " [~A] ~A in ~A" i v the-unit))))
-
-    (format file "~%];~%~%")))
-
+(defun write-kvars (nm file)
+  (let* ((kvars-table (numerica-model-kvars nm))
+         (kvars  (make-array (1- (hash-table-count kvars-table)))))
+    (loop for kvar being the hash-keys of kvars-table
+          for i being the hash-values of kvars-table
+          unless (eq kvar :last-index)
+          do (setf (svref kvars (1- i)) kvar))
+    (format file "~2TWITHIN m DO")
+    (with-print-context t
+      (loop for k across kvars 
+            for i = 1 then (1+ i)
+            for k-unit = k.dimension.(calculate-unit (numerica-model-base-units nm))
+            for value = k.value
+            if (math-expression-p value) ; calculate after other kvars are set
+            collect (list i k) into dependent-vars
+            else
+            do  (with-dimensionless-math (numerica-model-base-units nm)
+                  (format file "~%~6Tk(~a) := ~a; #" i (print-math value nil)))
+            (b-format file " ~A ~@[in ~A~] "
+                      k (unless (eq null-unit k-unit) k-unit))
+            finally 
+            ;; write any dependent vars:
+            (loop for (i k) in dependent-vars
+                  do (with-dimensionless-math (numerica-model-base-units nm)
+                       (format file "~%~k(~A) := ~S ;" i k.value)))))
+    (format file "~%~2TEND~%")))
+  
 
 (defun escape-numerica-formatting-chars (str)
   (find-and-replace-all
@@ -361,7 +374,8 @@
   (mkstr (numerica-model-name nm) "_model"))
 (defun numerica-model-var-indicies-name (nm)
   (mkstr (numerica-model-name nm) "_vars"))
-
+(defun numerica-model-kvar-count (nm)
+  (1- (hash-table-count (numerica-model-kvars nm))))
 ;;;
 ;;; functions for computing default base units
 ;;;
@@ -490,12 +504,12 @@ ODE-VARs, the system must decide which form to prefer.  By default normal-vars a
            (t     (prin1 object stream))))))));(b-error "Unable to print numerica code for ~S." object))))))))
 
 (defun write-ode-var-code (v nm stream)
-  (format stream "y(~A)" ; note: y is a local variable in the numerica ode function
+  (format stream "c(~A)" ; note: c is a local variable in the numerica ode function
           (ode-var-index v nm)))
 
 (defun write-kvar-code (v nm stream)
-  (format stream "~A(~S)" 
-          (numerica-model-kvars-name nm)
+  (format stream "k(~S)" 
+          ;(numerica-model-kvars-name nm)
           (kvar-index v nm)))
 
 ;;;;
