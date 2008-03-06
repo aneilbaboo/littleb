@@ -41,6 +41,21 @@
 
 
 
+(defmethod math-expression-to-list ((self sum-expression))
+  (flet ((se-to-prefix (se)
+           (let ((var (math-expression-to-list (sum-element-var se)))
+                 (coef (math-expression-to-list (sum-element-coef se))))
+             (cond
+              ((eq coef 1) var)
+              (t           `(* ,coef ,var))))))
+    (let ((elts `(,@(mapcar #'se-to-prefix self.variable)
+                  ,@(unless (zerop self.numeric)
+                      (list self.numeric)))))
+      (cond
+       ((> (length elts) 1) `(+ ,@elts))
+       (t                   (first elts))))))
+      
+
 ;;;
 ;;; constructors
 ;;; 

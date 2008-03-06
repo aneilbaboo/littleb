@@ -59,6 +59,20 @@
                                                 [product-expression new-factors] coefficient))))))
 
 
+(defmethod math-expression-to-list ((self b/math:product-expression))
+  (flet ((pe-to-list (pe)
+           (let ((var (product-element-var pe))
+                 (power (product-element-power pe)))
+             (cond
+              ((eq power 1) var)
+              (t            `(^ ,(math-expression-to-list var)
+                                ,(math-expression-to-list power)))))))
+    (let ((elts (mapcar #'pe-to-list self.variable)))
+      (cond
+       ((> (length elts) 1) `(* ,@elts))
+       (t                   (first elts))))))
+                         
+
 (defield product-expression.vars ()
   (get-math-expression-vars object))
 
