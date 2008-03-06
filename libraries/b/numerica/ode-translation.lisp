@@ -135,30 +135,43 @@
                 END~%"))
 
 (defun write-model-block (nm file)
-  (let* ((ode-vars (numerica-model-ode-vars nm))
-         (rate-code (with-output-to-string (str) ; bad hack - need to write rates first (side effect=determines kvars)
-                      (loop for v in ode-vars
-                            for i = 1 then (1+ i)
-                            for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
-                            do  (with-print-context t 
-                                  ;; write comment
-                                  (if (numerica-model-ode-comments-p nm)
-                                      (b-format str "~%~4T# ~A = ~A " v rate))
-                                  (with-dimensionless-math (numerica-model-base-units nm)
-                                    (format str "~%~4T$c(~S) = ~S;" i rate)))))))
+  (let* ((ode-vars  (numerica-model-ode-vars nm))
+         (allvars (query var))
+         (klen-pos  nil))
     
     (format file "MODEL ~A~%~
                   ~2TPARAMETER~%~
-                    ~4Tk as ARRAY(~S) OF REAL~%~
+                    ~4Tk as ARRAY("
+            (numerica-model-model-name nm))
+
+    ;; store the location of the k array length so we can set it later...
+    (setf klen-pos (file-position file))
+
+    (format file "~A) OF REAL~%~
                   ~2TVARIABLE~%~
                     ~4Tc as ARRAY(~S) of Concentration~%~
-                  ~2TEQUATION~
-                  ~A~%~
-                  END~%"
-            (numerica-model-model-name nm)
-            (numerica-model-kvar-count nm)
-            (length ode-vars)
-            rate-code)))
+                  ~2TEQUATION"
+            (make-string (length allvars) :initial-element #\space)
+            (length ode-vars))
+
+    ;; write the rate fns:
+    (loop for v in ode-vars
+          for i = 1 then (1+ i)
+          for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
+          do  (with-print-context t 
+                ;; write comment
+                (if (numerica-model-ode-comments-p nm)
+                    (b-format file "~%~4T# ~A = ~A " v rate))
+                (with-dimensionless-math (numerica-model-base-units nm)
+                                         (format file "~%~4T$c(~S) = ~S;" i rate))))
+
+    ;; now, we've determine the actual # kvars ...
+    ;; go back and scribble at klen-pos
+    (let ((end (file-position file)))
+      (file-position file klen-pos)
+      (princ (numerica-model-kvar-count nm) file)
+      (file-position file end))))
+
 
 (defun compute-display-var-indicies (nm)
   (remove nil (mapcar (lambda (i) (ode-var-index i nm)) (numerica-model-display-vars nm))))
