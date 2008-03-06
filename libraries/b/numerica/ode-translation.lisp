@@ -120,8 +120,8 @@
   (write-model-block nm file)
   (write-simulation-block nm file)
   
-  (format t "The following file has been writted: ~A.~A~%"
-          (carefully-get-filename file) (carefully-get-filetype file)))
+  (format t "~&The following file has been writted: ~A~%"
+          (enough-namestring file)))
 
 ;;;
 ;;; helper functions which write numerica code to a stream:
@@ -138,7 +138,7 @@
   (let* ((ode-vars  (numerica-model-ode-vars nm))
          (allvars (query var))
          (klen-pos  nil))
-    
+    (format t "~&; Writing model block")
     (format file "MODEL ~A~%~
                   ~2TPARAMETER~%~
                     ~4Tk as ARRAY("
@@ -151,7 +151,7 @@
                   ~2TVARIABLE~%~
                     ~4Tc as ARRAY(~S) of Concentration~%~
                   ~2TEQUATION"
-            (make-string (length allvars) :initial-element #\space)
+            (map 'string (constantly #\space) (format nil "~A" (length allvars)))
             (length ode-vars))
 
     ;; write the rate fns:
@@ -159,6 +159,7 @@
           for i = 1 then (1+ i)
           for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
           do  (with-print-context t 
+                (princ #\.)
                 ;; write comment
                 (if (numerica-model-ode-comments-p nm)
                     (b-format file "~%~4T# ~A = ~A " v rate))
@@ -170,7 +171,8 @@
     (let ((end (file-position file)))
       (file-position file klen-pos)
       (princ (numerica-model-kvar-count nm) file)
-      (file-position file end))))
+      (file-position file end))
+    (format file "~%END~%~%")))
 
 
 (defun compute-display-var-indicies (nm)
@@ -178,6 +180,7 @@
 
 (defun write-simulation-block (nm file)
   (let ((vars (numerica-model-ode-vars nm)))
+    (format t "~&;  Writing simulation block")
     (format file "SIMULATION ~A~%~
                   ~2TOPTIONS~%~
                     ~4TDYNAMIC_REPORTING_INTERVAL := 1 ;~%~
@@ -198,12 +201,14 @@
     ;; write the parameters:
     (write-kvars nm file)
 
+    (format t "~&; &Writing initial conditions")
     ;; write the initial conditions:
     (format file "~2TINITIAL~%~
                     ~4TWITHIN m DO")
     (loop for v in vars
           for i = 1 then (1+ i)
           do (with-print-context t
+               (princ #\.)
                (let* ((base-units (numerica-model-base-units nm))
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math 
@@ -224,12 +229,14 @@
           for i being the hash-values of kvars-table
           unless (eq kvar :last-index)
           do (setf (svref kvars (1- i)) kvar))
+    (format t "~&; &Writing parameters")
     (format file "~2TWITHIN m DO")
     (with-print-context t
       (loop for k across kvars 
             for i = 1 then (1+ i)
             for k-unit = k.dimension.(calculate-unit (numerica-model-base-units nm))
             for value = k.value
+            do (princ #\.)
             if (math-expression-p value) ; calculate after other kvars are set
             collect (list i k) into dependent-vars
             else
@@ -280,38 +287,6 @@
   (let ((*math-print-function* 'default-math-printer))
     (apply #'format stream string args)))
 
-(defun write-kvars (file nm)
-  (let* ((name (numerica-model-kvars-name nm))
-         (kvars-table (numerica-model-kvars nm))
-         (kvars  (make-array (1- (hash-table-count kvars-table)))))
-    (loop for kvar being the hash-keys of kvars-table
-          for i being the hash-values of kvars-table
-          unless (eq kvar :last-index)
-          do (setf (svref kvars (1- i)) kvar))
-    (format file "~A= [...~%" name)
-    (with-print-context t
-      (loop for k across kvars ;(numerica-model-kvars nm)
-            for i = 1 then (1+ i)
-            for k-dimension = k.dimension.(calculate-unit (numerica-model-base-units nm))
-            for value = k.value
-            if (math-expression-p value)
-               do (with-dimensionless-math (numerica-model-base-units nm)
-                    (format file "     0,... % "))
-                  (b-format file "[~A] ~S = ~S (calculated below)~%" i k value)
-               and collect (list i k) into dependent-vars
-            else
-               do  (with-dimensionless-math (numerica-model-base-units nm)
-                     (format file "     ~a,... %" (print-math value nil)))
-                   (b-format file " [~A] ~A (~A)~% "
-                             i k k-dimension)
-            finally 
-            ;; close off the matrix
-            (format file "];~%" file)
-            ;; write any dependent vars:
-            (loop for (i k) in dependent-vars
-                  do (with-dimensionless-math (numerica-model-base-units nm)
-                       (format file "~A(~A)=~S;~%" name i k.value)))
-            (format file "~%")))))
   
 
 ;;;
