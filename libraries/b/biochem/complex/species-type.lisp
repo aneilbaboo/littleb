@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.32 2008/02/02 05:34:30 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.33 2008/03/07 23:30:04 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -1065,9 +1065,9 @@
                                     (monomer-color :lightgrey))
   (declare (ignorable site-style site-color monomer-style monomer-color))
   (apply #'complex-graph-write-dot-file cg *complex-graph-dot-script-temp-file* args)
-  (asdf:run-shell-command "dot -Tpng ~A > ~A" *complex-graph-dot-script-temp-file*
+  (port:run-shell-command "dot -Tpng ~A > ~A" *complex-graph-dot-script-temp-file*
                           *complex-graph-dot-image-temp-file*)
-  (asdf:run-shell-command "firefox ~A" *complex-graph-dot-image-temp-file* ))
+  (port:run-shell-command "firefox ~A" *complex-graph-dot-image-temp-file* ))
   
 
 (defun complex-graph-show-dotty (cg &rest args
@@ -1079,7 +1079,7 @@
   (declare (ignorable site-style site-color monomer-style monomer-color))
   (apply #'complex-graph-write-dot-file *complex-graph-dot-script-temp-file*
          args)
-  (asdf:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
+  (port:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
 
 (defun complex-graph-write-dot-file (cg file &rest args
                                     &key

@@ -500,35 +500,39 @@ ODE-VARs, the system must decide which form to prefer.  By default normal-vars a
 
 (defun compute-matlab-math-print-function (mm)
   (let ((old-print-fn *math-print-function*))
-    (lambda (object stream &optional (lhs-op nil))
-      (typecase object
-        (var       (if (kvar-p object) (write-kvar-code object mm stream)
-                            (write-ode-var-code object mm stream)))
+    (labels ((matlab-math-print-function (object stream &optional (lhs-op nil))
+               (typecase object
+                 (var       (if (kvar-p object) (write-kvar-code object mm stream)
+                              (write-ode-var-code object mm stream)))
 
-        (quantity  (with-dimensionless-math (matlab-model-base-units mm)
-                     (funcall old-print-fn object stream lhs-op)))
+                 (quantity  (with-dimensionless-math (matlab-model-base-units mm)
+                              (matlab-math-print-function  (dimensionless object) stream lhs-op)))
 
-        (real      (funcall old-print-fn object stream lhs-op))
 
-        (complex (format stream "(~A~[+~]~Ai)" 
-                         (realpart object) 
-                         (if (minusp (imagpart object)) 1 0)
-                         (imagpart object)))
+                 (rational  (princ (coerce object 'float) stream))
 
-        (number  (funcall old-print-fn (coerce object 'float) stream lhs-op))
+                 (real      (funcall old-print-fn object stream lhs-op))
 
-        (math-expression (funcall old-print-fn object stream lhs-op))
+                 (complex (format stream "(~A~[+~]~Ai)" 
+                                  (realpart object) 
+                                  (if (minusp (imagpart object)) 1 0)
+                                  (imagpart object)))
+
+                 (number  (funcall old-print-fn (coerce object 'float) stream lhs-op))
+
+                 (math-expression (funcall old-print-fn object stream lhs-op))
        
-        (t
-         (case object
-           (*     (princ #\* stream))
-           (+     (princ #\+ stream))
-           (/     (princ #\/ stream))
-           (-     (princ #\- stream))
-           (^     (princ #\^ stream))
-           (#\(   (princ #\( stream))
-           (#\)   (princ #\) stream))
-           (t     (prin1 object stream))))))));(b-error "Unable to print matlab code for ~S." object))))))))
+                 (t
+                  (case object
+                    (*     (princ #\* stream))
+                    (+     (princ #\+ stream))
+                    (/     (princ #\/ stream))
+                    (-     (princ #\- stream))
+                    (^     (princ #\^ stream))
+                    (#\(   (princ #\( stream))
+                    (#\)   (princ #\) stream))
+                    (t     (prin1 object stream)))))))
+             #'matlab-math-print-function)))
 
 (defun write-ode-var-code (v mm stream)
   (format stream "y(~A)" ; note: y is a local variable in the matlab ode function

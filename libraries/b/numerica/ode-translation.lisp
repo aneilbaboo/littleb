@@ -54,6 +54,7 @@
                                         (reltol nil)
                                         (gauss-value :mean) ; may be mean or random
                                         (base-units (compute-default-base-units-from-vars vars)))
+  (format t "~&Creating Numerica model...~%")
   (let+ ((*print-pretty*          nil)
          ((name path)             (parse-model-name name))
          (nm                      (make-numerica-model name
