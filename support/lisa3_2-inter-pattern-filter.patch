@@ -1,0 +1,2221 @@
+diff -Nurp lisa_ORIGINAL/lisa.asd lisa/lisa.asd
+--- lisa_ORIGINAL/lisa.asd	2007-09-11 14:14:07.000000000 -0700
++++ lisa/lisa.asd	2008-02-18 09:26:10.765625000 -0800
+@@ -100,7 +100,8 @@
+                (:module rete
+                         :pathname "rete/reference/"
+                         :components
+-                        ((:file "node-tests")
++                        ((:file "inter-pattern-filter")
++                         (:file "node-tests")
+                          (:file "shared-node")
+                          (:file "successor")
+                          (:file "node-pair")
+diff -Nurp lisa_ORIGINAL/lisa.patch lisa/lisa.patch
+--- lisa_ORIGINAL/lisa.patch	2008-01-23 10:13:01.375000000 -0800
++++ lisa/lisa.patch	1969-12-31 16:00:00.000000000 -0800
+@@ -1,19 +0,0 @@
+-src/rete/reference/rete-compiler.lisp
+-===================================================================
+-RCS file: /cvsroot/lisa/lisa/src/rete/reference/rete-compiler.lisp,v
+-retrieving revision 1.52
+-diff -r1.52 rete-compiler.lisp
+-212,217c212,217
+-< (defun copy-node-test-table (src)
+-<   (let ((target (make-hash-table :test #'equal)))
+-<     (maphash (lambda (key value)
+-<                (setf (gethash key target) value))
+-<              src)
+-<     target))
+----
+-> (defun copy-node-test-table (src) src)
+-> ;;;;   (let ((target (make-hash-table :test #'equal)))
+-> ;;;;     (maphash (lambda (key value)
+-> ;;;;                (setf (gethash key target) value))
+-> ;;;;              src)
+-> ;;;;     target))
+\ No newline at end of file
+diff -Nurp lisa_ORIGINAL/match-timing.lisp lisa/match-timing.lisp
+--- lisa_ORIGINAL/match-timing.lisp	1969-12-31 16:00:00.000000000 -0800
++++ lisa/match-timing.lisp	2008-02-20 20:30:59.765625000 -0800
+@@ -0,0 +1,26 @@
++(in-package :lisa-user)
++
++(defclass x () ((a :initarg :a)))
++(defclass y () ((b :initarg :b)))
++(defrule match () (x (a ?v)) (y (b ?v)) => (format t "+"))
++(defun test (n)
++  "Times the matching of n instances"
++  (reset)
++  (dotimes (i n)
++    (assert-instance (make-instance 'x :a i))
++    (assert-instance (make-instance 'y :b i)))
++  (run))
++
++
++(defun time-series (from to &optional (step 1))
++  "Calls TEST with increasing N (from FROM to TO, by STEP), 
++   and returns a list representing milliseconds taken by each call"
++  (loop for n from from upto to by step
++        for time = (get-internal-real-time) 
++        do (test n)
++        collect (list n (- (get-internal-real-time) time))))
++
++(defvar *time-series* (time-series 1 1001 100))
++
++(loop for (n time) in *time-series*
++      do (format t "~&~S~C~S~%" n #\tab (coerce (/ time 1000) 'float)))
+\ No newline at end of file
+diff -Nurp lisa_ORIGINAL/src/core/#watches.lisp# lisa/src/core/#watches.lisp#
+--- lisa_ORIGINAL/src/core/#watches.lisp#	2008-01-22 17:20:40.312500000 -0800
++++ lisa/src/core/#watches.lisp#	1969-12-31 16:00:00.000000000 -0800
+@@ -1,120 +0,0 @@
+-;;; This file is part of LISA, the Lisp-based Intelligent Software
+-;;; Agents platform.
+-
+-;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
+-
+-;;; This library is free software; you can redistribute it and/or
+-;;; modify it under the terms of the GNU Lesser General Public License
+-;;; as published by the Free Software Foundation; either version 2.1
+-;;; of the License, or (at your option) any later version.
+-
+-;;; This library is distributed in the hope that it will be useful,
+-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-;;; GNU Lesser General Public License for more details.
+-
+-;;; You should have received a copy of the GNU Lesser General Public License
+-;;; along with this library; if not, write to the Free Software
+-;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+-
+-;;; File: watches.lisp
+-;;; Description:
+-
+-;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
+-
+-(in-package "LISA")
+-
+-(defvar *assert-fact* nil)
+-(defvar *retract-fact* nil)
+-(defvar *enable-activation* nil)
+-(defvar *disable-activation* nil)
+-(defvar *fire-rule* nil)
+-(defvar *watches* nil)
+-
+-(defun watch-activation-detail (activation direction)
+-  (format *trace-output* "~A Activation: ~A : ~A~%"
+-          direction
+-          (rule-default-name (activation-rule activation))
+-          (activation-fact-list activation))
+-  (finish-output *trace-output*)
+-  (values))
+-
+-(defun watch-enable-activation (activation)
+-  (watch-activation-detail activation "==>"))
+-
+-(defun watch-disable-activation (activation)
+-  (watch-activation-detail activation "<=="))
+-
+-(defun watch-rule-firing (activation)
+-  (let ((rule (activation-rule activation)))
+-    (format *trace-output* "FIRE ~D: ~A ~A~%"
+-            (rete-firing-count (rule-engine rule))
+-            (rule-default-name rule)
+-            (activation-fact-list activation))
+-    (finish-output *trace-output*)
+-    (values)))
+-
+-(defun watch-fact-detail (fact direction)
+-  (format *trace-output* "~A ~A ~S~%"
+-          direction (fact-symbolic-id fact)
+-          (reconstruct-fact fact))
+-  (finish-output *trace-output*)
+-  (values))
+-
+-(defun watch-assert (fact)
+-  (watch-fact-detail fact "==>"))
+-
+-(defun watch-retract (fact)
+-  (watch-fact-detail fact "<=="))
+-
+-(defun watch-event (event)
+-  (ecase event
+-    (:facts (setf *assert-fact* #'watch-assert)
+-            (setf *retract-fact* #'watch-retract))
+-    (:activations (setf *enable-activation* #'watch-enable-activation)
+-                  (setf *disable-activation* #'watch-disable-activation))
+-    (:rules (setf *fire-rule* #'watch-rule-firing))
+-    (:all (watch-event :facts)
+-          (watch-event :activations)
+-          (watch-event :rules)))
+-  (unless (eq event :all)
+-    (pushnew event *watches*))
+-  event)
+-
+-(defun unwatch-event (event)
+-  (ecase event
+-    (:facts (setf *assert-fact* nil)
+-            (setf *retract-fact* nil))
+-    (:activations (setf *enable-activation* nil)
+-                  (setf *disable-activation* nil))
+-    (:rules (setf *fire-rule* nil))
+-    (:all (unwatch-event :facts)
+-          (unwatch-event :activations)
+-          (unwatch-event :rules)))
+-  (unless (eq event :all)
+-    (setf *watches*
+-      (delete event *watches*)))
+-  event)
+-
+-(defun watches ()
+-  *watches*)
+-
+-(defmacro trace-assert (fact)
+-  `(unless (null *assert-fact*)
+-     (funcall *assert-fact* ,fact)))
+-
+-(defmacro trace-retract (fact)
+-  `(unless (null *retract-fact*)
+-     (funcall *retract-fact* ,fact)))
+-
+-(defmacro trace-enable-activation (activation)
+-  `(unless (null *enable-activation*)
+-     (funcall *enable-activation* ,activation)))
+-
+-(defmacro trace-disable-activation (activation)
+-  `(unless (null *disable-activation*)
+-     (funcall *disable-activation* ,activation)))
+-
+-(defmacro trace-firing (activation)
+-  `(unless (null *fire-rule*)
+-     (funcall *fire-rule* ,activation)))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/.#node-tests.lisp.1.24 lisa/src/rete/reference/.#node-tests.lisp.1.24
+--- lisa_ORIGINAL/src/rete/reference/.#node-tests.lisp.1.24	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/.#node-tests.lisp.1.24	2008-02-19 08:17:23.515625000 -0800
+@@ -0,0 +1,176 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node-tests.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defvar *node-test-table*)
++
++(defun find-test (key constructor)
++  (or (gethash key *node-test-table*)
++      (setf (gethash key *node-test-table*)
++            (funcall constructor))))
++  
++(defun clear-node-test-table ()
++  (clrhash *node-test-table*))
++
++(defmethod class-matches-p ((instance inference-engine-object) fact class)
++  (eq (fact-name fact) class))
++  
++(defmethod class-matches-p ((instance t) fact class)
++  (or (eq (fact-name fact) class)
++      (has-superclass fact class)))
++
++(defun make-class-test (class)
++  (find-test class
++             #'(lambda ()
++                 (function
++                  (lambda (token)
++                    (declare (optimize (speed 3) (debug 1) (safety 0)))
++                    (let ((fact (token-top-fact token)))
++                      (class-matches-p 
++                       (find-instance-of-fact fact) fact class)))))))
++
++(defun make-simple-slot-test-aux (slot-name value negated-p)
++  (find-test 
++   `(,slot-name ,value ,negated-p)
++   #'(lambda ()
++       (let ((test
++              (function
++               (lambda (token)
++                 (declare (optimize (speed 3) (debug 1) (safety 0)))
++                 (equal value
++                        (get-slot-value
++                         (token-top-fact token)
++                         slot-name))))))
++         (if negated-p
++             (complement test)
++           test)))))
++
++(defun make-simple-slot-test (slot)
++  (declare (type pattern-slot slot))
++  (make-simple-slot-test-aux
++   (pattern-slot-name slot)
++   (pattern-slot-value slot)
++   (pattern-slot-negated slot)))
++
++#+ignore
++(defmacro make-variable-test (slot-name binding)
++  `(function
++    (lambda (tokens)
++      (equal (get-slot-value (token-top-fact tokens) ,slot-name)
++             (get-slot-value 
++              (token-find-fact tokens (binding-address ,binding))
++              (binding-slot-name ,binding))))))
++
++(defun make-inter-pattern-test (slot)
++  (let* ((binding (pattern-slot-slot-binding slot))
++         (test
++          (function
++           (lambda (tokens)
++             (declare (optimize (speed 3) (debug 1) (safety 0)))
++             (equal (get-slot-value (token-top-fact tokens) ; top-token is the right token
++                                    (pattern-slot-name slot))
++                    (get-slot-value  ; this is the left-token
++                     (token-find-fact tokens (binding-address binding))
++                     (binding-slot-name binding)))))))
++    (if (negated-slot-p slot) (complement test) test)))
++
++
++(defun make-predicate-test (forms bindings &optional (negated-p nil))
++  (let* ((special-vars
++          (mapcar #'binding-variable bindings))
++         (body
++          (if (consp (first forms)) 
++              forms
++            (list forms)))
++         (predicate
++          (compile nil `(lambda ()
++                          (declare (special ,@special-vars))
++                          ,@body)))
++         (test
++          (function
++           (lambda (tokens)
++             (progv
++                 `(,@special-vars)
++                 `(,@(mapcar #'(lambda (binding)
++                                 (if (pattern-binding-p binding)
++                                     (token-find-fact 
++                                      tokens (binding-address binding))
++                                   (get-slot-value
++                                    (token-find-fact 
++                                     tokens (binding-address binding))
++                                    (binding-slot-name binding))))
++                             bindings))
++               (funcall predicate))))))
++    (if negated-p (complement test) test)))
++
++(defun make-intra-pattern-predicate (forms bindings negated-p)
++  (let* ((special-vars
++          (mapcar #'binding-variable bindings))
++         (body
++          (if (consp (first forms)) 
++              forms
++            (list forms)))
++         (predicate
++          (compile nil `(lambda ()
++                          (declare (special ,@special-vars))
++                          (declare (optimize (speed 3) (debug 1) (safety 0)))
++                          ,@body)))
++         (test
++          (function
++           (lambda (tokens)
++             (progv
++                 `(,@special-vars)
++                 `(,@(mapcar #'(lambda (binding)
++                                 (declare (optimize (speed 3) (debug 1) (safety 0)))
++                                 (if (pattern-binding-p binding)
++                                     (token-find-fact 
++                                      tokens (binding-address binding))
++                                   (get-slot-value
++                                    (token-top-fact tokens)
++                                    (binding-slot-name binding))))
++                             bindings))
++               (funcall predicate))))))
++    (if negated-p (complement test) test)))
++         
++(defun make-intra-pattern-constraint-test (slot)
++  (make-intra-pattern-predicate
++   (pattern-slot-constraint slot)
++   (pattern-slot-constraint-bindings slot)
++   (negated-slot-p slot)))
++
++(defun make-intra-pattern-test (slot)
++  (let ((test
++         (function
++          (lambda (tokens)
++            (declare (optimize (speed 3) (debug 1) (safety 0)))
++            (equal (get-slot-value (token-top-fact tokens)
++                                   (pattern-slot-name slot))
++                   (get-slot-value (token-top-fact tokens)
++                                   (binding-slot-name 
++                                    (pattern-slot-slot-binding slot))))))))
++    (if (negated-slot-p slot) (complement test) test)))
++
++(defun make-behavior (function bindings)
++  (make-predicate-test function bindings))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/.#node2.lisp.1.21 lisa/src/rete/reference/.#node2.lisp.1.21
+--- lisa_ORIGINAL/src/rete/reference/.#node2.lisp.1.21	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/.#node2.lisp.1.21	2008-02-14 14:41:58.828125000 -0800
+@@ -0,0 +1,74 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node2.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defclass node2 (join-node) 
++  (left-value-memory :init-form (make-hash-table :test #'equal))
++  (right-value-memory :init-form (make-hash-table :test #'equal)))
++
++;;; old test-against-left/right-memory:
++
++(defmethod test-against-right-memory ((self node2) left-tokens)
++  (loop for right-token being the hash-values of (join-node-right-memory self)
++      do (when (test-tokens self left-tokens right-token)
++           (pass-tokens-to-successor 
++            self (combine-tokens left-tokens right-token)))))
++
++(defmethod test-against-left-memory ((self node2) (right-token add-token))
++   (loop for left-tokens being the hash-values of (join-node-left-memory self)
++       do (when (test-tokens self left-tokens right-token)
++            (pass-tokens-to-successor 
++             self (combine-tokens left-tokens right-token)))))
++   
++
++(defmethod test-against-left-memory ((self node2) (right-token remove-token))
++   (loop for left-tokens being the hash-values of (join-node-left-memory self)
++      do (when (test-tokens self left-tokens right-token)
++            (pass-tokens-to-successor
++             self (combine-tokens
++                   (make-remove-token left-tokens) right-token)))))
++  
++(defmethod accept-tokens-from-left ((self node2) (left-tokens add-token))
++  (add-tokens-to-left-memory self left-tokens)
++  (test-against-right-memory self left-tokens))
++
++(defmethod accept-token-from-right ((self node2) (right-token add-token))
++  (add-token-to-right-memory self right-token)
++  (test-against-left-memory self right-token))
++
++(defmethod accept-tokens-from-left ((self node2) (left-tokens remove-token))
++  (when (remove-tokens-from-left-memory self left-tokens)
++    (test-against-right-memory self left-tokens)))
++
++(defmethod accept-token-from-right ((self node2) (right-token remove-token))
++  (when (remove-token-from-right-memory self right-token)
++    (test-against-left-memory self right-token)))
++
++(defvar *join-nodes* ())
++(defun make-node2 ()
++  (let ((jnode  (make-instance 'node2)))
++    (push jnode *join-nodes*)
++    jnode))
++
+diff -Nurp lisa_ORIGINAL/src/rete/reference/.#rete-compiler.lisp.1.52 lisa/src/rete/reference/.#rete-compiler.lisp.1.52
+--- lisa_ORIGINAL/src/rete/reference/.#rete-compiler.lisp.1.52	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/.#rete-compiler.lisp.1.52	2008-01-23 08:48:44.046875000 -0800
+@@ -0,0 +1,240 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: rete-compiler.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defvar *root-nodes* nil)
++(defvar *rule-specific-nodes* nil)
++(defvar *leaf-nodes* nil)
++(defvar *logical-block-marker*)
++
++(declaim (inline set-leaf-node leaf-node left-input right-input logical-block-marker))
++
++(defun set-leaf-node (node address)
++  (setf (aref *leaf-nodes* address) node))
++
++(defun leaf-node ()
++  (aref *leaf-nodes* (1- (length *leaf-nodes*))))
++
++(defun left-input (address)
++  (aref *leaf-nodes* (1- address)))
++
++(defun right-input (address)
++  (aref *leaf-nodes* address))
++
++(defun logical-block-marker ()
++  *logical-block-marker*)
++  
++(defclass rete-network ()
++  ((root-nodes :initform (make-hash-table)
++               :initarg :root-nodes
++               :reader rete-roots)
++   (node-test-cache :initform (make-hash-table :test #'equal)
++                    :initarg :node-test-cache
++                    :reader node-test-cache)))
++
++(defun record-node (node parent)
++  (when (typep parent 'shared-node)
++    (increment-use-count parent))
++  (push (make-node-pair node parent) *rule-specific-nodes*)
++  node)
++
++(defmethod remove-node-from-parent ((self rete-network) (parent t) child)
++  (remhash (node1-test child) (rete-roots self)))
++
++(defmethod remove-node-from-parent ((self rete-network) 
++                                    (parent shared-node) child)
++  (remove-successor parent child))
++
++(defun make-root-node (class)
++  (let* ((test (make-class-test class))
++         (root (gethash test *root-nodes*)))
++    (when (null root)
++      (setf root (make-node1 test))
++      (setf (gethash test *root-nodes*) root))
++    (record-node root t)))
++
++(defmethod add-successor ((parent t) new-node connector)
++  (declare (ignore connector))
++  new-node)
++
++(defmethod add-successor :around ((parent shared-node) new-node connector)
++  (declare (ignore new-node connector))
++  (record-node (call-next-method) parent))
++
++(defun make-intra-pattern-node (slot)
++  (let ((test
++         (cond ((simple-slot-p slot)
++                (make-simple-slot-test slot))
++               ((constrained-slot-p slot)
++                (make-intra-pattern-constraint-test slot))
++               (t
++                (make-intra-pattern-test slot)))))
++    (make-node1 test)))
++
++(defun distribute-token (rete-network token)
++  (loop for root-node being the hash-values 
++      of (rete-roots rete-network)
++      do (accept-token root-node token)))
++
++(defmethod make-rete-network (&rest args &key &allow-other-keys)
++  (apply #'make-instance 'rete-network args))
++
++;;; The following functions serve as "connectors" between any two
++;;; nodes. PASS-TOKEN connects two pattern (one-input) nodes, or a join node 
++;;; to a terminal node; ENTER-JOIN-NETWORK-FROM-LEFT connects a pattern node
++;;; to a join node; ENTER-JOIN-NETWORK-FROM-RIGHT also connects a pattern node
++;;; to a join node; both PASS-TOKENS-ON-LEFT and PASS-TOKEN-ON-RIGHT connect
++;;; two join nodes.
++
++(defun pass-token (node token)
++  (accept-token node token))
++
++(defun pass-tokens-on-left (node2 tokens)
++  (accept-tokens-from-left node2 tokens))
++
++(defun pass-token-on-right (node2 token)
++  (accept-token-from-right node2 token))
++
++(defun enter-join-network-from-left (node2 tokens)
++  (pass-tokens-on-left node2 (replicate-token tokens)))
++
++(defun enter-join-network-from-right (node2 token)
++  (pass-token-on-right node2 (replicate-token token)))
++
++;;; end connector functions
++
++(defun add-intra-pattern-nodes (patterns)
++  "The alpha memory nodes and tests"
++  (dolist (pattern patterns)
++    (cond ((test-pattern-p pattern)
++           (set-leaf-node t (parsed-pattern-address pattern)))
++          (t
++           (let ((node
++                  (make-root-node (parsed-pattern-class pattern)))
++                 (address (parsed-pattern-address pattern)))
++             (set-leaf-node node address)
++             (dolist (slot (parsed-pattern-slots pattern))
++               (when (intra-pattern-slot-p slot)
++                 (setf node
++                   (add-successor node (make-intra-pattern-node slot)
++                                  #'pass-token))
++                 (set-leaf-node node address))))))))
++
++(defun add-join-node-tests (join-node pattern)
++  (labels ((add-simple-join-node-test (slot)
++             (unless (= (binding-address (pattern-slot-slot-binding slot))
++                        (parsed-pattern-address pattern))
++               (join-node-add-test join-node
++                                   (make-inter-pattern-test slot))))
++           (add-slot-constraint-test (slot)
++             (join-node-add-test join-node
++                                 (make-predicate-test
++                                  (pattern-slot-constraint slot)
++                                  (pattern-slot-constraint-bindings slot)
++                                  (negated-slot-p slot))))
++           (add-test-pattern-predicate ()
++             (join-node-add-test join-node
++                                 (make-predicate-test
++                                  (parsed-pattern-test-forms pattern)
++                                  (parsed-pattern-test-bindings pattern))))
++           (add-generic-pattern-tests ()
++             (dolist (slot (parsed-pattern-slots pattern))
++               (cond ((simple-bound-slot-p slot)
++                      (add-simple-join-node-test slot))
++                     ((constrained-slot-p slot)
++                      (add-slot-constraint-test slot))))))
++    (if (test-pattern-p pattern)
++        (add-test-pattern-predicate)
++      (add-generic-pattern-tests))
++    join-node))
++
++(defun make-join-node (pattern)
++  (let ((join-node
++         (cond ((negated-pattern-p pattern)
++                (make-node2-not))
++               ((test-pattern-p pattern)
++                (make-node2-test))
++               ((existential-pattern-p pattern)
++                (make-node2-exists))
++               (t (make-node2)))))
++    (when (eql (parsed-pattern-address pattern) (logical-block-marker))
++      (mark-as-logical-block join-node (logical-block-marker)))
++    join-node))
++
++(defun make-left-join-connection (join-node node)
++  (if (typep node 'shared-node)
++      (add-successor node join-node #'enter-join-network-from-left)
++    (add-successor node join-node #'pass-tokens-on-left))
++  join-node)
++
++(defun make-right-join-connection (join-node node)
++  (if (typep node 'shared-node)
++      (add-successor node join-node #'enter-join-network-from-right)
++    (add-successor node join-node #'pass-token-on-right))
++  join-node)
++
++(defun add-inter-pattern-nodes (patterns)
++  "The beta memory nodes and tests"
++  (dolist (pattern (rest patterns))
++    (let ((join-node (make-join-node pattern))
++          (address (parsed-pattern-address pattern)))
++      (add-join-node-tests join-node pattern)
++      (make-left-join-connection join-node (left-input address))
++      (make-right-join-connection join-node (right-input address))
++      (set-leaf-node join-node address))))
++
++(defun add-terminal-node (rule)
++  (add-successor (leaf-node) (make-terminal-node rule) #'pass-token))
++
++;;; addresses a problem reported by Andrew Philpot on 9/6/2007
++(defun copy-node-test-table (src) src)
++;;;;   (let ((target (make-hash-table :test #'equal)))
++;;;;     (maphash (lambda (key value)
++;;;;                (setf (gethash key target) value))
++;;;;              src)
++;;;;     target))
++
++(defun compile-rule-into-network (rete-network patterns rule)
++  (let ((*root-nodes* (rete-roots rete-network))
++        (*rule-specific-nodes* (list))
++        (*leaf-nodes* (make-array (length patterns)))
++        (*logical-block-marker* (rule-logical-marker rule))
++        (*node-test-table* (node-test-cache rete-network)))
++    (add-intra-pattern-nodes patterns)
++    (add-inter-pattern-nodes patterns)
++    (add-terminal-node rule)
++    (attach-rule-nodes rule (nreverse *rule-specific-nodes*))
++    (setf (slot-value rete-network 'root-nodes) *root-nodes*)
++    rete-network))
++
++(defun merge-rule-into-network (to-network patterns rule &key (loader nil))
++  (let ((from-network
++         (compile-rule-into-network
++          (make-rete-network :node-test-cache (copy-node-test-table (node-test-cache to-network)))
++          patterns rule)))
++    (when loader
++      (funcall loader from-network))
++    (attach-rule-nodes rule (merge-networks from-network to-network))
++    to-network))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/CVS/Entries lisa/src/rete/reference/CVS/Entries
+--- lisa_ORIGINAL/src/rete/reference/CVS/Entries	2008-02-20 12:48:13.312500000 -0800
++++ lisa/src/rete/reference/CVS/Entries	2008-02-20 22:45:00.156250000 -0800
+@@ -4,13 +4,14 @@
+ /node-pair.lisp/1.1/Thu Oct  3 14:48:08 2002//
+ /node1.lisp/1.16/Tue Sep 11 21:14:10 2007//
+ /node2-exists.lisp/1.3/Tue Sep 11 21:14:10 2007//
+-/node2-not.lisp/1.15/Tue Sep 11 21:14:10 2007//
+ /node2-test.lisp/1.6/Tue Sep 11 21:14:10 2007//
+ /shared-node.lisp/1.12/Tue Sep 11 21:14:10 2007//
+ /successor.lisp/1.4/Mon Oct  7 19:55:13 2002//
+ /terminal-node.lisp/1.12/Mon Sep 13 19:27:53 2004//
+ /tms.lisp/1.1/Thu Nov 14 14:45:38 2002//
+-/node-tests.lisp/1.24/Wed Feb 20 20:48:12 2008//
+-/node2.lisp/1.21/Wed Feb 20 20:48:13 2008//
+-/rete-compiler.lisp/1.52/Wed Feb 20 20:48:13 2008//
++/rete-compiler.lisp/1.52/Mon Jan 28 23:58:26 2008//
++/node2.lisp/1.21/Thu Feb 14 22:47:09 2008//
++/node2-not.lisp/1.15/Tue Feb 19 15:45:40 2008//
++/node-tests.lisp/1.24/Thu Feb 21 04:20:21 2008//
++/inter-pattern-filter.lisp/0/New file//
+ D
+diff -Nurp lisa_ORIGINAL/src/rete/reference/CVS/Entries.Extra lisa/src/rete/reference/CVS/Entries.Extra
+--- lisa_ORIGINAL/src/rete/reference/CVS/Entries.Extra	2008-02-20 12:48:13.312500000 -0800
++++ lisa/src/rete/reference/CVS/Entries.Extra	2008-02-20 20:20:21.312500000 -0800
+@@ -4,12 +4,12 @@
+ /node-pair.lisp////*///
+ /node1.lisp////*///
+ /node2-exists.lisp////*///
+-/node2-not.lisp////*///
+ /node2-test.lisp////*///
+ /shared-node.lisp////*///
+ /successor.lisp////*///
+ /terminal-node.lisp////*///
+ /tms.lisp////*///
+-/node-tests.lisp////*///
+-/node2.lisp////*///
+ /rete-compiler.lisp////*///
++/node2.lisp////*///
++/node2-not.lisp////*///
++/node-tests.lisp////*///
+diff -Nurp lisa_ORIGINAL/src/rete/reference/CVS/Entries.Extra.Old lisa/src/rete/reference/CVS/Entries.Extra.Old
+--- lisa_ORIGINAL/src/rete/reference/CVS/Entries.Extra.Old	2008-01-28 15:58:26.265625000 -0800
++++ lisa/src/rete/reference/CVS/Entries.Extra.Old	2008-02-20 20:19:18.234375000 -0800
+@@ -4,12 +4,12 @@
+ /node-pair.lisp////*///
+ /node1.lisp////*///
+ /node2-exists.lisp////*///
+-/node2-not.lisp////*///
+ /node2-test.lisp////*///
+-/node2.lisp////*///
+ /shared-node.lisp////*///
+ /successor.lisp////*///
+ /terminal-node.lisp////*///
+ /tms.lisp////*///
+ /node-tests.lisp////*///
+ /rete-compiler.lisp////*///
++/node2.lisp////*///
++/node2-not.lisp////*///
+diff -Nurp lisa_ORIGINAL/src/rete/reference/CVS/Entries.Old lisa/src/rete/reference/CVS/Entries.Old
+--- lisa_ORIGINAL/src/rete/reference/CVS/Entries.Old	2008-01-28 15:58:26.250000000 -0800
++++ lisa/src/rete/reference/CVS/Entries.Old	2008-02-20 20:19:18.234375000 -0800
+@@ -4,13 +4,13 @@
+ /node-pair.lisp/1.1/Thu Oct  3 14:48:08 2002//
+ /node1.lisp/1.16/Tue Sep 11 21:14:10 2007//
+ /node2-exists.lisp/1.3/Tue Sep 11 21:14:10 2007//
+-/node2-not.lisp/1.15/Tue Sep 11 21:14:10 2007//
+ /node2-test.lisp/1.6/Tue Sep 11 21:14:10 2007//
+-/node2.lisp/1.21/Tue Sep 11 21:14:10 2007//
+ /shared-node.lisp/1.12/Tue Sep 11 21:14:10 2007//
+ /successor.lisp/1.4/Mon Oct  7 19:55:13 2002//
+ /terminal-node.lisp/1.12/Mon Sep 13 19:27:53 2004//
+ /tms.lisp/1.1/Thu Nov 14 14:45:38 2002//
+ /node-tests.lisp/1.24/Wed Jan 23 16:39:10 2008//
+ /rete-compiler.lisp/1.52/Mon Jan 28 23:58:26 2008//
++/node2.lisp/1.21/Thu Feb 14 22:47:09 2008//
++/node2-not.lisp/1.15/Tue Feb 19 15:45:40 2008//
+ D
+diff -Nurp lisa_ORIGINAL/src/rete/reference/inter-pattern-filter.lisp lisa/src/rete/reference/inter-pattern-filter.lisp
+--- lisa_ORIGINAL/src/rete/reference/inter-pattern-filter.lisp	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/inter-pattern-filter.lisp	2008-02-20 16:16:15.921875000 -0800
+@@ -0,0 +1,195 @@
++
++;;; Copyright (C) 2008 Aneil Mallavarapu
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: inter-pattern-filter.lisp
++
++(in-package "LISA")
++
++(defstruct (inter-pattern-filter (:constructor %make-inter-pattern-filter))
++  left-slot-name   ; = binding-slot-name
++  left-address     ; = binding-address
++  right-slot-name  ; = pattern-slot-name
++  ;; left/right-value-memories store hash-tables of tokens which match a particular value
++  ;; value memories are hash-tables where
++  ;;    key = slot-value, 
++  ;;    value = hash-table storing tokens (key=token-hash-code, value=token)
++  (negated nil)
++  (left-value-memory (make-hash-table :test #'equal))  
++  (right-value-memory (make-hash-table :test #'equal)))
++
++(defun make-inter-pattern-filter (slot)
++  (let ((binding (pattern-slot-slot-binding slot)))
++    (%make-inter-pattern-filter 
++     :left-slot-name (binding-slot-name binding)
++     :left-address (binding-address binding)
++     :right-slot-name (pattern-slot-name slot)
++     :negated (pattern-slot-negated slot))))
++;;;
++;;; LEFT/RIGHT-LOOKUPS: 
++;;; 
++(defun inter-pattern-filter-left-lookup (self right-token)
++  "Returns a hash-table of left-tokens which match the right-token for this slot-pattern binding"
++ (let* ((left-value-memory      (inter-pattern-filter-left-value-memory self))
++        (right-slot-name  (inter-pattern-filter-right-slot-name self))
++        (right-fact       (token-top-fact right-token))
++        (right-slot-value (get-slot-value right-fact right-slot-name)))
++
++   (cond
++    ((inter-pattern-filter-negated self)  (not-lookup left-value-memory right-slot-value))
++    (t                                    (get-token-memory left-value-memory right-slot-value)))))
++
++           
++(defun inter-pattern-filter-right-lookup (self left-tokens)
++  "Returns a hash-table of right-tokens which match the left-tokens for this slot-pattern binding"
++  (let* ((right-value-memory (inter-pattern-filter-right-value-memory self))
++         (left-slot-name     (inter-pattern-filter-left-slot-name self))
++         (left-fact          (token-find-fact left-tokens (inter-pattern-filter-left-address self)))
++         (left-slot-value    (get-slot-value left-fact left-slot-name)))
++    (cond
++     ((inter-pattern-filter-negated self)  (not-lookup right-value-memory left-slot-value))
++     (t                                    (get-token-memory right-value-memory left-slot-value)))))
++
++;;;
++;;; NOT handling:
++;;;
++(defun not-lookup (value-memory value)
++  "Returns a hash-table which contains an intersection of all tokens which do not match VALUE"
++  (let ((newht (copy-hash-table value-memory)))
++    ;; remove tokens which matching VALUE
++    (remhash value newht) 
++    ;; merge the remaining value memories
++    (apply #'merge-hash-tables nil (hash-values-to-list newht))))
++        
++(defun not-value-remove-token (value-memory value token)
++  "Removes TOKEN from all token memories which do not match VALUE"
++  (loop for k being the hash-keys of value-memory
++        for token-memory being the hash-values of value-memory
++        unless (equal k value)
++        do (forget-token token-memory token)))
++
++;;;
++;;; TOKEN-MEMORY - a value memory stores all tokens matching a particular value
++;;;                it is a hash-table mapping token-hash-codes to tokens
++;;;
++(defun inter-pattern-filter-left-token-memory (self value)
++  (get-token-memory (inter-pattern-filter-left-value-memory self) value))
++
++(defun inter-pattern-filter-right-token-memory (self value)
++  (get-token-memory (inter-pattern-filter-right-value-memory self) value))
++
++(defun get-token-memory (value-memory value)
++  (or (gethash value value-memory)
++      (setf (gethash value value-memory) (make-hash-table :test #'equal))))
++
++;;;
++;;; ADD LEFT/RIGHT TOKENS:
++;;;
++(defun inter-pattern-filter-add-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-filter-left-slot-name self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-filter-left-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++    (remember-token (inter-pattern-filter-left-token-memory self value)
++                    left-tokens)))
++
++(defun inter-pattern-filter-add-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-filter-right-slot-name self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++    (remember-token (inter-pattern-filter-right-token-memory self value)
++                    right-token)))
++
++;;;
++;;; REMOVE LEFT/RIGHT TOKENS:
++;;;
++
++(defun inter-pattern-filter-remove-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-filter-left-slot-name self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-filter-left-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++   (forget-token (inter-pattern-filter-left-token-memory self value)
++                      left-tokens)))
++
++
++(defun inter-pattern-filter-remove-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-filter-right-slot-name self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++   (forget-token (inter-pattern-filter-right-token-memory self value)
++                    right-token)))
++
++(defun inter-pattern-filter-left-size (self)
++  (value-memory-size (inter-pattern-filter-left-value-memory self)))
++
++(defun inter-pattern-filter-right-size (self)
++  (value-memory-size (inter-pattern-filter-right-value-memory self)))
++
++(defun value-memory-size (value-memory)
++  (hash-table-count 
++   (merge-hash-tables 
++    nil 
++    (hash-values-to-list value-memory))))
++
++(defmethod left-value-memory-count ((self inter-pattern-filter))
++  (inter-pattern-filter-left-size self))
++
++(defmethod right-value-memory-count ((self inter-pattern-filter))
++  (inter-pattern-filter-right-size self))
++
++(defun inter-pattern-filter-clear-memories (self)
++  (clrhash (inter-pattern-filter-left-value-memory self))
++  (clrhash (inter-pattern-filter-right-value-memory self)))
++
++;;;
++;;; HASH-TABLE utils:
++;;;
++
++(defun merge-hash-tables (&optional result &rest hash-tables)
++  "Copies the contents of hash-tables into RESULT.  
++   If argument RESULT is NIL, a new hash-table is created"
++  (flet ((hash-table-merge (ht1 ht2) ; merge ht2 into ht1
++           (copy-hash-table ht2 ht1)))
++    (reduce #'hash-table-merge 
++            (list* 
++             (or result
++                 (make-hash-table :test (if hash-tables
++                                            (hash-table-test (first hash-tables))
++                                            #'equal)))
++             hash-tables))))
++
++(defun copy-hash-table (ht1 &optional ht2)
++  "Copies hash-table HT1 - optionally to a user-provided hash-table, HT2"
++  (loop with result = (or ht2 (make-hash-table :test (hash-table-test ht1)))
++        for k being the hash-keys of ht1
++        for v being the hash-values of ht1
++        do (setf (gethash k result) v)
++        finally (return result)))
++
++(defun intersect-hash-table-keys (ht1 ht2)
++  "Creates a new hash-table with keys representing the intersection of keys from HT1 and HT2,
++   and the corresponding values of HT1."
++  (loop with newht = (make-hash-table :test (hash-table-test ht1))
++        for k being the hash-keys of ht1
++        for v being the hash-values of ht1
++        when (gethash k ht2)
++        do (setf (gethash k newht) v)
++        finally (return newht)))
++
++(defun hash-values-to-list (ht)
++  (loop for v being the hash-values of ht collect v))
++
+diff -Nurp lisa_ORIGINAL/src/rete/reference/inter-pattern-filter.lisp~ lisa/src/rete/reference/inter-pattern-filter.lisp~
+--- lisa_ORIGINAL/src/rete/reference/inter-pattern-filter.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/inter-pattern-filter.lisp~	2008-02-20 15:42:51.937500000 -0800
+@@ -0,0 +1,204 @@
++
++;;; Copyright (C) 2008 Aneil Mallavarapu
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: inter-pattern-filter.lisp
++
++(in-package "LISA")
++
++(defstruct (inter-pattern-filter (:constructor %make-inter-pattern-filter))
++  left-slot-name   ; = binding-slot-name
++  left-address     ; = binding-address
++  right-slot-name  ; = pattern-slot-name
++  ;; left/right-value-memories store hash-tables of tokens which match a particular value
++  ;; value memories are hash-tables where
++  ;;    key = slot-value, 
++  ;;    value = hash-table storing tokens (key=token-hash-code, value=token)
++  (negated nil)
++  (left-value-memory (make-hash-table :test #'equal))  
++  (right-value-memory (make-hash-table :test #'equal)))
++
++(defun make-inter-pattern-filter (slot)
++  (let ((binding (pattern-slot-slot-binding slot)))
++    (%make-inter-pattern-filter 
++     :left-slot-name (binding-slot-name binding)
++     :left-address (binding-address binding)
++     :right-slot-name (pattern-slot-name slot)
++     :negated (pattern-slot-negated slot))))
++;;;
++;;; LEFT/RIGHT-LOOKUPS: 
++;;; 
++(defun inter-pattern-filter-left-lookup (self right-token)
++  "Returns a hash-table of left-tokens which match the right-token for this slot-pattern binding"
++ (let* ((left-value-memory      (inter-pattern-filter-left-value-memory self))
++        (right-slot-name  (inter-pattern-filter-right-slot-name self))
++        (right-fact       (token-top-fact right-token))
++        (right-slot-value (get-slot-value right-fact right-slot-name)))
++
++   (cond
++    ((inter-pattern-filter-negated self)  (not-lookup left-value-memory right-slot-value))
++    (t                                    (get-token-memory left-value-memory right-slot-value)))))
++
++           
++(defun inter-pattern-filter-right-lookup (self left-tokens)
++  "Returns a hash-table of right-tokens which match the left-tokens for this slot-pattern binding"
++  (let* ((right-value-memory (inter-pattern-filter-right-value-memory self))
++         (left-slot-name     (inter-pattern-filter-left-slot-name self))
++         (left-fact          (token-find-fact left-tokens (inter-pattern-filter-left-address self)))
++         (left-slot-value    (get-slot-value left-fact left-slot-name)))
++    (cond
++     ((inter-pattern-filter-negated self)  (not-lookup right-value-memory left-slot-value))
++     (t                                    (get-token-memory right-value-memory left-slot-value)))))
++
++;;;
++;;; NOT handling:
++;;;
++(defun not-lookup (value-memory value)
++  "Returns a hash-table which contains an intersection of all tokens which do not match VALUE"
++  (let ((newht (copy-hash-table value-memory)))
++    ;; remove tokens which matching VALUE
++    (remhash value newht) 
++    ;; merge the remaining value memories
++    (apply #'merge-hash-tables nil (hash-values-to-list newht))))
++        
++(defun not-value-remove-token (value-memory value token)
++  "Removes TOKEN from all token memories which do not match VALUE"
++  (loop for k being the hash-keys of value-memory
++        for token-memory being the hash-values of value-memory
++        unless (equal k value)
++        do (forget-token token-memory token)))
++
++;;;
++;;; TOKEN-MEMORY - a value memory stores all tokens matching a particular value
++;;;                it is a hash-table mapping token-hash-codes to tokens
++;;;
++(defun inter-pattern-filter-left-token-memory (self value)
++  (get-token-memory (inter-pattern-filter-left-value-memory self) value))
++
++(defun inter-pattern-filter-right-token-memory (self value)
++  (get-token-memory (inter-pattern-filter-right-value-memory self) value))
++
++(defun get-token-memory (value-memory value)
++  (or (gethash value value-memory)
++      (setf (gethash value value-memory) (make-hash-table :test #'equal))))
++
++;;;
++;;; ADD LEFT/RIGHT TOKENS:
++;;;
++(defun inter-pattern-filter-add-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-filter-left-slot-name self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-filter-left-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++    (remember-token (inter-pattern-filter-left-token-memory self value)
++                    left-tokens)))
++
++(defun inter-pattern-filter-add-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-filter-right-slot-name self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++    (remember-token (inter-pattern-filter-right-token-memory self value)
++                    right-token)))
++
++;;;
++;;; REMOVE LEFT/RIGHT TOKENS:
++;;;
++
++(defun inter-pattern-filter-remove-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-filter-left-slot-name self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-filter-left-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++    (cond 
++     ((inter-pattern-filter-negated self) 
++      (not-value-remove-token (inter-pattern-filter-left-value-memory self)
++                              value
++                              left-tokens))
++     (t (forget-token (inter-pattern-filter-left-token-memory self value)
++                      left-tokens)))))
++
++(defun inter-pattern-filter-remove-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-filter-right-slot-name self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++    (cond
++     ((inter-pattern-filter-negated self)
++      (not-value-remove-token (inter-pattern-filter-right-value-memory self)
++                              value
++                              right-token))
++     (t (forget-token (inter-pattern-filter-right-token-memory self value)
++                      right-token)))))
++
++(defun inter-pattern-filter-left-size (self)
++  (value-memory-size (inter-pattern-filter-left-value-memory self)))
++
++(defun inter-pattern-filter-right-size (self)
++  (value-memory-size (inter-pattern-filter-right-value-memory self)))
++
++(defun value-memory-size (value-memory)
++  (hash-table-count 
++   (merge-hash-tables 
++    nil 
++    (hash-values-to-list value-memory))))
++
++(defmethod left-value-memory-count ((self inter-pattern-filter))
++  (inter-pattern-filter-left-size self))
++
++(defmethod right-value-memory-count ((self inter-pattern-filter))
++  (inter-pattern-filter-right-size self))
++
++(defun inter-pattern-filter-clear-memories (self)
++  (clrhash (inter-pattern-filter-left-value-memory self))
++  (clrhash (inter-pattern-filter-right-value-memory self)))
++
++;;;
++;;; HASH-TABLE utils:
++;;;
++
++(defun merge-hash-tables (&optional result &rest hash-tables)
++  "Copies the contents of hash-tables into RESULT.  
++   If argument RESULT is NIL, a new hash-table is created"
++  (flet ((hash-table-merge (ht1 ht2) ; merge ht2 into ht1
++           (copy-hash-table ht2 ht1)))
++    (reduce #'hash-table-merge 
++            (list* 
++             (or result
++                 (make-hash-table :test (if hash-tables
++                                            (hash-table-test (first hash-tables))
++                                            #'equal)))
++             hash-tables))))
++
++(defun copy-hash-table (ht1 &optional ht2)
++  "Copies hash-table HT1 - optionally to a user-provided hash-table, HT2"
++  (loop with result = (or ht2 (make-hash-table :test (hash-table-test ht1)))
++        for k being the hash-keys of ht1
++        for v being the hash-values of ht1
++        do (setf (gethash k result) v)
++        finally (return result)))
++
++(defun intersect-hash-table-keys (ht1 ht2)
++  "Creates a new hash-table with keys representing the intersection of keys from HT1 and HT2,
++   and the corresponding values of HT1."
++  (loop with newht = (make-hash-table :test (hash-table-test ht1))
++        for k being the hash-keys of ht1
++        for v being the hash-values of ht1
++        when (gethash k ht2)
++        do (setf (gethash k newht) v)
++        finally (return newht)))
++
++(defun hash-values-to-list (ht)
++  (loop for v being the hash-values of ht collect v))
++
+diff -Nurp lisa_ORIGINAL/src/rete/reference/inter-pattern-test.lisp~ lisa/src/rete/reference/inter-pattern-test.lisp~
+--- lisa_ORIGINAL/src/rete/reference/inter-pattern-test.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/inter-pattern-test.lisp~	2008-02-17 02:40:22.781250000 -0800
+@@ -0,0 +1,117 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node2.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defstruct (inter-pattern-test (:constructor %make-inter-pattern-test))
++  slot-name binding-slot-name binding-address negated-p
++  ;; memories store all tokens which match a particular value
++  ;; implemented as hash-tables where key = slot-value, value = list of facts
++  (negated nil)
++  (left-memory (make-hash-table :test #'equal)) 
++  (right-memory (make-hash-table :test #'equalp)))
++
++;;;
++;;; LEFT/RIGHT-LOOKUPS: 
++;;;
++(defun inter-pattern-test-left-lookup (self right-token)
++  "Returns a list of left-tokens which match the right-token for this slot-pattern binding"
++ (let* ((left-memory      (inter-pattern-test-left-memory self))
++        (right-slot-name  (inter-pattern-test-slot-name self))
++        (fact             (token-top-fact right-token)))
++   (gethash (get-slot-value fact right-slot-name) 
++            left-memory)))
++
++(defun inter-pattern-test-right-lookup (self left-tokens)
++  "Returns a list of right-tokens which match the left-tokens for this slot-pattern binding"
++  (let* ((right-memory      (inter-pattern-test-right-memory self))
++         (left-slot-name    (inter-pattern-test-binding-slot-name self))
++         (left-fact         (token-find-fact left-tokens (inter-pattern-test-binding-address self))))
++    (gethash (get-slot-value left-fact left-slot-name)
++             right-memory))))
++
++;;;
++;;; ADD LEFT/RIGHT TOKENS:
++;;;
++(defun inter-pattern-test-add-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-test-binding-slot-name self))
++         (left-memory    (inter-pattern-test-left-memory self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-test-binding-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++    (push left-tokens (gethash value left-memory))))
++
++(defun inter-pattern-test-add-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-test-slot-name self))
++         (right-memory     (inter-pattern-test-right-memory self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++    (push right-token (gethash value right-memory))))
++
++;;;
++;;; REMOVE LEFT/RIGHT TOKENS:
++;;;
++
++(defun inter-pattern-test-remove-left-tokens (self left-tokens)
++  (let* ((left-slot-name (inter-pattern-test-binding-slot-name self))
++         (left-memory    (inter-pattern-test-left-memory self))
++         (fact           (token-find-fact left-tokens 
++                                          (inter-pattern-test-binding-address self)))
++         (value          (get-slot-value fact left-slot-name)))
++    (setf (gethash value left-memory)
++          (remove left-tokens (gethash value left-memory)
++                  :key #'token-hash-code
++                  :test #'equal))))
++
++
++(defun inter-pattern-test-remove-right-token (self right-token)
++  (let* ((right-slot-name  (inter-pattern-test-slot-name self))
++         (right-memory     (inter-pattern-test-right-memory self))
++         (fact             (token-top-fact right-token))
++         (value            (get-slot-value fact right-slot-name)))
++    (setf (gethash value right-memory)
++          (remove right-token (gethash value right-memory)
++                  :key #'token-hash-code
++                  :test #'equal))))
++
++(defun inter-patter-test-clear-memories (self)
++  (clrhash (inter-pattern-test-left-memory self))
++  (clrhash (inter-pattern-test-right-memory self)))
++
++(defun inter-pattern-test-left-size (iptest)
++  (hash-table-count (inter-pattern-test-left-memory iptest)))
++
++(defun inter-pattern-test-right-size (iptest)
++  (hash-table-count (inter-pattern-test-left-memory iptest)))
++
++(defmethod left-memory-count ((self inter-pattern-test))
++  (hash-table-count (inter-pattern-test-left-memory self)))
++
++
++(defmethod right-memory-count ((self inter-pattern-test))
++  (hash-table-count (inter-pattern-test-right-memory self)))
++
++(defun inter-pattern-test-clear-memories (self)
++  (clrhash (inter-pattern-test-left-memory self))
++  (clrhash (inter-pattern-test-right-memory self)))
+\ No newline at end of file
+diff -Nurp lisa_ORIGINAL/src/rete/reference/join-node.lisp lisa/src/rete/reference/join-node.lisp
+--- lisa_ORIGINAL/src/rete/reference/join-node.lisp	2007-09-11 14:14:10.000000000 -0700
++++ lisa/src/rete/reference/join-node.lisp	2008-02-20 16:05:45.734375000 -0800
+@@ -60,11 +60,11 @@
+ (defun remove-token-from-right-memory (join-node token)
+   (forget-token (join-node-right-memory join-node) token))
+ 
+-(defun left-memory-count (join-node)
+-  (hash-table-count (join-node-left-memory join-node)))
++(defmethod left-memory-count ((self join-node))
++  (hash-table-count (join-node-left-memory self)))
+ 
+-(defun right-memory-count (join-node)
+-  (hash-table-count (join-node-right-memory join-node)))
++(defmethod right-memory-count ((self join-node))
++  (hash-table-count (join-node-right-memory self)))
+ 
+ (defmethod test-tokens ((self join-node) left-tokens right-token)
+   (token-push-fact left-tokens (token-top-fact right-token))
+@@ -107,3 +107,6 @@
+             (left-memory-count self)
+             (right-memory-count self)
+             (length (join-node-tests self)))))
++
++(defmethod add-slot-filter ((self join-node) slot)
++  (join-node-add-test self (make-inter-pattern-test slot)))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/join-node.lisp~ lisa/src/rete/reference/join-node.lisp~
+--- lisa_ORIGINAL/src/rete/reference/join-node.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/join-node.lisp~	2008-02-19 08:28:47.328125000 -0800
+@@ -0,0 +1,112 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: join-node.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defclass join-node ()
++  ((successor :initform nil
++              :accessor join-node-successor)
++   (logical-block :initform nil
++                  :reader join-node-logical-block)
++   (tests :initform (list)
++          :accessor join-node-tests)
++   (left-memory :initform (make-hash-table :test #'equal)
++                :reader join-node-left-memory)
++   (right-memory :initform (make-hash-table :test #'equal)
++                 :reader join-node-right-memory)))
++
++(defun mark-as-logical-block (join-node marker)
++  (setf (slot-value join-node 'logical-block) marker))
++
++(defun logical-block-p (join-node)
++  (numberp (join-node-logical-block join-node)))
++
++(defun remember-token (memory token)
++  (setf (gethash (hash-key token) memory) token))
++
++(defun forget-token (memory token)
++  (remhash (hash-key token) memory))
++
++(defun add-tokens-to-left-memory (join-node tokens)
++  (remember-token (join-node-left-memory join-node) tokens))
++
++(defun add-token-to-right-memory (join-node token)
++  (remember-token (join-node-right-memory join-node) token))
++
++(defun remove-tokens-from-left-memory (join-node tokens)
++  (forget-token (join-node-left-memory join-node) tokens))
++
++(defun remove-token-from-right-memory (join-node token)
++  (forget-token (join-node-right-memory join-node) token))
++
++(defmethod left-memory-count ((self join-node))
++  (hash-table-count (join-node-left-memory self)))
++
++(defmethod right-memory-count ((self join-node))
++  (hash-table-count (join-node-right-memory self)))
++
++(defmethod test-tokens ((self join-node) left-tokens right-token)
++  (token-push-fact left-tokens (token-top-fact right-token))
++  (prog1
++      (every #'(lambda (test)
++                 (funcall test left-tokens))
++             (join-node-tests self))
++    (token-pop-fact left-tokens)))
++
++(defmethod pass-tokens-to-successor ((self join-node) left-tokens)
++  (call-successor (join-node-successor self) left-tokens))
++
++(defmethod combine-tokens ((left-tokens token) (right-token token))
++  (token-push-fact (replicate-token left-tokens) (token-top-fact right-token)))
++
++(defmethod combine-tokens ((left-tokens token) (right-token t))
++  (token-push-fact (replicate-token left-tokens) right-token))
++
++(defmethod add-successor ((self join-node) successor-node connector)
++  (setf (join-node-successor self)
++    (make-successor successor-node connector)))
++
++(defmethod join-node-add-test ((self join-node) test)
++  (push test (join-node-tests self)))
++
++(defmethod clear-memories ((self join-node))
++  (clrhash (join-node-left-memory self))
++  (clrhash (join-node-right-memory self)))
++
++(defmethod accept-tokens-from-left ((self join-node) (left-tokens reset-token))
++  (clear-memories self)
++  (pass-tokens-to-successor self left-tokens))
++
++(defmethod accept-token-from-right ((self join-node) (left-tokens reset-token))
++  nil)
++
++(defmethod print-object ((self join-node) strm)
++  (print-unreadable-object (self strm :type t :identity t)
++    (format strm "left ~S ; right ~S ; tests ~S"
++            (left-memory-count self)
++            (right-memory-count self)
++            (length (join-node-tests self)))))
++
++(defmethod add-slot-filter ((self join-node) slot)
++  (join-node-add-test self (make-inter-pattern-test slot)))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/node-tests.lisp~ lisa/src/rete/reference/node-tests.lisp~
+--- lisa_ORIGINAL/src/rete/reference/node-tests.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/node-tests.lisp~	2008-02-17 07:23:04.421875000 -0800
+@@ -0,0 +1,182 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node-tests.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defvar *node-test-table*)
++
++(defun find-test (key constructor)
++  (or (gethash key *node-test-table*)
++      (setf (gethash key *node-test-table*)
++            (funcall constructor))))
++  
++(defun clear-node-test-table ()
++  (clrhash *node-test-table*))
++
++(defmethod class-matches-p ((instance inference-engine-object) fact class)
++  (eq (fact-name fact) class))
++  
++(defmethod class-matches-p ((instance t) fact class)
++  (or (eq (fact-name fact) class)
++      (has-superclass fact class)))
++
++(defun make-class-test (class)
++  (find-test class
++             #'(lambda ()
++                 (function
++                  (lambda (token)
++                    (declare (optimize (speed 3) (debug 1) (safety 0)))
++                    (let ((fact (token-top-fact token)))
++                      (class-matches-p 
++                       (find-instance-of-fact fact) fact class)))))))
++
++(defun make-simple-slot-test-aux (slot-name value negated-p)
++  (find-test 
++   `(,slot-name ,value ,negated-p)
++   #'(lambda ()
++       (let ((test
++              (function
++               (lambda (token)
++                 (declare (optimize (speed 3) (debug 1) (safety 0)))
++                 (equal value
++                        (get-slot-value
++                         (token-top-fact token)
++                         slot-name))))))
++         (if negated-p
++             (complement test)
++           test)))))
++
++(defun make-simple-slot-test (slot)
++  (declare (type pattern-slot slot))
++  (make-simple-slot-test-aux
++   (pattern-slot-name slot)
++   (pattern-slot-value slot)
++   (pattern-slot-negated slot)))
++
++#+ignore
++(defmacro make-variable-test (slot-name binding)
++  `(function
++    (lambda (tokens)
++      (equal (get-slot-value (token-top-fact tokens) ,slot-name)
++             (get-slot-value 
++              (token-find-fact tokens (binding-address ,binding))
++              (binding-slot-name ,binding))))))
++
++;;;; (defun make-inter-pattern-test (slot)
++;;;;   (let* ((binding (pattern-slot-slot-binding slot))
++;;;;          (test
++;;;;           (function
++;;;;            (lambda (tokens)
++;;;;              (declare (optimize (speed 3) (debug 1) (safety 0)))
++;;;;              (equal (get-slot-value (token-top-fact tokens) ; top-token is the right token
++;;;;                                     (pattern-slot-name slot))
++;;;;                     (get-slot-value  ; this is the left-token
++;;;;                      (token-find-fact tokens (binding-address binding))
++;;;;                      (binding-slot-name binding)))))))
++;;;;     (if (negated-slot-p slot) (complement test) test)))
++
++(defun make-inter-pattern-test (slot) 
++  (let ((binding (pattern-slot-slot-binding slot)))
++    (%make-inter-pattern-test :slot-name (pattern-slot-name slot)
++                              :binding-slot-name (binding-slot-name binding)
++                              :binding-address (binding-address binding)
++                              :negated (pattern-slot-negated slot))))
++
++(defun make-predicate-test (forms bindings &optional (negated-p nil))
++  (let* ((special-vars
++          (mapcar #'binding-variable bindings))
++         (body
++          (if (consp (first forms)) 
++              forms
++            (list forms)))
++         (predicate
++          (compile nil `(lambda ()
++                          (declare (special ,@special-vars))
++                          ,@body)))
++         (test
++          (function
++           (lambda (tokens)
++             (progv
++                 `(,@special-vars)
++                 `(,@(mapcar #'(lambda (binding)
++                                 (if (pattern-binding-p binding)
++                                     (token-find-fact 
++                                      tokens (binding-address binding))
++                                   (get-slot-value
++                                    (token-find-fact 
++                                     tokens (binding-address binding))
++                                    (binding-slot-name binding))))
++                             bindings))
++               (funcall predicate))))))
++    (if negated-p (complement test) test)))
++
++(defun make-intra-pattern-predicate (forms bindings negated-p)
++  (let* ((special-vars
++          (mapcar #'binding-variable bindings))
++         (body
++          (if (consp (first forms)) 
++              forms
++            (list forms)))
++         (predicate
++          (compile nil `(lambda ()
++                          (declare (special ,@special-vars))
++                          (declare (optimize (speed 3) (debug 1) (safety 0)))
++                          ,@body)))
++         (test
++          (function
++           (lambda (tokens)
++             (progv
++                 `(,@special-vars)
++                 `(,@(mapcar #'(lambda (binding)
++                                 (declare (optimize (speed 3) (debug 1) (safety 0)))
++                                 (if (pattern-binding-p binding)
++                                     (token-find-fact 
++                                      tokens (binding-address binding))
++                                   (get-slot-value
++                                    (token-top-fact tokens)
++                                    (binding-slot-name binding))))
++                             bindings))
++               (funcall predicate))))))
++    (if negated-p (complement test) test)))
++         
++(defun make-intra-pattern-constraint-test (slot)
++  (make-intra-pattern-predicate
++   (pattern-slot-constraint slot)
++   (pattern-slot-constraint-bindings slot)
++   (negated-slot-p slot)))
++
++(defun make-intra-pattern-test (slot)
++  (let ((test
++         (function
++          (lambda (tokens)
++            (declare (optimize (speed 3) (debug 1) (safety 0)))
++            (equal (get-slot-value (token-top-fact tokens)
++                                   (pattern-slot-name slot))
++                   (get-slot-value (token-top-fact tokens)
++                                   (binding-slot-name 
++                                    (pattern-slot-slot-binding slot))))))))
++    (if (negated-slot-p slot) (complement test) test)))
++
++(defun make-behavior (function bindings)
++  (make-predicate-test function bindings))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/node2-not.lisp~ lisa/src/rete/reference/node2-not.lisp~
+--- lisa_ORIGINAL/src/rete/reference/node2-not.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/node2-not.lisp~	2007-09-11 14:14:10.000000000 -0700
+@@ -0,0 +1,71 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node2-not.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defclass node2-not (join-node) ())
++
++(defmethod test-against-right-memory ((self node2-not) left-tokens)
++  (loop for right-token being the hash-values of (join-node-right-memory self)
++      do (when (test-tokens self left-tokens right-token)
++           (token-increment-not-counter left-tokens)))
++  (unless (token-negated-p left-tokens)
++    (pass-tokens-to-successor 
++     self (combine-tokens left-tokens self))))
++
++(defmethod test-against-left-memory ((self node2-not) 
++                                     (right-token add-token))
++  (loop for left-tokens being the hash-values of (join-node-left-memory self)
++      do (when (test-tokens self left-tokens right-token)
++           (token-increment-not-counter left-tokens)
++           (pass-tokens-to-successor 
++            self (combine-tokens (make-remove-token left-tokens) self)))))
++  
++(defmethod test-against-left-memory ((self node2-not) 
++                                     (right-token remove-token))
++  (loop for left-tokens being the hash-values of (join-node-left-memory self)
++      do (when (and (test-tokens self left-tokens right-token)
++                    (not (token-negated-p
++                          (token-decrement-not-counter left-tokens))))
++           (pass-tokens-to-successor 
++            self (combine-tokens left-tokens self)))))
++  
++(defmethod accept-tokens-from-left ((self node2-not) (left-tokens add-token))
++  (add-tokens-to-left-memory self left-tokens)
++  (test-against-right-memory self left-tokens))
++
++(defmethod accept-tokens-from-left ((self node2-not) (left-tokens remove-token))
++  (when (remove-tokens-from-left-memory self left-tokens)
++    (pass-tokens-to-successor self (combine-tokens left-tokens self))))
++
++(defmethod accept-token-from-right ((self node2-not) (right-token add-token))
++  (add-token-to-right-memory self right-token)
++  (test-against-left-memory self right-token))
++
++(defmethod accept-token-from-right ((self node2-not) (right-token remove-token))
++  (when (remove-token-from-right-memory self right-token)
++    (test-against-left-memory self right-token)))
++
++(defun make-node2-not ()
++  (make-instance 'node2-not))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/node2.lisp lisa/src/rete/reference/node2.lisp
+--- lisa_ORIGINAL/src/rete/reference/node2.lisp	2008-02-20 12:48:13.015625000 -0800
++++ lisa/src/rete/reference/node2.lisp	2008-02-20 16:16:15.906250000 -0800
+@@ -24,43 +24,105 @@
+ 
+ (in-package "LISA")
+ 
+-(defclass node2 (join-node) ())
++;;;
++;;; Changes 2/20/2008 made by Aneil Mallavarapu:
++;;;         Introduced FILTER slot in node2, which can hold 0 or more inter-pattern-filters.
++;;;         An inter-pattern-filter reduces the number of tokens that must be 
++;;;         subjected to join-node-tests. It is defined in inter-pattern-filter.lisp.
++;;;         The filter uses hash-tables to quickly calculate a set of tokens
++;;;
++(defclass node2 (join-node) ((filters :initform () :accessor node2-filters)))
+ 
++(defun make-node2 ()
++  (make-instance 'node2))
++
++(defmethod add-slot-filter ((self node2) slot)
++  (push (make-inter-pattern-filter slot) (node2-filters self)))
++
++;;; TEST RIGHT MEMORY
+ (defmethod test-against-right-memory ((self node2) left-tokens)
+-  (loop for right-token being the hash-values of (join-node-right-memory self)
+-      do (when (test-tokens self left-tokens right-token)
+-           (pass-tokens-to-successor 
+-            self (combine-tokens left-tokens right-token)))))
++  (loop for right-token being the hash-values of (node2-filter-right-memory self left-tokens)
++        when (test-tokens self left-tokens right-token)
++        do (pass-tokens-to-successor self (combine-tokens left-tokens right-token))))
++
++(defun node2-filter-right-memory (self left-tokens)
++  (cond
++   ((node2-filters self)
++    (loop for ipfilter in (node2-filters self)
++          for right-tokens = (inter-pattern-filter-right-lookup ipfilter left-tokens)
++                        then (intersect-hash-table-keys
++                              right-tokens
++                              (inter-pattern-filter-right-lookup ipfilter left-tokens))
++          until (zerop (hash-table-count right-tokens))
++          finally (return right-tokens)))
++   (t (join-node-right-memory self))))
+ 
++
++;;; TEST LEFT MEMORY
+ (defmethod test-against-left-memory ((self node2) (right-token add-token))
+-  (loop for left-tokens being the hash-values of (join-node-left-memory self)
+-      do (when (test-tokens self left-tokens right-token)
+-           (pass-tokens-to-successor 
+-            self (combine-tokens left-tokens right-token)))))
+-  
++  (loop for left-tokens being the hash-values of (node2-filter-left-memory self right-token)
++        when (test-tokens self left-tokens right-token)
++        do   (pass-tokens-to-successor
++              self
++              (combine-tokens left-tokens right-token))))
++
+ (defmethod test-against-left-memory ((self node2) (right-token remove-token))
+-  (loop for left-tokens being the hash-values of (join-node-left-memory self)
+-      do (when (test-tokens self left-tokens right-token)
+-           (pass-tokens-to-successor
+-            self (combine-tokens
+-                  (make-remove-token left-tokens) right-token)))))
+-  
++  (loop for left-tokens being the hash-values of (node2-filter-left-memory self right-token)
++        when (test-tokens self left-tokens right-token)
++        do   (pass-tokens-to-successor
++              self (combine-tokens
++                    (make-remove-token left-tokens) right-token))))
++
++(defun node2-filter-left-memory (self right-token)
++  (cond 
++   ((node2-filters self)
++    (loop for ipfilter in (node2-filters self)
++          for left-tokens* = (inter-pattern-filter-left-lookup ipfilter right-token)
++                        then (intersect-hash-table-keys
++                              left-tokens*
++                              (inter-pattern-filter-left-lookup ipfilter right-token))
++          until (zerop (hash-table-count left-tokens*))
++          finally (return left-tokens*)))
++   (t (join-node-left-memory self))))
++
++;;;
++;;; ACCEPT LEFT/RIGHT ADD-TOKEN
++;;;
+ (defmethod accept-tokens-from-left ((self node2) (left-tokens add-token))
+-  (add-tokens-to-left-memory self left-tokens)
++  (node2-add-tokens-to-left-memory self left-tokens)
+   (test-against-right-memory self left-tokens))
+ 
++(defun node2-add-tokens-to-left-memory (self left-tokens)
++  (add-tokens-to-left-memory self left-tokens)
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-add-left-tokens ipfilter left-tokens)))
++      
+ (defmethod accept-token-from-right ((self node2) (right-token add-token))
+-  (add-token-to-right-memory self right-token)
++  (node2-add-token-to-right-memory self right-token)
+   (test-against-left-memory self right-token))
+ 
++(defun node2-add-token-to-right-memory (self right-token)
++  (add-token-to-right-memory self right-token)
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-add-right-token ipfilter right-token)))
++
++     
++;;;
++;;; ACCEPT LEFT/RIGHT REMOVE-TOKEN
++;;;
+ (defmethod accept-tokens-from-left ((self node2) (left-tokens remove-token))
+   (when (remove-tokens-from-left-memory self left-tokens)
++    (dolist (ipfilter (node2-filters self))
++      (inter-pattern-filter-remove-left-tokens ipfilter left-tokens))
+     (test-against-right-memory self left-tokens)))
+ 
+ (defmethod accept-token-from-right ((self node2) (right-token remove-token))
+   (when (remove-token-from-right-memory self right-token)
++    (dolist (ipfilter (node2-filters self))
++      (inter-pattern-filter-remove-right-token ipfilter right-token))
+     (test-against-left-memory self right-token)))
+ 
+-(defun make-node2 ()
+-  (make-instance 'node2))
+-
++;;; CLEAR-MEMORIES
++(defmethod clear-memories ((self node2))
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-clear-memories ipfilter)))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/node2.lisp~ lisa/src/rete/reference/node2.lisp~
+--- lisa_ORIGINAL/src/rete/reference/node2.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/node2.lisp~	2008-02-20 10:25:54.078125000 -0800
+@@ -0,0 +1,127 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: node2.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++;;;
++;;; Changes 2/20/2008 made by Aneil Mallavarapu:
++;;;         Introduced the concept of a filter in node2.
++;;;         The inter-pattern-filter reduces the number of tokens that must be 
++;;;         subjected to join-node-tests. It is defined in inter-pattern-filter.lisp.
++;;;         The filter uses hash-tables to quickly calculate a set of tokens
++;;;
++(defclass node2 (join-node) ((filters :initform () :accessor node2-filters)))
++
++(defun make-node2 ()
++  (make-instance 'node2))
++
++(defmethod add-slot-filter ((self node2) slot)
++  (push (make-inter-pattern-filter slot) (node2-filters self)))
++
++;;; TEST RIGHT MEMORY
++(defmethod test-against-right-memory ((self node2) left-tokens)
++  (loop for right-token being the hash-values of (node2-filter-right-memory self left-tokens)
++        when (test-tokens self left-tokens right-token)
++        do (pass-tokens-to-successor self (combine-tokens left-tokens right-token))))
++
++(defun node2-filter-right-memory (self left-tokens)
++  (cond
++   ((node2-filters self)
++    (loop for ipfilter in (node2-filters self)
++          for right-tokens = (inter-pattern-filter-right-lookup ipfilter left-tokens)
++                        then (intersect-hash-table-keys
++                              right-tokens
++                              (inter-pattern-filter-right-lookup ipfilter left-tokens))
++          until (zerop (hash-table-count right-tokens))
++          finally (return right-tokens)))
++   (t (join-node-right-memory self))))
++
++
++;;; TEST LEFT MEMORY
++(defmethod test-against-left-memory ((self node2) (right-token add-token))
++  (node2-test-against-left-memory self right-token))
++
++(defmethod test-against-left-memory ((self node2) (right-token remove-token))
++  (node2-test-against-left-memory self right-token))
++
++(defun node2-filter-left-memory (self right-token)
++  (cond 
++   ((node2-filters self)
++    (loop for ipfilter in (node2-filters self)
++          for left-tokens* = (inter-pattern-filter-left-lookup ipfilter right-token)
++                        then (intersect-hash-table-keys
++                              left-tokens*
++                              (inter-pattern-filter-left-lookup ipfilter right-token))
++          until (zerop (hash-table-count left-tokens*))
++          finally (return left-tokens*)))
++   (t (join-node-left-memory self))))
++
++(defun node2-test-against-left-memory (self right-token)
++  (loop for left-tokens being the hash-values of (node2-filter-left-memory self right-token)
++        when (test-tokens self left-tokens right-token)
++        do   (pass-tokens-to-successor
++              self
++              (combine-tokens left-tokens right-token))))      
++        
++;;;
++;;; ACCEPT LEFT/RIGHT ADD-TOKEN
++;;;
++(defmethod accept-tokens-from-left ((self node2) (left-tokens add-token))
++  (node2-add-tokens-to-left-memory self left-tokens)
++  (test-against-right-memory self left-tokens))
++
++(defun node2-add-tokens-to-left-memory (self left-tokens)
++  (add-tokens-to-left-memory self left-tokens)
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-add-left-tokens ipfilter left-tokens)))
++      
++(defmethod accept-token-from-right ((self node2) (right-token add-token))
++  (node2-add-token-to-right-memory self right-token)
++  (test-against-left-memory self right-token))
++
++(defun node2-add-token-to-right-memory (self right-token)
++  (add-token-to-right-memory self right-token)
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-add-right-token ipfilter right-token)))
++
++     
++;;;
++;;; ACCEPT LEFT/RIGHT REMOVE-TOKEN
++;;;
++(defmethod accept-tokens-from-left ((self node2) (left-tokens remove-token))
++  (when (remove-tokens-from-left-memory self left-tokens)
++    (dolist (ipfilter (node2-filters self))
++      (inter-pattern-filter-remove-left-tokens ipfilter left-tokens))
++    (test-against-right-memory self left-tokens)))
++
++(defmethod accept-token-from-right ((self node2) (right-token remove-token))
++  (when (remove-token-from-right-memory self right-token)
++    (dolist (ipfilter (node2-filters self))
++      (inter-pattern-filter-remove-right-token ipfilter right-token))
++    (test-against-left-memory self right-token)))
++
++;;; CLEAR-MEMORIES
++(defmethod clear-memories ((self node2))
++  (dolist (ipfilter (node2-filters self))
++    (inter-pattern-filter-clear-memories ipfilter)))
+diff -Nurp lisa_ORIGINAL/src/rete/reference/rete-compiler.lisp lisa/src/rete/reference/rete-compiler.lisp
+--- lisa_ORIGINAL/src/rete/reference/rete-compiler.lisp	2008-02-20 12:48:13.281250000 -0800
++++ lisa/src/rete/reference/rete-compiler.lisp	2008-02-20 20:29:38.250000000 -0800
+@@ -146,8 +146,7 @@
+   (labels ((add-simple-join-node-test (slot)
+              (unless (= (binding-address (pattern-slot-slot-binding slot))
+                         (parsed-pattern-address pattern))
+-               (join-node-add-test join-node
+-                                   (make-inter-pattern-test slot))))
++               (add-slot-filter join-node slot)))
+            (add-slot-constraint-test (slot)
+              (join-node-add-test join-node
+                                  (make-predicate-test
+diff -Nurp lisa_ORIGINAL/src/rete/reference/rete-compiler.lisp~ lisa/src/rete/reference/rete-compiler.lisp~
+--- lisa_ORIGINAL/src/rete/reference/rete-compiler.lisp~	1969-12-31 16:00:00.000000000 -0800
++++ lisa/src/rete/reference/rete-compiler.lisp~	2008-02-19 08:25:28.093750000 -0800
+@@ -0,0 +1,239 @@
++;;; This file is part of LISA, the Lisp-based Intelligent Software
++;;; Agents platform.
++
++;;; Copyright (C) 2000 David E. Young (de.young@computer.org)
++
++;;; This library is free software; you can redistribute it and/or
++;;; modify it under the terms of the GNU Lesser General Public License
++;;; as published by the Free Software Foundation; either version 2.1
++;;; of the License, or (at your option) any later version.
++
++;;; This library is distributed in the hope that it will be useful,
++;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;; GNU Lesser General Public License for more details.
++
++;;; You should have received a copy of the GNU Lesser General Public License
++;;; along with this library; if not, write to the Free Software
++;;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++
++;;; File: rete-compiler.lisp
++;;; Description:
++
++;;; $Id: lisa3_2-inter-pattern-filter.patch,v 1.1 2008/03/07 23:47:27 amallavarapu Exp $
++
++(in-package "LISA")
++
++(defvar *root-nodes* nil)
++(defvar *rule-specific-nodes* nil)
++(defvar *leaf-nodes* nil)
++(defvar *logical-block-marker*)
++
++(declaim (inline set-leaf-node leaf-node left-input right-input logical-block-marker))
++
++(defun set-leaf-node (node address)
++  (setf (aref *leaf-nodes* address) node))
++
++(defun leaf-node ()
++  (aref *leaf-nodes* (1- (length *leaf-nodes*))))
++
++(defun left-input (address)
++  (aref *leaf-nodes* (1- address)))
++
++(defun right-input (address)
++  (aref *leaf-nodes* address))
++
++(defun logical-block-marker ()
++  *logical-block-marker*)
++  
++(defclass rete-network ()
++  ((root-nodes :initform (make-hash-table)
++               :initarg :root-nodes
++               :reader rete-roots)
++   (node-test-cache :initform (make-hash-table :test #'equal)
++                    :initarg :node-test-cache
++                    :reader node-test-cache)))
++
++(defun record-node (node parent)
++  (when (typep parent 'shared-node)
++    (increment-use-count parent))
++  (push (make-node-pair node parent) *rule-specific-nodes*)
++  node)
++
++(defmethod remove-node-from-parent ((self rete-network) (parent t) child)
++  (remhash (node1-test child) (rete-roots self)))
++
++(defmethod remove-node-from-parent ((self rete-network) 
++                                    (parent shared-node) child)
++  (remove-successor parent child))
++
++(defun make-root-node (class)
++  (let* ((test (make-class-test class))
++         (root (gethash test *root-nodes*)))
++    (when (null root)
++      (setf root (make-node1 test))
++      (setf (gethash test *root-nodes*) root))
++    (record-node root t)))
++
++(defmethod add-successor ((parent t) new-node connector)
++  (declare (ignore connector))
++  new-node)
++
++(defmethod add-successor :around ((parent shared-node) new-node connector)
++  (declare (ignore new-node connector))
++  (record-node (call-next-method) parent))
++
++(defun make-intra-pattern-node (slot)
++  (let ((test
++         (cond ((simple-slot-p slot)
++                (make-simple-slot-test slot))
++               ((constrained-slot-p slot)
++                (make-intra-pattern-constraint-test slot))
++               (t
++                (make-intra-pattern-test slot)))))
++    (make-node1 test)))
++
++(defun distribute-token (rete-network token)
++  (loop for root-node being the hash-values 
++      of (rete-roots rete-network)
++      do (accept-token root-node token)))
++
++(defmethod make-rete-network (&rest args &key &allow-other-keys)
++  (apply #'make-instance 'rete-network args))
++
++;;; The following functions serve as "connectors" between any two
++;;; nodes. PASS-TOKEN connects two pattern (one-input) nodes, or a join node 
++;;; to a terminal node; ENTER-JOIN-NETWORK-FROM-LEFT connects a pattern node
++;;; to a join node; ENTER-JOIN-NETWORK-FROM-RIGHT also connects a pattern node
++;;; to a join node; both PASS-TOKENS-ON-LEFT and PASS-TOKEN-ON-RIGHT connect
++;;; two join nodes.
++
++(defun pass-token (node token)
++  (accept-token node token))
++
++(defun pass-tokens-on-left (node2 tokens)
++  (accept-tokens-from-left node2 tokens))
++
++(defun pass-token-on-right (node2 token)
++  (accept-token-from-right node2 token))
++
++(defun enter-join-network-from-left (node2 tokens)
++  (pass-tokens-on-left node2 (replicate-token tokens)))
++
++(defun enter-join-network-from-right (node2 token)
++  (pass-token-on-right node2 (replicate-token token)))
++
++;;; end connector functions
++
++(defun add-intra-pattern-nodes (patterns)
++  "The alpha memory nodes and tests"
++  (dolist (pattern patterns)
++    (cond ((test-pattern-p pattern)
++           (set-leaf-node t (parsed-pattern-address pattern)))
++          (t
++           (let ((node
++                  (make-root-node (parsed-pattern-class pattern)))
++                 (address (parsed-pattern-address pattern)))
++             (set-leaf-node node address)
++             (dolist (slot (parsed-pattern-slots pattern))
++               (when (intra-pattern-slot-p slot)
++                 (setf node
++                   (add-successor node (make-intra-pattern-node slot)
++                                  #'pass-token))
++                 (set-leaf-node node address))))))))
++
++(defun add-join-node-tests (join-node pattern)
++  (labels ((add-simple-join-node-test (slot)
++             (unless (= (binding-address (pattern-slot-slot-binding slot))
++                        (parsed-pattern-address pattern))
++               (add-slot-filter join-node slot)))
++           (add-slot-constraint-test (slot)
++             (join-node-add-test join-node
++                                 (make-predicate-test
++                                  (pattern-slot-constraint slot)
++                                  (pattern-slot-constraint-bindings slot)
++                                  (negated-slot-p slot))))
++           (add-test-pattern-predicate ()
++             (join-node-add-test join-node
++                                 (make-predicate-test
++                                  (parsed-pattern-test-forms pattern)
++                                  (parsed-pattern-test-bindings pattern))))
++           (add-generic-pattern-tests ()
++             (dolist (slot (parsed-pattern-slots pattern))
++               (cond ((simple-bound-slot-p slot)
++                      (add-simple-join-node-test slot))
++                     ((constrained-slot-p slot)
++                      (add-slot-constraint-test slot))))))
++    (if (test-pattern-p pattern)
++        (add-test-pattern-predicate)
++      (add-generic-pattern-tests))
++    join-node))
++
++(defun make-join-node (pattern)
++  (let ((join-node
++         (cond ((negated-pattern-p pattern)
++                (make-node2-not))
++               ((test-pattern-p pattern)
++                (make-node2-test))
++               ((existential-pattern-p pattern)
++                (make-node2-exists))
++               (t (make-node2)))))
++    (when (eql (parsed-pattern-address pattern) (logical-block-marker))
++      (mark-as-logical-block join-node (logical-block-marker)))
++    join-node))
++
++(defun make-left-join-connection (join-node node)
++  (if (typep node 'shared-node)
++      (add-successor node join-node #'enter-join-network-from-left)
++    (add-successor node join-node #'pass-tokens-on-left))
++  join-node)
++
++(defun make-right-join-connection (join-node node)
++  (if (typep node 'shared-node)
++      (add-successor node join-node #'enter-join-network-from-right)
++    (add-successor node join-node #'pass-token-on-right))
++  join-node)
++
++(defun add-inter-pattern-nodes (patterns)
++  "The beta memory nodes and tests"
++  (dolist (pattern (rest patterns))
++    (let ((join-node (make-join-node pattern))
++          (address (parsed-pattern-address pattern)))
++      (add-join-node-tests join-node pattern)
++      (make-left-join-connection join-node (left-input address))
++      (make-right-join-connection join-node (right-input address))
++      (set-leaf-node join-node address))))
++
++(defun add-terminal-node (rule)
++  (add-successor (leaf-node) (make-terminal-node rule) #'pass-token))
++
++;;; addresses a problem reported by Andrew Philpot on 9/6/2007
++(defun copy-node-test-table (src) src) 
++;;;;   (let ((target (make-hash-table :test #'equal)))
++;;;;     (maphash (lambda (key value)
++;;;;                (setf (gethash key target) value))
++;;;;              src)
++;;;;     target))
++
++(defun compile-rule-into-network (rete-network patterns rule)
++  (let ((*root-nodes* (rete-roots rete-network))
++        (*rule-specific-nodes* (list))
++        (*leaf-nodes* (make-array (length patterns)))
++        (*logical-block-marker* (rule-logical-marker rule))
++        (*node-test-table* (node-test-cache rete-network)))
++    (add-intra-pattern-nodes patterns)
++    (add-inter-pattern-nodes patterns)
++    (add-terminal-node rule)
++    (attach-rule-nodes rule (nreverse *rule-specific-nodes*))
++    (setf (slot-value rete-network 'root-nodes) *root-nodes*)
++    rete-network))
++
++(defun merge-rule-into-network (to-network patterns rule &key (loader nil))
++  (let ((from-network
++         (compile-rule-into-network
++          (make-rete-network :node-test-cache (copy-node-test-table (node-test-cache to-network)))
++          patterns rule)))
++    (when loader
++      (funcall loader from-network))
++    (attach-rule-nodes rule (merge-networks from-network to-network))
++    to-network))
