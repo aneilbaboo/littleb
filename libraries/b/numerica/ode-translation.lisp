@@ -1,4 +1,4 @@
-;;;; This file is part of little b.
+;;; This file is part of little b.
 
 ;;;; The MIT License
 
@@ -44,6 +44,8 @@
   :authors ("Aneil Mallavarapu"))
 
 (define-var *numerica-model* ())
+(defvar  *numerica-rate-string-max-length* 2000
+  "Part of a horrendous kludge to deal with a numerica bug")
 
 (define-function create-numerica-model (name &key 
                                         (vars (progn (format t "~&; Collecting variables...~%") (query ode-var)))
@@ -54,7 +56,7 @@
                                         (reltol nil)
                                         (gauss-value :mean) ; may be mean or random
                                         (base-units (compute-default-base-units-from-vars vars)))
-  (format t "~&Creating Numerica model...~%")
+  (format t "~&; Creating Numerica model...~%")
   (let+ ((*print-pretty*          nil)
          ((name path)             (parse-model-name name))
          (nm                      (make-numerica-model name
@@ -79,17 +81,17 @@
         (setf *numerica-model* nm)))
 
 
-(defun refresh-parameters (&optional (model *model*))
-  "Rewrites the parameters/initial conditions of a model (default is *model*) to the model's initfile."  
-  (let* ((name (numerica-model-init-script-name model))
-         (path (numerica-model-path model))
-         (init-path (numerica-file-path name path)))
-    (with-open-file (file init-path :direction :output)
-      (write-init-script file model))
-    (format t "New parameters file (~A.~A) written to ~A."
-            (pathname-name init-path)
-            (pathname-type init-path)
-            path)))
+;;;; (defun refresh-parameters (&optional (model *model*))
+;;;;   "Rewrites the parameters/initial conditions of a model (default is *model*) to the model's initfile."  
+;;;;   (let* ((name (numerica-model-init-script-name model))
+;;;;          (path (numerica-model-path model))
+;;;;          (init-path (numerica-file-path name path)))
+;;;;     (with-open-file (file init-path :direction :output)
+;;;;       (write-init-script file model))
+;;;;     (format t "New parameters file (~A.~A) written to ~A."
+;;;;             (pathname-name init-path)
+;;;;             (pathname-type init-path)
+;;;;             path)))
 
 (defun make-safe-file-name (o)
   (substitute-if-not #\_ #'alphanumericp
@@ -108,6 +110,7 @@
             (first varlist) (rest varlist))))
 
 (defun order-vars (vars)
+  (format t "~&; Sorting variables...~%")
   (sort (copy-list vars)  ; must copy the list! Allegro destructively modifies the input list (removing elements!!!)
         #'string<
         :key (lambda (o) 
@@ -121,7 +124,7 @@
   (write-model-block nm file)
   (write-simulation-block nm file)
   
-  (format t "~&The following file has been writted: ~A~%"
+  (format t "~&; The following file has been written: ~A~%"
           (enough-namestring file)))
 
 ;;;
@@ -135,10 +138,41 @@
                 ~4TConcentration = 1 : -1e-6 : 1E20~%~
                 END~%"))
 
+(defun split-rate-string-equally (str &optional (max-char-size *numerica-rate-string-max-length*))
+  (let ((term-breaks (sort (nconc (positions #\+ str)
+                                  (positions #\- str))
+                           #'<)))
+    (loop with cur-start-pos = 0
+          for last-term-pos = 0 then term-pos
+          for term-pos in term-breaks
+          for expr-len = (- term-pos cur-start-pos)
+          when (> expr-len max-char-size)
+          collect (subseq str cur-start-pos last-term-pos) into parts
+          and do (setf cur-start-pos last-term-pos)
+          finally 
+          (setf parts (nconc parts (if (> last-term-pos cur-start-pos)
+                                       (list (subseq str cur-start-pos last-term-pos)))))
+          (return parts))))
+          
+
 (defun write-model-block (nm file)
   (let* ((ode-vars  (numerica-model-ode-vars nm))
          (allvars (query var))
          (klen-pos  nil))
+    (flet ((write-ode-fn (i rate)
+             (let ((rate-strs (split-rate-string-equally 
+                               (with-dimensionless-math (numerica-model-base-units nm)
+                                 (format nil "~S" rate)))))
+               (princ #\.)
+               (cond
+                ((> (length rate-strs) 1)
+                 (loop for rate-str in rate-strs
+                       for p = 1 then (1+ p)
+                       do (format file "~%~4Tpart~S := ~A;" p rate-str)
+                       collect p into parts
+                       finally (format file "~%~4T$c(~S) = ~{part~S~^+~};" i parts)))
+                (t (format file "~%~4T$c(~S) = ~A;" i (first rate-strs)))))))
+
     (format t "~&; Writing model block")
     (format file "MODEL ~A~%~
                   ~2TPARAMETER~%~
@@ -164,8 +198,8 @@
                 ;; write comment
                 (if (numerica-model-ode-comments-p nm)
                     (b-format file "~%~4T# ~A = ~A " v rate))
-                (with-dimensionless-math (numerica-model-base-units nm)
-                                         (format file "~%~4T$c(~S) = ~S;" i rate))))
+                ;; write eqn
+                (write-ode-fn i rate)))
 
     ;; now, we've determine the actual # kvars ...
     ;; go back and scribble at klen-pos
@@ -173,7 +207,7 @@
       (file-position file klen-pos)
       (princ (numerica-model-kvar-count nm) file)
       (file-position file end))
-    (format file "~%END~%~%")))
+    (format file "~%END~%~%"))))
 
 
 (defun compute-display-var-indicies (nm)
@@ -202,7 +236,7 @@
     ;; write the parameters:
     (write-kvars nm file)
 
-    (format t "~&; &Writing initial conditions")
+    (format t "~&; Writing initial conditions")
     ;; write the initial conditions:
     (format file "~2TINITIAL~%~
                     ~4TWITHIN m DO")
@@ -513,15 +547,8 @@ ODE-VARs, the system must decide which form to prefer.  By default normal-vars a
          (path (make-pathname :name nil :type nil 
                               :defaults p)))
     (unless (eq (first (pathname-directory path)) :absolute)
-      (warn "Output folder was not provided.  Files will be saved to ~A.~%~
-             To avoid this warning, either provide an absolute pathname to CREATE-NUMERICA-MODEL,~%~
-             or set ~S to an absolute pathname in INIT.LISP.~%~
-             E.g., something like this:
-             ~8T(setf #/b/numerica/settings:*model-output-default-pathname* ~S)~%~%"  
-            (truename path)
-            'nil
-            #+:win32 #P"C:/Numerica7/work/"
-            #+:unix #P"~/numerica/work/"))
+      (warn "Output folder was not provided.  Files will be saved to ~A.~%~%~%"  
+            (truename path)))
 
     (check-numerica-function-name name)
     (values name path)))
