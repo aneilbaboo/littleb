@@ -26,7 +26,7 @@
 ;;; Description: Defines the Quantity concept, a representation of a dimensional
 ;;;              quantity (such as 5 joules).
 
-;;; $Id: quantity.lisp,v 1.3 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: quantity.lisp,v 1.4 2008/03/27 15:14:18 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -109,7 +109,7 @@
       (with-print-context q
         (pprint-math-block (stream braces?)
           (let+ (((u m inv) (find-best-units q)))
-            (print-math m stream)            
+            (print-math (coerce m 'float) stream)
             (print-unit-product u inv t '* stream))))))))
 
 
