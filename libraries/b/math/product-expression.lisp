@@ -59,7 +59,7 @@
                                                 [product-expression new-factors] coefficient))))))
 
 
-(defmethod math-expression-to-list ((self b/math:product-expression))
+(defmethod math-expression-to-list ((self product-expression))
   (flet ((pe-to-list (pe)
            (let ((var (product-element-var pe))
                  (power (product-element-power pe)))
