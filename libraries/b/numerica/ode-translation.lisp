@@ -287,7 +287,7 @@
             ;; write any dependent vars:
             (loop for (i k) in dependent-vars
                   do (with-dimensionless-math (numerica-model-base-units nm)
-                       (format file "~%~k(~A) := ~S ;" i k.value)))))
+                       (format file "~%~6Tk(~A) := ~S ;" i k.value)))))
     (format file "~%~2TEND~%")))
   
 
