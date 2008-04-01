@@ -44,7 +44,7 @@
   :authors ("Aneil Mallavarapu"))
 
 (define-var *numerica-model* ())
-(defvar  *numerica-rate-string-max-length* 2000
+(define-var *numerica-rate-string-max-length* 2000
   "Part of a horrendous kludge to deal with a numerica bug")
 
 (define-function create-numerica-model (name &key 
@@ -55,30 +55,29 @@
                                         (abstol nil) 
                                         (reltol nil)
                                         (gauss-value :mean) ; may be mean or random
-                                        (base-units (compute-default-base-units-from-vars vars)))
-  (format t "~&; Creating Numerica model...~%")
+                                        (base-units (compute-default-base-units-from-vars vars)))    
   (let+ ((*print-pretty*          nil)
-         ((name path)             (parse-model-name name))
-         (nm                      (make-numerica-model name
-                                                       :path path
-                                                       :ode-vars vars
-                                                       :ode-comments-p ode-comments
-                                                       :reltol reltol
-                                                       :abstol abstol
-                                                       :gauss-value gauss-value
-                                                       :display-vars (order-vars (if (eq t display-vars) vars
-                                                                                   display-vars))
-                                                       :base-units  base-units))
-         (pathname                (numerica-file-path (numerica-model-name nm) path)))
-
-        (when (ok-to-overwrite overwrite pathname)
-          (unless vars
-            (warn "*** No ode vars selected ***~%"))
-          (format t "~&; Computing Numerica code...~%")
-          (with-open-file (stream pathname :direction :output :if-does-not-exist :create :if-exists :supersede)
-            (let ((*math-print-function*   (compute-numerica-math-print-function nm)))
-              (write-numerica-code nm stream))))
-        (setf *numerica-model* nm)))
+         ((name path)             (parse-model-name name)))
+    (when (ok-to-overwrite overwrite (numerica-file-path name path))
+      (format t "~&; Creating Numerica model...~%")
+      (let* ((nm                      (make-numerica-model name
+                                                           :path path
+                                                           :ode-vars vars
+                                                           :ode-comments-p ode-comments
+                                                           :reltol reltol
+                                                           :abstol abstol
+                                                           :gauss-value gauss-value
+                                                           :display-vars (order-vars (if (eq t display-vars) vars
+                                                                                       display-vars))
+                                                           :base-units  base-units))
+             (pathname                (numerica-file-path (numerica-model-name nm) path)))
+        (unless vars
+          (warn "*** No ode vars selected ***~%"))
+        (format t "~&; Computing Numerica code...~%")
+        (with-open-file (stream pathname :direction :output :if-does-not-exist :create :if-exists :supersede)
+          (let ((*math-print-function*   (compute-numerica-math-print-function nm)))
+            (write-numerica-code nm stream)))
+        (setf *numerica-model* nm)))))
 
 
 ;;;; (defun refresh-parameters (&optional (model *model*))
@@ -207,8 +206,8 @@
           (format file "~%~2TEQUATION~%")
           (loop for eqn in eqns
                 for e = 1 then (1+ e)
-                do (format file "~%~4T$c(~A) = ~{part~A~^+~};"
-                           e eqn)))
+                do (format file "~%~4T$c(~A) = ~:[0~;~{part~A~^+~}~];"
+                           e eqn eqn)))
 
     ;; now, we've determine the actual # kvars ...
     ;; go back and scribble at klen-pos
