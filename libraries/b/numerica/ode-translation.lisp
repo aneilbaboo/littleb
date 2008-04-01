@@ -49,7 +49,7 @@
 
 (define-function create-numerica-model (name &key 
                                         (vars (progn (format t "~&; Collecting variables...~%") (query ode-var)))
-                                        (ode-comments t)
+                                        (ode-comments nil)
                                         (display-vars t)
                                         (overwrite :query)
                                         (abstol nil) 
@@ -156,8 +156,9 @@
           
 (defun write-model-block (nm file)
   (let* ((ode-vars  (numerica-model-ode-vars nm))
-         (allvars (query var))
-         (klen-pos  nil))
+         (allvars   (query var))
+         (klen-pos  nil)
+         (npart     0))
     (labels ((rate-str-without-outer-parens (rate)
                (let ((rate-str (format nil "~S" rate)))
                  (with-dimensionless-math (numerica-model-base-units nm)
@@ -165,17 +166,14 @@
                        (subseq rate-str
                                1 (1- (length rate-str)))
                      rate-str))))
-             (write-ode-fn (i rate)
+             (compute-and-write-parts (rate)
                (let ((rate-strs (split-rate-string-equally (rate-str-without-outer-parens rate))))                  
                  (princ #\.)
-                 (cond
-                  ((> (length rate-strs) 1)
-                   (loop for rate-str in rate-strs
-                         for p = 1 then (1+ p)
-                         do (format file "~%~4Tpart~S := ~A;" p rate-str)
-                         collect p into parts
-                         finally (format file "~%~4T$c(~S) = ~{part~S~^+~};" i parts)))
-                  (t (format file "~%~4T$c(~S) = ~A;" i (first rate-strs)))))))
+                 (loop for rate-str in rate-strs
+                       for p = (incf npart)
+                       collect p into parts
+                       do (format file "~%~4Tpart~S := ~A;" p rate-str)
+                       finally (return parts)))))
 
     (format t "~&; Writing model block")
     (format file "MODEL ~A~%~
@@ -189,21 +187,28 @@
     (format file "~A) OF REAL~%~
                   ~2TVARIABLE~%~
                     ~4Tc as ARRAY(~S) of Concentration~%~
-                  ~2TEQUATION"
+                  ~2TINTERMEDIATE~%"
             (map 'string (constantly #\space) (format nil "~A" (length allvars)))
             (length ode-vars))
 
     ;; write the rate fns:
     (loop for v in ode-vars
-          for i = 1 then (1+ i)
-          for rate = (compute-ode-expression (nth (1- i) (numerica-model-ode-rates nm)) nm)
+          for i =  0 then (1+ i)
+          for rate = (compute-ode-expression (nth i (numerica-model-ode-rates nm)) nm)
           do  (with-print-context t 
                 (princ #\.)
                 ;; write comment
                 (if (numerica-model-ode-comments-p nm)
-                    (b-format file "~%~4T# ~A = ~A " v rate))
-                ;; write eqn
-                (write-ode-fn i rate)))
+                    (b-format file "~%~4T# ~A = ~A " v rate)))
+          collect
+                ;; write parts
+                (compute-and-write-parts rate) into eqns
+          finally 
+          (format file "~%~2TEQUATION~%")
+          (loop for eqn in eqns
+                for e = 1 then (1+ e)
+                do (format file "~%~4T$c(~A) = ~{part~A~^+~};"
+                           e eqn)))
 
     ;; now, we've determine the actual # kvars ...
     ;; go back and scribble at klen-pos
