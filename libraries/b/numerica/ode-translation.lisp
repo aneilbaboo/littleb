@@ -73,7 +73,6 @@
              (pathname                (numerica-file-path (numerica-model-name nm) path)))
         (unless vars
           (warn "*** No ode vars selected ***~%"))
-        (format t "~&; Computing Numerica code...~%")
         (with-open-file (stream pathname :direction :output :if-does-not-exist :create :if-exists :supersede)
           (let ((*math-print-function*   (compute-numerica-math-print-function nm)))
             (write-numerica-code nm stream)))
@@ -156,7 +155,8 @@
 (defun write-model-block (nm file)
   (let* ((ode-vars  (numerica-model-ode-vars nm))
          (allvars   (query var))
-         (klen-pos  nil)
+         (klen-pos  nil) ; file position of length of k array
+         (part-pos  nil) ; file position of length of part array 
          (npart     0))
     (labels ((rate-str-without-outer-parens (rate)
                (let ((rate-str (format nil "~S" rate)))
@@ -165,14 +165,19 @@
                        (subseq rate-str
                                1 (1- (length rate-str)))
                      rate-str))))
-             (compute-and-write-parts (rate)
+             (write-functions (i rate)
                (let ((rate-strs (split-rate-string-equally (rate-str-without-outer-parens rate))))                  
                  (princ #\.)
                  (loop for rate-str in rate-strs
                        for p = (incf npart)
                        collect p into parts
-                       do (format file "~%~4Tpart~S := ~A;" p rate-str)
-                       finally (return parts)))))
+                       do (format file "~%~4Tpart(~S) = ~A;" p rate-str)
+                       finally (format file "~%~4T$c(~A) = ~:[0~;~{part(~A)~^+~}~];" (1+ i) parts parts))))
+             (scribble (obj pos)
+               (let ((end (file-position file)))
+                 (file-position file pos)
+                 (prin1 obj file)
+                 (file-position file end))))
 
     (format t "~&; Writing model block")
     (format file "MODEL ~A~%~
@@ -186,10 +191,14 @@
     (format file "~A) OF REAL~%~
                   ~2TVARIABLE~%~
                     ~4Tc as ARRAY(~S) of Concentration~%~
-                  ~2TINTERMEDIATE~%"
+                    ~4Tpart as Array("
             (map 'string (constantly #\space) (format nil "~A" (length allvars)))
             (length ode-vars))
 
+    (setf part-pos (file-position file))
+    (format file "~A) of Concentration~%~
+                  ~2TEQUATION"
+            (map 'string (constantly #\space) (format nil "~A" (length allvars))))
     ;; write the rate fns:
     (loop for v in ode-vars
           for i =  0 then (1+ i)
@@ -199,22 +208,14 @@
                 ;; write comment
                 (if (numerica-model-ode-comments-p nm)
                     (b-format file "~%~4T# ~A = ~A " v rate)))
-          collect
-                ;; write parts
-                (compute-and-write-parts rate) into eqns
-          finally 
-          (format file "~%~2TEQUATION~%")
-          (loop for eqn in eqns
-                for e = 1 then (1+ e)
-                do (format file "~%~4T$c(~A) = ~:[0~;~{part~A~^+~}~];"
-                           e eqn eqn)))
+          do
+                ;; write functions
+                (write-functions i rate))
 
     ;; now, we've determine the actual # kvars ...
     ;; go back and scribble at klen-pos
-    (let ((end (file-position file)))
-      (file-position file klen-pos)
-      (princ (numerica-model-kvar-count nm) file)
-      (file-position file end))
+    (scribble (numerica-model-kvar-count nm) klen-pos)
+    (scribble npart part-pos)
     (format file "~%END~%~%"))))
 
 
@@ -272,7 +273,7 @@
           for i being the hash-values of kvars-table
           unless (eq kvar :last-index)
           do (setf (svref kvars (1- i)) kvar))
-    (format t "~&; &Writing parameters")
+    (format t "~&; Writing parameters")
     (format file "~2TWITHIN m DO")
     (with-print-context t
       (loop for k across kvars 
