@@ -136,7 +136,7 @@
                 ~4TConcentration = 1 : -1e-6 : 1E20~%~
                 END~%"))
 
-(defun split-rate-string-equally (str &optional (max-char-size *numerica-rate-string-max-length*))
+(defun split-rate-string-equally (str max-str-len)
   (let ((term-breaks (sort (nconc (positions #\+ str)
                                   (positions #\- str))
                            #'<)))
@@ -144,7 +144,7 @@
           for last-term-pos = 0 then term-pos
           for term-pos in term-breaks
           for expr-len = (- term-pos cur-start-pos)
-          when (> expr-len max-char-size)
+          when (> expr-len max-str-len)
           collect (subseq str cur-start-pos last-term-pos) into parts
           and do (setf cur-start-pos last-term-pos)
           finally 
@@ -158,6 +158,7 @@
          (klen-pos  nil) ; file position of length of k array
          (part-pos  nil) ; file position of length of part array 
          (npart     0))
+
     (labels ((rate-str-without-outer-parens (rate)
                (let ((rate-str (format nil "~S" rate)))
                  (with-dimensionless-math (numerica-model-base-units nm)
@@ -165,14 +166,21 @@
                        (subseq rate-str
                                1 (1- (length rate-str)))
                      rate-str))))
+
              (write-functions (i rate)
-               (let ((rate-strs (split-rate-string-equally (rate-str-without-outer-parens rate))))                  
                  (princ #\.)
-                 (loop for rate-str in rate-strs
-                       for p = (incf npart)
-                       collect p into parts
-                       do (format file "~%~4Tpart(~S) = ~A;" p rate-str)
-                       finally (format file "~%~4T$c(~A) = ~:[0~;~{part(~A)~^+~}~];" (1+ i) parts parts))))
+                 (cond 
+                  (*numerica-rate-string-max-length*
+                   (loop with rate-strs = (split-rate-string-equally (rate-str-without-outer-parens rate)
+                                                                     *numerica-rate-string-max-length*)
+                         for rate-str in rate-strs
+                         for p = (incf npart)
+                         collect p into parts
+                         do (format file "~%~4Tpart(~S) = ~A;" p rate-str)
+                         finally (format file "~%~4T$c(~A) = ~:[0~;~{part(~A)~^+~}~];" (1+ i) parts parts)))
+                  (t (format file "~%~T$c(~A) = ~A;" (1+ i) 
+                             (rate-str-without-outer-parens rate)))))
+                  
              (scribble (obj pos)
                (let ((end (file-position file)))
                  (file-position file pos)
