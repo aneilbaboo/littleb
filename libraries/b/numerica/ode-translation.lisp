@@ -79,8 +79,8 @@
         (setf *numerica-model* nm)))))
 
 
-;;;; (defun refresh-parameters (&optional (model *model*))
-;;;;   "Rewrites the parameters/initial conditions of a model (default is *model*) to the model's initfile."  
+;;;; (defun refresh-parameters (&optional (model *numerica-model*))
+;;;;   "Rewrites the parameters/initial conditions of a model (default is *numerica-model*) to the model's initfile."  
 ;;;;   (let* ((name (numerica-model-init-script-name model))
 ;;;;          (path (numerica-model-path model))
 ;;;;          (init-path (numerica-file-path name path)))
@@ -99,7 +99,7 @@
   (if (streamp path) path  ; a little hack to allow redirection of output from files to a single stream
     (normalize-pathname (merge-pathnames (mkstr name ".jac") path))))
 
-(defun compute-indicies (varlist &optional (model *model*))
+(defun compute-indicies (varlist &optional (model *numerica-model*))
   (assert model (model)
     "No current model.  Please provide a model name.")
   (with-print-context t
@@ -388,8 +388,6 @@
                           (path nil)
                           (ode-vars (query [ode-var ?])) 
                           (base-units nil) 
-                          (abstol nil)
-                          (reltol nil)
                           (gauss-value :mean) 
                           (display-vars nil))
   (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
