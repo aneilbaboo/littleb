@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.34 2008/04/24 16:14:55 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.35 2008/04/24 17:03:12 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -528,11 +528,12 @@
                    ;; in future, maybe do a check here to ensure that all
                    ;; connector sites can support this many bonds
                    (maplist #'identity bindings))) into especs
-        finally (return 
-                 (gtools:make-labelled-graph (nconc especs (gethash '|monomer-edges| binding-table))
-                                             site-labels
-                                             nil
-                                             '%make-complex-graph))))
+        finally (return (gtools:graph-delete-verticies 
+                         (gtools:make-labelled-graph (nconc especs (gethash '|monomer-edges| binding-table))
+                                                     site-labels
+                                                     nil
+                                                     '%make-complex-graph)
+                         (gethash '|marked-for-delete| binding-table)))))
 
 (defvar *var-counter*
   "A counter for automatically generated bond vars") 
@@ -818,7 +819,7 @@
   (multiple-value-bind (labels offset2) 
       (parse-special-monomer-description monomer bindings binding-table offset)
     (loop for o from offset below offset2
-          do (push o (gethash nil binding-table)))
+          do (push o (gethash '|marked-for-delete| binding-table)))
     (values labels offset2)))
           
 (defun normalize-test (x &optional (logical-op 'and))
