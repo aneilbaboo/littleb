@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.13 2008/01/17 23:56:25 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.14 2008/04/24 21:03:23 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -40,6 +40,11 @@
 
 
 (defprop reaction-type.pattern-map (:= ()))
+
+(defield complex-reaction-type.lhs-patterns ()
+  (mapcar (lambda (o)
+            [complex-pattern o])
+          (nth-value 5 (compute-complex-reaction-type-changes object))))
 
 (defun compute-graph-inference-rule-parts (cr)   
   "Where LHS and RHS are sum-expressions or lists of COMPLEX-PATTERNS:

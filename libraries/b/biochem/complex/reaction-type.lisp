@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.21 2008/01/24 19:44:34 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.22 2008/04/24 21:03:23 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -389,14 +389,14 @@
        (mapcar #'map-named-vertex->graph-index lost-bonds) ;; lost bonds
        (mapcar (lambda (lchange)                           ;; label changes
                  `(,(named-vertex->graph-index (first lchange)) ,@(rest lchange)))
-               label-changes)
-       (kept-verticies)
-       (lost-verticies)
-       deref-lhs-patterns
-       deref-rhs-patterns
-       deref-rhs-new
-       lhs-rxn-vars
-       (mapcar #'named-localization->graph-index-localization rhs-monomer-locs)))))
+               label-changes) ; label-changes
+       (kept-verticies)       ; keep verticies
+       (lost-verticies)       ; lose verticies
+       deref-lhs-patterns     ; lhs-patterns
+       deref-rhs-patterns     ; rhs-patterns
+       deref-rhs-new          ; new pattern
+       lhs-rxn-vars           ; complex-patterns
+       (mapcar #'named-localization->graph-index-localization rhs-monomer-locs))))) ; localizations
 
 (defun compute-rhs-graphs (input-graphs isomorphisms new-bonds lost-bonds relabels 
                                         keep lose 
@@ -473,7 +473,7 @@
                                                   :edges (mapcar #'bond new-bonds)))
              ;; and return the distinct complexes resulting from this operation:
              ;; keeping only the RHS verticies: 
-             (disconnected-graphs (gtools:unconnected-subgraphs rhs-super-graph :containing (mapcar #'svertex keep))))
+             (disconnected-graphs (gtools:unconnected-subgraphs rhs-super-graph :verticies (mapcar #'svertex keep))))
         (if lose (mapcar #'fix-bond-sites disconnected-graphs)
           disconnected-graphs)))))
 
