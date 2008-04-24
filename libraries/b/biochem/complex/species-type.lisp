@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.36 2008/04/24 17:04:22 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.37 2008/04/24 17:18:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -940,7 +940,7 @@
      ((monomer-form-ref-p first)
        `(make-complex ',(mapcar #'object-form-body args))))))
 
-(defun make-complex (cdescr)  
+(defun make-complex (cdescr &optional patternp)  
   "Given a list of the form ((D1 1a 1b 1c) (D2 2a 2b 2c)...) where Dn are domain symbols and nx are bindings, constructs a complex"
   (cond
    (*reference-labels*    [reference-pattern 
@@ -962,6 +962,7 @@
   (and (consp x)
        (let ((head (first x)))
          (or (fld-form-p head)
+             (null head)
              (some (lambda (x) (member x '(* **))) x)))))
 
 (defun firsthash (keys hash-table &optional default)
