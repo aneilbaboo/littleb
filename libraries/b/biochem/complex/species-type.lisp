@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.33 2008/03/07 23:30:04 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.34 2008/04/24 16:14:55 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -589,7 +589,7 @@
                                  offset
                                  patternp)
   "Given a description of the form (monomer b1 b2 b3...)
-   RETURNS: SITE-LABELS, BONDS, OFFSET, PATTERNP
+   RETURNS: (MONOMER SITE/VALUE-LABELS), PATTERN-P
    Where SITE- and VALUE-LABELS are labels for the graph,
          BINDING-TABLE is a hash-table mapping binding vars to lists pairing sites offsets
                      with either other site offsets or values,
@@ -603,11 +603,14 @@
     (cond
      ;; wildcard monomer
      ((wildcard-monomer-symbol-p monomer)
-      (parse-wildcard-monomer-description 
+      (parse-special-monomer-description 
        head
        bindings
        binding-table
        offset))
+
+     ((null monomer)
+      (parse-nil-monomer-description head bindings binding-table offset))
 
      ;; not a wildcard monomer
      ((symbolp monomer)
@@ -767,9 +770,9 @@
 
 
 ;;;
-;;; PARSE-WILDCARD-MONOMER-DESCRIPTION for [* ...] monomers
+;;; PARSE-SPECIAL-MONOMER-DESCRIPTION for [*/NIL ...] monomers
 ;;;
-(defun parse-wildcard-monomer-description (monomer bindings binding-table offset)
+(defun parse-special-monomer-description (monomer bindings binding-table offset)
   (flet ((make-label (i &optional site-test (value-test nil value-test-p))
              (let ((sindex      (- i offset 1))
                    (value-test  (normalize-test value-test 'or)))
@@ -802,7 +805,7 @@
          ;; [* 1] - a wildcard pattern with a bound site, no labels specified
          else if (user-bond-label-p binding)
               do (record-bond-binding i binding binding-table)
-              and collect (make-label i '*) into site-labels
+              and collect (make-label i monomer) into site-labels
   
          ;; [* label-test] - a wildcard pattern with a label-test only (cnxns unspecified)
          else collect (make-label i binding) into site-labels
@@ -810,6 +813,14 @@
          finally (return (values (list* monomer site-labels)
                                  (1+ i))))))
 
+
+(defun parse-nil-monomer-description (monomer bindings binding-table offset)
+  (multiple-value-bind (labels offset2) 
+      (parse-special-monomer-description monomer bindings binding-table offset)
+    (loop for o from offset below offset2
+          do (push o (gethash nil binding-table)))
+    (values labels offset2)))
+          
 (defun normalize-test (x &optional (logical-op 'and))
   (labels ((keywordify-logical-test (x)
              (list* (first x) 
