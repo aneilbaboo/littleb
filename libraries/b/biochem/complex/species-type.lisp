@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.35 2008/04/24 17:03:12 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.36 2008/04/24 17:04:22 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -92,6 +92,7 @@
     (symbol  (find x .sites :key #'site-info-name))))
 
 (defgeneric monomer-lclass (m)
+  (:method ((m (eql '*))) location)
   (:method ((m symbol)) (|MONOMER.LOCATION-CLASS| (eval m)))
   (:method ((m monomer)) (|MONOMER.LOCATION-CLASS| m))
   (:method ((m cons)) (|MONOMER.LOCATION-CLASS| (eval (fld-form-object m)))))
