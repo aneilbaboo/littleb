@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.38 2008/05/01 16:14:56 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.39 2008/05/01 19:22:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -906,10 +906,11 @@
                 (t
                  (push newreflab (gethash nil *reference-labels*))
                  newreflab)))))
-    (let ((id (cons dname (incf (gethash dname *reference-labels* 0)))))
-      (or (gethash id *reference-labels*)
-          (setf (gethash id *reference-labels*)
-                (gen-ref-label))))))
+    (when dname ; if dname is NIL, then don't look up ref label
+      (let ((id (cons dname (incf (gethash dname *reference-labels* 0)))))
+        (or (gethash id *reference-labels*)
+            (setf (gethash id *reference-labels*)
+                  (gen-ref-label)))))))
 
 (defmacro in-complex-pattern-mode (&body body)
   `(let ((*reference-labels* (make-hash-table :test #'equal)))
