@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.37 2008/04/24 17:18:30 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.38 2008/05/01 16:14:56 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -93,9 +93,10 @@
 
 (defgeneric monomer-lclass (m)
   (:method ((m (eql '*))) location)
+  (:method ((m null)) location)
   (:method ((m symbol)) (|MONOMER.LOCATION-CLASS| (eval m)))
   (:method ((m monomer)) (|MONOMER.LOCATION-CLASS| m))
-  (:method ((m cons)) (|MONOMER.LOCATION-CLASS| (eval (fld-form-object m)))))
+  (:method ((m cons)) (monomer-lclass (eval (fld-form-object m)))))
 
 (defgeneric monomer-sites (m)
   (:method ((m symbol)) (|MONOMER.SITES| (eval m)))
@@ -325,7 +326,8 @@
         when (funcall monomer-test lab)
         do (let* ((m-lclass (monomer-lclass lab))
                   (m-dim    (location-class-dimensionality m-lclass)))
-             (when (< m-dim lclass-dim)
+             (when (and (not (eq m-lclass location))
+                        (< m-dim lclass-dim))
                (setf lclass-dim m-dim
                      lclass m-lclass)))
         finally (return lclass)))
