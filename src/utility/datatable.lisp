@@ -131,7 +131,7 @@
              (unless (and (listp args) 
                           (eq (length args) (length params)))
                (error "WITH-DATA-TABLE arguments do not match parameters. ~
-                       Expecting valuesfixed data for ~S, ~
+                       Expecting values for ~S, ~
                        but received ~S." params args))
              args)
             (t (list args)))))
