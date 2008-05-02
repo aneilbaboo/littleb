@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.39 2008/05/01 19:22:30 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.40 2008/05/02 22:05:29 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -96,7 +96,7 @@
   (:method ((m null)) location)
   (:method ((m symbol)) (|MONOMER.LOCATION-CLASS| (eval m)))
   (:method ((m monomer)) (|MONOMER.LOCATION-CLASS| m))
-  (:method ((m cons)) (monomer-lclass (eval (fld-form-object m)))))
+  (:method ((m cons)) (monomer-lclass (fld-form-object m))))
 
 (defgeneric monomer-sites (m)
   (:method ((m symbol)) (|MONOMER.SITES| (eval m)))
@@ -266,20 +266,21 @@
 
 (defmethod gtools:graph-type-label-test-predicate ((type (eql 'complex-graph)))
   (labels ((site-test (test y)
-             (etypecase test
-               (null t)
-               (atom (typecase y
-                       (atom (eql test y))
-                       (list (find test y :test #'equal))))
-               (cons
-                (let ((test-labs (rest test)))
-                  (ecase (first test)
-                    (AND   (null (set-difference test-labs y
-                                                 :test #'logical-test)))
-                    (OR    (some (lambda (lab)
-                                   (member lab test-labs))
-                                 y :test #'equal))
-                    (NOT   (not (site-test `(or ,@test-labs) y))))))))
+             (or (eq test '*)
+                 (etypecase test
+                   (null t)
+                   (atom (typecase y
+                           (atom (eql test y))
+                           (list (find test y :test #'equal))))
+                   (cons
+                    (let ((test-labs (rest test)))
+                      (ecase (first test)
+                        (AND   (null (set-difference test-labs y
+                                                     :test #'logical-test)))
+                        (OR    (some (lambda (lab)
+                                       (member lab test-labs))
+                                     y :test #'equal))
+                        (NOT   (not (site-test `(or ,@test-labs) y)))))))))
 
            (value-test (test value)
              (typecase test
@@ -297,11 +298,12 @@
            (complex-graph-label-test-predicate (test glabel)
              (cond
                ((symbolp test)
-                (or (and (eq test '?) (symbolp glabel))
+                (or (and (wildcard-monomer-symbol-p test) (symbolp glabel))
                     (eq test glabel)))
 
                ((wildcard-label-p test)
-                (wildcard-test test glabel))
+                (if (site-label-p glabel)
+                    (wildcard-test test glabel)))
 
                ((site-label-p test)
                 (and (site-label-p glabel)
@@ -475,7 +477,7 @@
 
 (declaim (inline wildcard-label-monomer wildcard-label-index
                  wildcard-label-site wildcard-label-state wildcard-label-p))
-(defun wildcard-label-p (x) (and (consp x) (eq '? (second x))))
+(defun wildcard-label-p (x) (and (consp x) (eq '* (second x))))
 (defun wildcard-label-monomer (x) (first x))
 (defun wildcard-label-index (x) (second x))
 (defun wildcard-label-state (x) (fourth x))
@@ -785,8 +787,8 @@
                       (if value-test-p (list value-test))))))
                       
     (record-monomer offset (length bindings) binding-table)
-    (loop for binding in bindings
-          for i = (1+ offset) then (1+ i)
+    (loop for i = (1+ offset) then (1+ i)
+          for binding in bindings
           if (fld-form-p binding)
             ;; [* TAG-TEST.[V1 V2...]] --- a value binding with label specification
             if (square-bracket-fld-form-p binding)
@@ -815,7 +817,7 @@
          else collect (make-label i binding) into site-labels
               
          finally (return (values (list* monomer site-labels)
-                                 (1+ i))))))
+                                 i)))))
 
 
 (defun parse-nil-monomer-description (monomer bindings binding-table offset)
@@ -834,7 +836,8 @@
                                 (keywordify elt)))
                             (rest x)))))
     (cond
-     ((wildcard-binding-p x) x)
+     ((or (wildcard-binding-p x) (null x)) x)
+     ((fld-form-p x) (fld-form-object x))
      ((consp x)
       (keywordify-logical-test 
        (if (logical-label-p (first x))
