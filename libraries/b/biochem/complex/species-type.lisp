@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.40 2008/05/02 22:05:29 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.41 2008/05/03 17:06:23 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -367,7 +367,7 @@
                               (etypecase id
                                 (complex-graph  id)
                                 (cons           (make-complex-graph id nil)))))))
-  ;(check-complex-species-type-graph-is-valid .id)
+;  (check-complex-species-type-graph-is-valid .id)
   =>
  (complex-species-graph-size-check object) 
  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
@@ -382,6 +382,9 @@
   (loop for i from 0 below (gtools:graph-vertex-count g)
         for lab = (gtools:graph-vertex-label g i)
         for outputs = (gtools:graph-vertex-outputs g i)
+        if (and (symbolp lab)
+                (not (monomer-symbol-p lab)))
+        do (b-error "Invalid complex-species-type graph ~S - invalid label:" g lab)
         if (site-label-p lab)
         do (cond 
             ((site-label-has-state-p lab)
@@ -451,7 +454,10 @@
 
 (defun complex-graph-label-to-site-labels (glabel)
   "Given a GLABEL, e.g., (0 KSR), returns the labels of that site."
-  (site-info-tags (monomer-site-info (second glabel) (first glabel))))
+  (let ((sindex (site-label-sindex glabel))
+        (monomer (site-label-monomer glabel)))
+    (if (wildcard-monomer-symbol-p monomer) (third glabel)
+      (site-info-tags (monomer-site-info (second glabel) (first glabel))))))
 
 ;;;
 ;;; LOGICAL-LABEL:
