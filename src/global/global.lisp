@@ -98,7 +98,7 @@
 ;;;
 ;;; (test-set-global) => error undefined function (SETF B.GLOBAL::B*G)
 
-;;; $Id: global.lisp,v 1.2 2007/12/12 15:06:07 amallavarapu Exp $
+;;; $Id: global.lisp,v 1.3 2008/05/06 20:33:36 amallavarapu Exp $
 
 (in-package b)
 
@@ -427,7 +427,7 @@ Check may be NIL    body is always executed
           +global-package+))
 
 (defun make-global-ctor-symbol (s)
-  (intern (mkstr  (make-global-place-name s) "-CTOR") +global-package+))
+  (intern (mkstr (make-global-place-name s) "-CTOR") +global-package+))
 
 (defun place-symbol-p (s)
   (and (symbolp s)
@@ -445,8 +445,9 @@ Check may be NIL    body is always executed
 (defun initialize-global-value ()
   "Clears the global-value package"
   (do-symbols (s 'global-value)
-    (portable:destroy-symbol s :undefinep t)
-    (unintern s 'global-value)))
+    (unless (eq (string<= "B." (symbol-name s)) 2)
+      (portable:destroy-symbol s :undefinep t)
+      (unintern s 'global-value))))
 
 ;;;; ;;;
 ;;;; ;;; FOR CLEARING GLOBAL DEFINITIONS:
