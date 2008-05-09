@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.13 2008/01/17 01:55:44 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.14 2008/05/09 18:21:39 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -664,8 +664,7 @@ Only values which pass LIST-TEST are included in the list (default is to include
       symbol)))
 
 (defun xor (a1 a2)
-  (and (or a1 a2)
-       (not (and a1 a2))))
+  (not (eq (if a1 t) (if a2 t))))
 
 ;(defun external (&optional (package *package*) (type :symbols))
 ;  "Retrieves all external symbols from package.  Type may be :symbols or :functions."
@@ -1008,6 +1007,38 @@ destructures the body, binding variables to the method qualifiers, the argument 
     
    (t new)))
 
+(defun delete-nth (n list)
+  (if (zerop n) (cdr list)
+    (let ((prior-cons (nthcdr (1- n) list)))
+      (setf (cdr prior-cons) (cddr prior-cons))
+      list)))
+  
+(defun remove-nth (n list)
+  (delete-nth n (copy-list list)))
+        
+(defun nexclusion (list1 list2 &key (test 'eql))
+  "Returns the elements of list1 not present in list2, and the elements of list2 not present in list1.  list1 and list2 may be modified."
+  (loop with last-iter = nil
+        with list-head = list1
+        for iter on list1
+        for pos = (position (car iter) list2 :test test)
+        while list2
+        if pos
+        do (setf list2 (delete-nth pos list2)
+                 iter  (cdr iter))
+           (if last-iter (setf (cdr last-iter) iter)
+             (setf list-head (cdr list-head)))
+        else do (setf last-iter iter)
+        finally return (values list-head list2)))
+
+(defun exclusion (list1 list2 &key (test 'eql))
+  "Returns the elements of list1 not present in list2, and the elements of list2 not present in list1."
+  (nexclusion (copy-list list1) (copy-list list2) :test test))
+
+(defun multiset-same-p (list1 list2 &key (test 'eql))
+  "Tests whether 2 lists have the same elements"
+  (multiple-value-bind (e1 e2) (exclusion list1 list2 :test test)
+    (not (or e1 e2))))
 
 (defmacro timed-dolist ((var list &key 
                              (elapsed-time    '#:elapsed-time)
@@ -1233,3 +1264,4 @@ to the function returned by testform if INVERT is nil.  Otherwise, KEYFORM is th
   #+sbcl (sb-ext:quit :unix-code (typecase code (number code) (null 0) (t 1)))
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'quit code)))
+

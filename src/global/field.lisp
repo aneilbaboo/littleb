@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.11 2008/02/12 14:26:17 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.12 2008/05/09 18:21:39 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -532,6 +532,9 @@
       `(method ,name ,@quals ,types))))
                        
 
+(defmethod fld (o (field (eql :coerce)) &rest args)
+  (destructuring-bind (result-type) args
+    (coerce o result-type)))
 ;;;
 ;;; Default bracket fields - for accessing elements of sequences
 ;;;
@@ -555,6 +558,10 @@
   (destructuring-bind (index) indexes
     (setf (svref o index) value)))
 
+
+(defmethod fld ((o list) (field (eql :subsetp)) &rest args)
+  (destructuring-bind (list2 &rest subsetp-args &key key (test (quote eql) testp) (test-not nil notp)) args
+    (apply #'subsetp o list2 subsetp-args)))
 
 (defmethod fld ((o list) (field (eql '*bracket*)) &rest indexes)
   "Accesses the 0-based element of a list"
@@ -600,7 +607,12 @@
      ,@(mapcar (lambda (flddef)
                  `(def-lisp-field ,type ,@(ensure-list flddef)))
                flddefs)))
-                         
+                 
+(defmethod fld ((o sequence) (field (eql :from-end)) &rest args)
+  (destructuring-bind (n) args
+    (elt o (- (length o) 1 n))))
+
+      
 (def-lisp-fields sequence
                  length
                  fill
@@ -639,7 +651,14 @@
                  remove-duplicates 
                  delete-duplicates)
 
+(defmethod fld ((list1 sequence) (field (eql :multiset-same-p)) &rest args)
+  (destructuring-bind (list2 &key (test 'eql)) args
+    (multiset-same-p (coerce l1 'list) (coerce l2 'list) :test test)))
 
+(def-lisp-fields list
+                 multiset-same-p 
+                 exclusion
+                 nexclusion)
 ;;;; (port:define-dspec-class defield () "")
 ;;;; (port:define-dspec-form-parser defield (fe &body method-body)
 ;;;;   (if (fld-setf-form-p fe) `(defield (setf ,(fld-form-to-symbol (second fe))))

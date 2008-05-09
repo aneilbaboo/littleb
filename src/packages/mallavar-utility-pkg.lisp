@@ -25,7 +25,7 @@
 ;;; File: mallavar-utility-pkg.lisp
 ;;; Description: 
 
-;;; $Id: mallavar-utility-pkg.lisp,v 1.6 2008/01/17 01:55:43 amallavarapu Exp $
+;;; $Id: mallavar-utility-pkg.lisp,v 1.7 2008/05/09 18:21:39 amallavarapu Exp $
 
 ;;;
 
@@ -35,6 +35,7 @@
   (:export delete-package-tree #:split #:splice #:insert 
    #:insert-after-if #:ninsert-after-if #:insert-after #:ninsert-after   
    #:find-and-replace #:find-and-replace-all #:assoc-to-list #:assoc-val
+   #:delete-nth #:remove-nth #:nexclusion #:exclusion #:multiset-same-p
    #:copy-hash-table  
    ensure-cons #:ensure-list #:find-duplicates 
    #:it ; must export IT because some lisps (e.g., lispworks mac 5) do macroexpansion at function run-time (not define-time)

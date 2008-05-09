@@ -25,7 +25,7 @@
 ;;; File: rule-patterns
 ;;; Description: Computes the LISA patterns required to support a little b rule.
 
-;;; $Id: rule-patterns.lisp,v 1.7 2008/01/28 23:59:58 amallavarapu Exp $
+;;; $Id: rule-patterns.lisp,v 1.8 2008/05/09 18:21:39 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -228,8 +228,8 @@
 
 ;;; class-tracking
 (defun rule-parse-add-class (rule-parse class)
-  (when (member class (list property concept))
-    (b-error "Cannot pattern match against ~S." class))
+ ; (when (member class (list property concept))
+  ;  (b-error "Cannot pattern match against ~S." class))
   (pushnew class (rule-parse-classes rule-parse)))
 
 ;;;

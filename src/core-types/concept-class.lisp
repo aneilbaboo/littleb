@@ -25,7 +25,7 @@
 ;;; File: concept-class
 ;;; Description: Defines the meta-class CONCEPT-CLASS. 
 
-;;; $Id: concept-class.lisp,v 1.5 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: concept-class.lisp,v 1.6 2008/05/09 18:21:39 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -74,6 +74,10 @@
                        :reader cclass-base-property)))
 
 
+(allowing-redefinitions
+(defmethod documentation (x (doc-type (eql :ctor-help))) ())
+(defmethod documentation (x (doc-type (eql :fields-help))) ())
+(defmethod documentation (x (doc-type cons)) ()))
 ;;;
 ;;; documentation methods used by help system
 ;;;
