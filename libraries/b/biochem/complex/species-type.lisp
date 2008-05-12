@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.41 2008/05/03 17:06:23 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.42 2008/05/12 22:41:59 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -264,55 +264,68 @@
                           ;    (complex-graph-label< (first x) (first y)))))))))
     #'complex-graph-label<))
 
-(defmethod gtools:graph-type-label-test-predicate ((type (eql 'complex-graph)))
-  (labels ((site-test (test y)
+(defmethod gtools:graph-label-test-predicate ((s complex-graph))
+  (labels ((test-state (test state)
              (or (eq test '*)
-                 (etypecase test
-                   (null t)
-                   (atom (typecase y
-                           (atom (eql test y))
-                           (list (find test y :test #'equal))))
-                   (cons
-                    (let ((test-labs (rest test)))
-                      (ecase (first test)
-                        (AND   (null (set-difference test-labs y
-                                                     :test #'logical-test)))
-                        (OR    (some (lambda (lab)
-                                       (member lab test-labs))
-                                     y :test #'equal))
-                        (NOT   (not (site-test `(or ,@test-labs) y)))))))))
-
-           (value-test (test value)
-             (typecase test
-               ((eql *) t)
-               (atom    (eql test value))
-               (cons    (find value test :test #'eql))))
-
-           (wildcard-test (test glabel)
-             (let ((site-test (wildcard-label-tags test))
-                   (value-test (wildcard-label-state test)))
-               (and (site-test site-test 
-                               (complex-graph-label-to-site-labels glabel))
-                    (value-test value-test (site-label-state glabel)))))
-
-           (complex-graph-label-test-predicate (test glabel)
+                 (eq test state)
+                 (and (consp test)
+                      (let ((op (first test)))
+                        (ecase op
+                          ((and or not) (logic-test test state #'test-state))
+                          ((> <)        (funcall op state (rest test))))))))
+           (logic-test (test tags predicate)
+             (let ((args (rest test)))
+               (case (first test)
+                 (and (eq (length (intersection args
+                                                tags
+                                                :test predicate))
+                          (length args)))
+                 (or  (intersection args
+                                    tags
+                                    :test predicate))
+                 (not (not (intersection args tags :test #'test-tags))))))
+           (test-tags (test tags)
+             (or (eq test '*) 
+                 (eq test tags)
+                 (and (consp test)
+                      (logic-test test tags #'test-tags))))
+           (calculate-predicate (test)
              (cond
-               ((symbolp test)
-                (or (and (wildcard-monomer-symbol-p test) (symbolp glabel))
-                    (eq test glabel)))
+              ((wildcard-monomer-symbol-p test) #'symbolp)
 
-               ((wildcard-label-p test)
-                (if (site-label-p glabel)
-                    (wildcard-test test glabel)))
+              ((symbolp test) (lambda (glabel) (eq glabel test)))
 
-               ((site-label-p test)
-                (and (site-label-p glabel)
-                     (equal (site-label-sindex test) (site-label-sindex glabel))
-                     (equal (site-label-monomer test) (site-label-monomer glabel))
-                     (value-test (site-label-state test) (site-label-state glabel))))
+              ((wildcard-label-p test)
+               (let ((tags (wildcard-label-tags test))
+                     (state (wildcard-label-state test)))
+                 (cond
+                  (state
+                   (lambda (glabel)
+                     (and (site-label-p glabel)
+                          (test-tags tags
+                                     (complex-graph-label-to-site-labels glabel))
+                          (test-state state
+                                      (site-label-state glabel)))))
+                  (t (lambda (glabel)
+                       (and (site-label-p glabel)
+                            (test-tags tags (complex-graph-label-to-site-labels glabel))))))))
+                                     
 
-               (t (error "Unexpected test graph label:~S" test)))))
-    #'complex-graph-label-test-predicate))
+                ; 
+              ((site-label-has-state-p test)
+               (lambda (glabel)
+                 (and (site-label-p glabel)
+                      (eq (first test) (first glabel))
+                      (eq (second test) (second glabel))
+                      (test-state (site-label-state test)
+                                  (site-label-state glabel)))))
+
+                ; if here, test must be an ordinary site-label
+              (t (lambda (glabel) (equal test glabel))))))
+    
+    (let ((preds (map 'vector #'calculate-predicate (gtools:graph-labels s))))
+      (lambda (si glabel)
+        (funcall (svref preds si) glabel)))))
 
 ;;;
 ;;;  BASE CLASS: COMPLEX-GRAPH-CONCEPT
@@ -342,15 +355,18 @@
 
 (defmethod print-concept ((o complex-graph-concept) &optional stream)
   (if *debug-printing* (call-next-method)
-    (let* ((descr o.constructor-description)
-           (complex (> (length descr) 1)))
-      (pprint-logical-block (stream descr
-                                    :prefix (if complex "[" "")
-                                    :suffix (if complex "]" ""))
-        (loop for mdescr = (pprint-pop)
-              do (prin1 `[,@mdescr] stream)
-              (pprint-exit-if-list-exhausted)
-              (pprint-newline-selectively :linear stream))))))
+    (let ((descr o.constructor-description))
+      (pprint-complex-graph-ctor-description descr stream))))
+
+(defun pprint-complex-graph-ctor-description (descr stream)
+  (let ((complex (> (length descr) 1)))
+    (pprint-logical-block (stream descr
+                                  :prefix (if complex "[" "")
+                                  :suffix (if complex "]" ""))
+      (loop for mdescr = (pprint-pop)
+            do (format stream "[~{~S~^ ~}]" mdescr)
+            (pprint-exit-if-list-exhausted)
+            (pprint-newline-selectively :linear stream)))))
 
 
 ;;;
@@ -367,17 +383,30 @@
                               (etypecase id
                                 (complex-graph  id)
                                 (cons           (make-complex-graph id nil)))))))
-;  (check-complex-species-type-graph-is-valid .id)
+  #+:debug (check-complex-species-type-graph-is-valid .id)
   =>
  (complex-species-graph-size-check object) 
  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
-(define-var *max-monomers-per-complex* 15)
+(define-var b-user::*max-monomers-per-complex* 25)
+(intern 'b-user::*max-monomers-per-complex*)
+
 (defun complex-species-graph-size-check (o)
   (when (and *max-monomers-per-complex*
              (> o.monomers.length *max-monomers-per-complex*))
-    (b-error "Attempt to create a complex with greater than ~S monomers: ~S" *max-monomers-per-complex* o)))
+    (restart-case (b-error "Attempt to create a complex with greater than ~S monomers: ~S" 
+                           *max-monomers-per-complex* o)
+      (continue (&optional (new-max (+ 5 *max-monomers-per-complex*)))
+        (read-new-max-complex-size new-max)))))
 
+(defun read-new-max-complex-size (new-max)
+  (format t "Enter new max monomers per complex (~S):" new-max) 
+  (let* ((str      (read-line))
+         (max      (if (zerop (length str)) new-max
+                     (or (ignore-errors (read-from-string str))
+                         (read-new-max-complex-size new-max)))))
+    (setf *max-monomers-per-complex* max)))
+        
 (defun check-complex-species-type-graph-is-valid (g)
   (loop for i from 0 below (gtools:graph-vertex-count g)
         for lab = (gtools:graph-vertex-label g i)
@@ -392,9 +421,9 @@
                        "Invalid state site: ~S. Vertex ~S has ~S outputs." g i outputs))
             (t (b-assert (= 2 (length (gtools:graph-vertex-outputs g i))) ()
                          "Invalid bond site in ~S.  Vertex ~S has ~S outputs." 
-                         g i outputs)))))
+                         g i (length outputs))))))
 
-(defield complex-species-type.monomers ()
+(defield complex-graph-concept.monomers ()
   (remove-if-not #'symbolp (gtools:graph-labels .id)))
 
 (defield complex-species-type.site-bonds (mindex sindex)
@@ -507,10 +536,16 @@
 (defun make-complex-graph (&optional descr force-pattern)
   "Given a complex description of the form ((monomer1 b1 b2 ...) (monomer2 b3 b4...) ...),
    returns a canonical complex graph, and returns the location class of the graph"
-  (multiple-value-bind (site-labels binding-table patternp)
-      (parse-complex-description descr force-pattern)
-    (values (build-complex-graph site-labels binding-table)
-            patternp)))
+  (handler-case (multiple-value-bind (site-labels binding-table patternp)
+                    (parse-complex-description descr force-pattern)
+                  (values (build-complex-graph site-labels binding-table)
+                          patternp))
+    (error (e) (error "Invalid complex: ~A. ~A"
+                      (with-output-to-string (stream) 
+                         (let ((*print-pretty* nil))
+                           (pprint-complex-graph-ctor-description descr stream)))
+                        e))))
+
 
 (defun containing-location-class-for-monomers (monomers)
   (containing-location-class 
@@ -535,10 +570,14 @@
                   (2 (list bindings))
                   ;; multiple bonds - ensure every site in the list 
                   ;; is connected to every other site in the list
-                  (otherwise
-                   ;; in future, maybe do a check here to ensure that all
+                  (otherwise 
+                  ;(error "Too many occurrences of bond label ~S." var)
+                   ;; in future, we may allow this - using this code to compute
+                   ;; the mutual bonds:
+                   (maplist #'identity bindings)
+                   ;; and maybe do a check here to ensure that all
                    ;; connector sites can support this many bonds
-                   (maplist #'identity bindings))) into especs
+                   )) into especs
         finally (return (gtools:graph-delete-verticies 
                          (gtools:make-labelled-graph (nconc especs (gethash '|monomer-edges| binding-table))
                                                      site-labels
@@ -1272,3 +1311,4 @@ Returns the vertexes representing sites in the correct order."
                             ,cst-graph :continue-if nil))))))))))
 
 (add-pattern-expander 'complex-pattern-expander)
+

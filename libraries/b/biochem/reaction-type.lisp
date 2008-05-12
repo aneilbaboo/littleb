@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.11 2008/01/22 17:47:24 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.12 2008/05/12 22:41:59 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -147,7 +147,7 @@
     (cond
      ((> (length loc-classes) 1)
       (b-error "Unable to determine location class for {~{~S~^ + ~} ~A ~{~S~^ + ~}} ~
-                ~&-- have you forgotten to assign sublocations (e.g., {X @ :inner})?"
+                ~&-- have you forgotten to assign a sublocation to one of the monomer (e.g., {[some-monomer...] @ :inner})?"
                clhs op crhs))
      ((null loc-classes)
       (b-error "Unable to determine location class for {~{~S~^ + ~} ~A ~{~S~^ + ~}}."

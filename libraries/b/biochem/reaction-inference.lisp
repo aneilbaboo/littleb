@@ -26,7 +26,7 @@
 ;;; Description:  when included, this rule infers which species and reactions
 ;;;               are implied by an initial set of species and reactions.
 
-;;; $Id: reaction-inference.lisp,v 1.6 2008/01/22 17:47:24 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.7 2008/05/12 22:41:59 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -104,8 +104,9 @@
     (:test (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
                        ?rxn-type.location-class)))
   =>  ;; one of the reaction-type requirements has been satisfied
-  
-  ;; record that ?species satisfies the localization requirement ?loc-req
-  {?rxn-type.(lhs-species ?rxn-loc ?rt-req) := ?species}
-  (when ?rxn-type.(satisfied-at ?rxn-loc)
-    [reaction ?rxn-type ?rxn-loc]))
+  (handler-case (progn
+                  ;; record that ?species satisfies the localization requirement ?loc-req
+                  {?rxn-type.(lhs-species ?rxn-loc ?rt-req) := ?species}
+                  (when ?rxn-type.(satisfied-at ?rxn-loc)
+                    [reaction ?rxn-type ?rxn-loc]))
+    (error (e) (error "While creating satisfying ~S - ~A" ?rxn-type.(in ?rxn-loc) e))))

@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.16 2008/01/26 04:02:02 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.17 2008/05/12 22:41:59 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -68,7 +68,8 @@
                                                    rtr.stoichiometry
                                                    (location-class-dimension
                                                     rtr.species-type.location-class)))
-                                           .lhs-requirements))))))
+                                           .lhs-requirements))))
+    object))
 
 ;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
 ;;;     - function of 5 or more arguments which return a math expression expression
