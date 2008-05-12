@@ -27,7 +27,7 @@
 ;;;              *name* when generating new objects.  The object returned by the
 ;;;              form takes (id S) as its ID.
 
-;;; $Id: define.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: define.lisp,v 1.2 2008/05/12 19:42:52 amallavarapu Exp $
 ;;;
 ;;;
 (in-package b)
@@ -42,11 +42,13 @@
     (cond 
      ((const-fld-form-p name)    (let* ((symbol    (fld-form-to-symbol name))
                                         (def-form  (make-typed-define-form name name form env)))
-                                   (compute-define-symbol-code name symbol def-form))) 
+                                   (compute-define-symbol-code name symbol def-form)))
      
      ((symbolp name)             (let* ((place       (make-global-place-symbol name))
                                         (def-form    (make-typed-define-form name place form env)))
-                                   (compute-define-symbol-code name name def-form))))))
+                                   (compute-define-symbol-code name name def-form)))
+
+     (t                          (error "Invalid name provided to DEFINE: ~S" name)))))
 
 
 (defun expose-name (x &optional (default-exposure :expose))
@@ -55,33 +57,51 @@
       (parse-name-exposure x default-exposure)
     (process-name-exposure name exposure)))
 
-(defun process-name-exposure (name exposure)
-  (labels ((symbol-from-name (x)
-             (cond ((and (consp x) (eq (first x) 'setf))
-                    (symbol-from-name (second x)))
-                   ((fld-form-p x)
-                    (fld-form-to-symbol x))
-                   (t x))))
-    (let ((symbol (symbol-from-name name)))      
-      (when exposure
-        (dolist (upkg (package-transitive-used-by-list *package*))
-          (safely-remove-conflicting-internal-symbols symbol upkg)))
-      (ecase exposure
-        (:expose (expose-symbol symbol))
-        (:export (export symbol))
-        (:internal ())))))                                         
+
+(defun process-name-exposure (symbol exposure)
+  (when exposure
+    (dolist (upkg (package-transitive-used-by-list *package*))
+      (safely-remove-conflicting-internal-symbols symbol upkg)))
+  (ecase exposure
+    (:expose (expose-symbol symbol))
+    (:export (export symbol))
+    (:internal ())))
+
+;;;; (defun process-name-exposure (name exposure)
+;;;;   (labels ((symbol-from-name (x)
+;;;;              (cond ((and (consp x) (eq (first x) 'setf))
+;;;;                     (symbol-from-name (second x)))
+;;;;                    ((fld-form-p x)
+;;;;                     (fld-form-to-symbol x))
+;;;;                    ((consp x) (apply #'delim-sym #\- x))
+;;;;                    (t         x))))
+;;;;     (let ((symbol (symbol-from-name name)))      
+;;;;       (when exposure
+;;;;         (dolist (upkg (package-transitive-used-by-list *package*))
+;;;;           (safely-remove-conflicting-internal-symbols symbol upkg)))
+;;;;       (ecase exposure
+;;;;         (:expose (expose-symbol symbol))
+;;;;         (:export (export symbol))
+;;;;         (:internal ())))))                                         
 
 (defun exposure-directive-p (o)
   (case o ((:expose :export :internal) t)))
 
 (defun parse-name-exposure (specifier &optional (default-exposure :expose))
   "Returns 2 values: name, exposure (:EXPOSE :EXPORT or :INTERNAL)"
+  (labels ((symbol-from-name (x)
+             (cond ((and (consp x) (eq (first x) 'setf))
+                    (symbol-from-name (second x)))
+                   ((fld-form-p x)
+                    (fld-form-to-symbol x))
+                   ((consp x) (apply #'delim-sym #\- x))
+                   (t         x))))
   (cond 
    ((and (consp specifier)
          (exposure-directive-p (first specifier)))
-    (values (second specifier) (first specifier)))
+    (values (symbol-from-name (second specifier)) (first specifier)))
 
-   (t (values specifier default-exposure))))
+   (t (values (symbol-from-name specifier) default-exposure)))))
 
 (defun make-typed-define-form (name place form env)
   (let* ((type    (compute-form-type form env))
