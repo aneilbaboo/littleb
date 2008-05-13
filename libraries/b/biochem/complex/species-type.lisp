@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.42 2008/05/12 22:41:59 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.43 2008/05/13 15:04:03 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -389,7 +389,7 @@
  (setf .location-class (complex-graph-location-class .id #'monomer-symbol-p)))
 
 (define-var b-user::*max-monomers-per-complex* 25)
-(intern 'b-user::*max-monomers-per-complex*)
+(import 'b-user::*max-monomers-per-complex*)
 
 (defun complex-species-graph-size-check (o)
   (when (and *max-monomers-per-complex*
