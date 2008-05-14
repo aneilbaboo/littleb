@@ -52,8 +52,6 @@
                                         (ode-comments nil)
                                         (display-vars t)
                                         (overwrite :query)
-                                        (abstol nil) 
-                                        (reltol nil)
                                         (gauss-value :mean) ; may be mean or random
                                         (base-units (compute-default-base-units-from-vars vars)))    
   (let+ ((*print-pretty*          nil)
@@ -64,8 +62,6 @@
                                                            :path path
                                                            :ode-vars vars
                                                            :ode-comments-p ode-comments
-                                                           :reltol reltol
-                                                           :abstol abstol
                                                            :gauss-value gauss-value
                                                            :display-vars (order-vars (if (eq t display-vars) vars
                                                                                        display-vars))
