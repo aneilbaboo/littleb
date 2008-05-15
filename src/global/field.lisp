@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.12 2008/05/09 18:21:39 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.13 2008/05/15 21:16:40 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -659,6 +659,15 @@
                  multiset-same-p 
                  exclusion
                  nexclusion)
+
+(def-lisp-fields number
+                 + - / * 1+ 1-
+                 > < = >= <= /=
+                 ash zerop plusp minusp
+                 floor ffloor ceiling fceiling truncate ftruncate round fround
+                 sin cos tan asin acos atan
+                 abs evenp oddp exp expt
+                 gcd)
 ;;;; (port:define-dspec-class defield () "")
 ;;;; (port:define-dspec-form-parser defield (fe &body method-body)
 ;;;;   (if (fld-setf-form-p fe) `(defield (setf ,(fld-form-to-symbol (second fe))))
