@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.13 2008/05/15 21:16:40 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.14 2008/05/21 00:36:52 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -305,6 +305,13 @@
   (gethash field object (first args)))
 
 (defmethod (setf fld) (value (object hash-table) (field t) &rest args)
+  (declare (ignorable args))
+  (setf (gethash field object) value))
+
+(defmethod fld ((object hash-table) (field (eql '*bracket*)) &rest args)
+  (gethash (first args) object))
+
+(defmethod (setf fld) (value (object hash-table) (field (eql '*bracket*)) &rest args)
   (declare (ignorable args))
   (setf (gethash field object) value))
 

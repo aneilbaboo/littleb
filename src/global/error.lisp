@@ -25,7 +25,7 @@
 ;;; File: error
 ;;; Description: condition and error functions for little b
 
-;;; $Id: error.lisp,v 1.4 2007/12/06 15:30:59 amallavarapu Exp $
+;;; $Id: error.lisp,v 1.5 2008/05/21 00:36:52 amallavarapu Exp $
 ;;; $Name:  $
 ;;;
 (in-package b)
@@ -33,6 +33,13 @@
 (defvar *debugger-enabled* nil)
 (defvar *last-error* nil)
 (defvar *last-error-info* nil)
+
+(defvar *b-error-context* ())
+
+(defmacro with-b-error-context ((str &rest args) &body body)
+  `(let ((*b-error-context* (list* (list ,str ,@args) *b-error-context*)))
+     ,@body))
+
 (defun littleb-debugger-hook (condition encapsulation)
   (declare (ignore encapsulation))
   (setf *last-error* condition)      
@@ -52,8 +59,9 @@
 (define-condition b-error (error)
   ((format-string :initarg :format-string :accessor b-error-format-string :initform "")
    (format-arguments :initarg :format-arguments :accessor b-error-format-arguments :initform ())
-   (cause :initarg :cause :accessor b-error-cause :initform ()))
-  (:default-initargs :format-string "" :format-arguments () :cause ())
+   ;(cause :initarg :cause :accessor b-error-cause :initform ())
+   )
+  (:default-initargs :format-string "" :format-arguments ()) ; :cause ())
   (:report print-object))
 
 (defmethod print-object ((o b-error) stream)
@@ -61,24 +69,27 @@
     (cond 
      (*print-escape* (print-unreadable-object (o stream :type t :identity t)))
      (t  (let ((*print-context* t))
-           (with-slots (format-string format-arguments cause) o
+           (with-slots (format-string format-arguments ) o
              (apply #'format 
                     stream 
                     format-string
                     format-arguments)
-             (when cause
-               (princ "  CAUSE: " stream)
-               (if (stringp cause) (princ cause stream)
-                 (prin1 cause stream)))))))))
+             (format stream "~@[  CONTEXT:~{ ~A~^ ->~}~]"  
+                     (mapcar (lambda (o) (handler-case (apply #'format nil o)
+                                           (error (e) (format nil "Context unprintable: ~S" o ))))
+                             (reverse *b-error-context*)))))))))
+
 (defun b-error (str &rest args)
   (error 'b-error :format-string str :format-arguments args))
 
 (defmacro b-assert (test-form &optional places datum &rest args)
-  `(assert ,test-form ,places   (let ((*print-pretty* nil))
-                                  (format nil ,datum ,@args))))
+  `(assert ,test-form ,places  ,@(if datum
+                                   `((let ((*print-pretty* nil))
+                                       (format nil ,datum ,@args))))))
 
 (defun b-warn (str &rest args)
   (let ((*print-pretty* t)
         (*print-context* t))
     (apply #'warn str args)))
+
 
