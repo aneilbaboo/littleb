@@ -26,7 +26,7 @@
 
 ;;; Description: 
 ;;;
-;;; $Id: multisided-cell.lisp,v 1.6 2008/01/23 13:52:24 amallavarapu Exp $
+;;; $Id: multisided-cell.lisp,v 1.7 2008/05/21 02:08:50 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 (include-declaration :use-packages (mallavar-utility))
@@ -53,7 +53,7 @@
    (loc2 location)
    &property
    (size := [[reference-var] :value 1 ]))     ; cross-sectional size of the interface
-  
+  (b-assert (not (eq loc1 loc2)))
   (b-assert (typep .loc1 (type-of .loc2)) () "Interfaced locations are of different types (~S ~S)" .loc1 .loc2))
 
 
@@ -78,7 +78,7 @@
   (let ((o object) ) 
     {object.(membrane-interface m2i m1i) :#           
             {.membrane-interfaces.,(cons m2i m1i) :=
-                  [[location-interface o.membranes.,m2i o.membranes.,m2i] :size interface-size]}}
+                  [[location-interface o.membranes.,m2i o.membranes.,m1i] :size interface-size]}}
 
     {object.(membrane-interface m1i m2i) :#           
             {.membrane-interfaces.,(cons m1i m2i) :=

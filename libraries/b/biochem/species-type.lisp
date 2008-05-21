@@ -25,7 +25,7 @@
 ;;; File: species-type
 ;;; Description: Defines the species-type concept. 
 
-;;; $Id: species-type.lisp,v 1.3 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.4 2008/05/21 02:08:50 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
@@ -38,13 +38,17 @@
                                 :documentation "The class of location in which species of this type can go")))
 
 
-(define-macro def-species-types (location-class &body stype-defs)
+(define-macro def-species-types (&body defs)
  "Defines a bunch of species in a particular location class (membrane, compartment or cell).
   USAGE:  (DEF-SPECIES-TYPES location-class stype-def*)
           where stype-def is either a symbol representing a species, or
                 a list matching: (name &optional documentation &key props)"
-  `(progn ,@(loop for spec in stype-defs
+  `(progn ,@(loop with location-class
+                  for spec in defs
                   for fixed-spec = (if (listp spec) spec (list spec))
+                  if (and (symbolp spec) (ignore-errors (subtypep spec 'location)))
+                  do (setf location-class spec)
+                  else
                   collect (destructuring-bind (symbol &rest args) fixed-spec
                             `(define ,symbol [[species-type] 
                                               ,@(if location-class `(:location-class ,location-class))

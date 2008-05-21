@@ -41,8 +41,8 @@
   (unless (or (nil-or-? .m1.apposition) 
               (nil-or-? .m2.apposition))
     (check-apposition-membranes .m1 .m2))
-  {.m1.c1 := .ic}
-  {.m2.c1 := .ic}
+  {.m1.outer := .ic}
+  {.m2.outer := .ic}
   {.m1.apposition := object}
   (let ((c1 .c1)
         (c2 .c2)

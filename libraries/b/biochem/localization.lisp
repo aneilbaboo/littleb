@@ -22,7 +22,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: localization.lisp,v 1.2 2007/12/16 02:18:50 amallavarapu Exp $
+;;; $Id: localization.lisp,v 1.3 2008/05/21 02:08:50 amallavarapu Exp $
 
 
 ;;; Description:  
@@ -51,6 +51,13 @@
   (pprint-math-form `{,o.entity @ ,o.location} stream outer-op))
 
 
-(defoperator @ ((1- (operator-precedence '+)) :yfx) 
-  (rct loc-class)
+(defoperator _@ ((1- (operator-precedence '+)) :yfx)
+    (rct loc-class)
   [localization rct loc-class])
+
+(def-macro-operator @ ((1- (operator-precedence '+)) :yfx)
+  (rct loc-class)
+  (if (fld-form-p loc-class)
+      `{{,rct _@ ,(fld-form-field loc-class) ,@(fld-form-args loc-class)}
+        _@ ,(fld-form-object loc-class)}
+    `{,rct _@ ,loc-class}))

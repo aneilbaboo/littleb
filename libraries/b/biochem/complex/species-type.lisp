@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.43 2008/05/13 15:04:03 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.44 2008/05/21 02:08:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -267,11 +267,12 @@
 (defmethod gtools:graph-label-test-predicate ((s complex-graph))
   (labels ((test-state (test state)
              (or (eq test '*)
-                 (eq test state)
+                 (eq test ':*)
+                 (equal test state)
                  (and (consp test)
                       (let ((op (first test)))
                         (ecase op
-                          ((and or not) (logic-test test state #'test-state))
+                          ((and or not) (logic-test test (list state) #'test-state))
                           ((> <)        (funcall op state (rest test))))))))
            (logic-test (test tags predicate)
              (let ((args (rest test)))
@@ -286,7 +287,7 @@
                  (not (not (intersection args tags :test #'test-tags))))))
            (test-tags (test tags)
              (or (eq test '*) 
-                 (eq test tags)
+                 (find test tags)
                  (and (consp test)
                       (logic-test test tags #'test-tags))))
            (calculate-predicate (test)
@@ -296,16 +297,21 @@
               ((symbolp test) (lambda (glabel) (eq glabel test)))
 
               ((wildcard-label-p test)
-               (let ((tags (wildcard-label-tags test))
-                     (state (wildcard-label-state test)))
+               (let ((tags (wildcard-label-tags test)))
                  (cond
-                  (state
+                  ((wildcard-state-label-p test)
                    (lambda (glabel)
-                     (and (site-label-p glabel)
-                          (test-tags tags
-                                     (complex-graph-label-to-site-labels glabel))
-                          (test-state state
-                                      (site-label-state glabel)))))
+                     (cond
+                      ((wildcard-label-p glabel)
+                       (and (test-tags tags (wildcard-label-tags glabel))
+                            (test-state (wildcard-label-state test)
+                                        (wildcard-label-state glabel))))
+                      (t
+                       (and (site-label-p glabel)
+                            (test-tags tags
+                                       (complex-graph-label-to-site-labels glabel))
+                            (test-state (wildcard-label-state test)
+                                        (site-label-state glabel)))))))
                   (t (lambda (glabel)
                        (and (site-label-p glabel)
                             (test-tags tags (complex-graph-label-to-site-labels glabel))))))))
@@ -326,6 +332,7 @@
     (let ((preds (map 'vector #'calculate-predicate (gtools:graph-labels s))))
       (lambda (si glabel)
         (funcall (svref preds si) glabel)))))
+
 
 ;;;
 ;;;  BASE CLASS: COMPLEX-GRAPH-CONCEPT
@@ -502,13 +509,14 @@
 ;;;
 ;;; WILDCARD-LABEL - for wildcard monomers
 ;;;
+(defconstant +no-state+ '#:no-state)
 (defun make-wildcard-label (monomer 
                             sindex
                             &optional site-test (value-test nil value-test-p))
   (let ((tags-test    (normalize-test site-test 'and)))
     (if value-test-p
         (list sindex monomer tags-test value-test)
-      (list sindex monomer tags-test))))
+      (list sindex monomer tags-test +no-state+))))
 
 (declaim (inline wildcard-label-monomer wildcard-label-index
                  wildcard-label-site wildcard-label-state wildcard-label-p))
@@ -517,7 +525,7 @@
 (defun wildcard-label-index (x) (second x))
 (defun wildcard-label-state (x) (fourth x))
 (defun wildcard-label-tags (x) (third x))
-(defun wildcard-state-label-p (x) (= (length x) 4))
+(defun wildcard-state-label-p (x) (ignore-errors (not (eq (wildcard-label-state x) +no-state+))))
 (defun wildcard-monomer-symbol-p (x) (eq x '*))
 (defun wildcard-monomer-reference-p (x) 
   (or (wildcard-monomer-symbol-p x)
@@ -536,15 +544,16 @@
 (defun make-complex-graph (&optional descr force-pattern)
   "Given a complex description of the form ((monomer1 b1 b2 ...) (monomer2 b3 b4...) ...),
    returns a canonical complex graph, and returns the location class of the graph"
-  (handler-case (multiple-value-bind (site-labels binding-table patternp)
-                    (parse-complex-description descr force-pattern)
-                  (values (build-complex-graph site-labels binding-table)
-                          patternp))
+  (handler-case
+      (multiple-value-bind (site-labels binding-table patternp)
+          (parse-complex-description descr force-pattern)
+        (values (build-complex-graph site-labels binding-table)
+                patternp))
     (error (e) (error "Invalid complex: ~A. ~A"
                       (with-output-to-string (stream) 
-                         (let ((*print-pretty* nil))
-                           (pprint-complex-graph-ctor-description descr stream)))
-                        e))))
+                        (let ((*print-pretty* nil))
+                          (pprint-complex-graph-ctor-description descr stream)))
+                      e))))
 
 
 (defun containing-location-class-for-monomers (monomers)
@@ -703,7 +712,9 @@
           (list sindex sindex)))
 
    ((bond-label-p binding)
-    (push sindex (gethash binding binding-table)))))
+    (push sindex (gethash binding binding-table)))
+
+   (t (error "Invalid bond label: ~S" binding))))
 
 (defvar *default-site-binding* 'non-pattern-default-site-binding
   "A function which calculates the default binding to use for a site")
@@ -725,7 +736,7 @@
 
 (defun square-bracket-fld-form-p (x)
   (and (fld-form-p x)
-       (eq (fld-form-field x) '#.(fld-form-field '().[]))))
+       (equal (fld-form-field x) '#.(fld-form-field '().[]))))
 
 ;;;
 ;;; PARSE-NAMED-MONOMER-DESCRIPTION

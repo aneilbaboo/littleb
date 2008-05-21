@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.22 2008/04/24 21:03:23 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.23 2008/05/21 02:08:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -32,7 +32,7 @@
 
 (include (b/math @folder/species-type @library/biochem/reaction-type))
 
-(defoperator ->> ((+ 1 (operator-precedence '+)) :xfy :macro)
+(def-macro-operator ->> ((+ 1 (operator-precedence '+)) :xfy)
     (lhs rhs)
   (let ((lhsvar '#:lhs)
         (rhsvar '#:rhs))
@@ -59,7 +59,7 @@
        (rev :#= [complex-reaction-type .rhs .lhs .location-class])))
   
 
-(defoperator <<->> ((+ 1 (operator-precedence '+)) :xfy :macro)
+(def-macro-operator <<->> ((+ 1 (operator-precedence '+)) :xfy)
     (lhs rhs)
   (let ((lhsvar '#:lhs)
         (rhsvar '#:rhs)
@@ -69,7 +69,6 @@
                                      (values ,.lhsvar.entity ,.lhsvar.location)
                                    (values ,lhsvar nil))))
          [reversible-complex-reaction-type ,lhsvar ,rhsvar ,lclass]))))
-
 ;;;;
 ;;;; PRINTING:
 

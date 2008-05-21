@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.17 2008/05/12 22:41:59 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.18 2008/05/21 02:08:50 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -142,17 +142,27 @@
         (type-substs rxn.type.k._hash-table))
     (labels ((substitute (o)
                (typecase o
-                 (function     (funcall o rxn))
-                 (species-type      rxn.type.(lhs-species rxn.location o).conc)
-                 (localization      rxn.type.(lhs-species 
-                                              rxn.location
-                                              (or (gethash o type-substs) 
-                                                  (b-error "BUG IN REACTION-RATE-SUBSTITUTER - CANNOT SUBSTITUTE ~S" o))).conc)
-                 (t            (let ((subst (or (gethash o type-substs)
-                                                (gethash o substs))))
-                                 (if subst (substitute subst)
-                                   o))))))
+                 (function (funcall o rxn))
+                 (t        (let ((subst (or (gethash o type-substs)
+                                            (gethash o substs))))
+                             (if subst (substitute subst)
+                               o))))))
       #'substitute)))
+
+;;;;                (typecase o
+;;;;                  (function          (funcall o rxn))
+;;;;                  (species-type      rxn.type.(lhs-species rxn.location o).conc)
+;;;;                  (localization      rxn.type.(lhs-species 
+;;;;                                               rxn.location
+;;;;                                               (or (gethash o type-substs) 
+;;;;                                                   (gethash o substs)
+;;;;                                                   (b-error "BUG IN REACTION-RATE-SUBSTITUTER - CANNOT SUBSTITUTE ~S"
+;;;;                                                            o))).conc)
+;;;;                  (t            (let ((subst (or (gethash o type-substs)
+;;;;                                                 (gethash o substs))))
+;;;;                                  (if subst (substitute subst)
+;;;;                                    o))))))
+;;;;       #'substitute)))
 
 (defrule add-reaction-influences
   (?rxn reaction); ?rxn-type ?rxn-loc])

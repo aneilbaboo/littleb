@@ -26,7 +26,7 @@
 ;;; Description:  when included, this rule infers which species and reactions
 ;;;               are implied by an initial set of species and reactions.
 
-;;; $Id: reaction-inference.lisp,v 1.7 2008/05/12 22:41:59 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.8 2008/05/21 02:08:50 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -35,6 +35,55 @@
 (defprop reaction.substitution-table
     (:= (make-hash-table)
       :documentation "A hashtable mapping higher-level objects (e.g., species-types) to species"))
+
+
+
+(defcon reaction-type-requirement-location ()
+  (requirement location))
+
+ 
+(defrule empty-reaction-type-requirement-satisfied
+  (:and (?rt-req [reaction-type-requirement 
+                  ?rxn-type :lhs nil nil nil])
+        (?loc [location])
+        (:test (subtypep   (class-of ?loc)  ; the reaction can occur in ?rxn-loc
+                           ?rxn-type.location-class)))
+  =>
+  [reaction ?rxn-type ?loc])
+
+(defrule reaction-type-requirement-satisfied
+   (:and (?species   [species ?species-type ?species-loc])    ; and the species in question exists in the right location,        
+    [has-sublocation ?rxn-loc ?localization ?species-loc] ; given relationship between a location and sublocation
+    (?rt-req    [reaction-type-requirement               
+                 ?rxn-type :lhs                     
+                 ?species-type ?localization ?stoich])
+    (:test (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
+                       ?rxn-type.location-class)))
+  =>  ;; one of the reaction-type requirements has been satisfied
+  (with-b-error-context ("While creating ~S.(in ~S)" ?rxn-type ?rxn-loc)
+    ;; record that ?species satisfies the localization requirement ?loc-req
+    {?rxn-type.(lhs-species ?rxn-loc ?rt-req) := ?species}
+    (when ?rxn-type.(satisfied-at ?rxn-loc)
+      (infer-reaction ?rxn-type ?rxn-loc))))
+
+(defun infer-reaction (rtype loc)
+  "creates a reaction and adds substitions to the substition table"
+  (let* ((r      [reaction rtype loc])
+         (table  (|REACTION.SUBSTITUTION-TABLE| r))
+         (rtr-species  rtype.reactants.[loc])) ;  a list of conses like (reaction-type-requirement . species)
+    (dolist (s rtr-species)
+      (let* ((rtr       (car s))
+             (species   (cdr s))
+             (stype     rtr.species-type)
+             (subloc    rtr.sublocation)
+             (specifier (if subloc {stype @ subloc} stype)))
+      (setf (gethash specifier table) species))
+    r)))
+
+
+;;;; THIS CODE GENERATES RULES DYNAMICALLY - an alternative approach that is
+;;;; conceptually quite nice: reaction-types are convereted into littleb/lisa 
+;;;; pattern-matching rules.  The problem is it's horribly slow.
 
 ;;;; (defrule reaction-inference-generator
 ;;;;   (?rtype reaction-type)
@@ -80,33 +129,3 @@
 ;;;;                              `(list ,@substitutions)))))))
 ;;;;             
 ;;;;         
-
-
-(defcon reaction-type-requirement-location ()
-  (requirement location))
-
- 
-(defrule empty-reaction-type-requirement-satisfied
-  (:and (?rt-req [reaction-type-requirement 
-                  ?rxn-type :lhs nil nil nil])
-        (?loc [location])
-        (:test (subtypep   (class-of ?loc)  ; the reaction can occur in ?rxn-loc
-                           ?rxn-type.location-class)))
-  =>
-  [reaction ?rxn-type ?loc])
-
-(defrule reaction-type-requirement-satisfied
-   (:and (?species   [species ?species-type ?species-loc])    ; and the species in question exists in the right location,        
-    [has-sublocation ?rxn-loc ?localization ?species-loc] ; given relationship between a location and sublocation
-    (?rt-req    [reaction-type-requirement               
-                 ?rxn-type :lhs                     
-                 ?species-type ?localization ?stoich])
-    (:test (subtypep   (class-of ?rxn-loc)                      ; the reaction can occur in ?rxn-loc
-                       ?rxn-type.location-class)))
-  =>  ;; one of the reaction-type requirements has been satisfied
-  (handler-case (progn
-                  ;; record that ?species satisfies the localization requirement ?loc-req
-                  {?rxn-type.(lhs-species ?rxn-loc ?rt-req) := ?species}
-                  (when ?rxn-type.(satisfied-at ?rxn-loc)
-                    [reaction ?rxn-type ?rxn-loc]))
-    (error (e) (error "While creating satisfying ~S - ~A" ?rxn-type.(in ?rxn-loc) e))))

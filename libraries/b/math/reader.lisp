@@ -46,16 +46,25 @@
 (port:define-dspec-class defoperator () "")
 (port:define-dspec-form-parser defoperator (name)
   `(defoperator ,name))
-(define-macro defoperator (symbol (precedence optype &optional (kind :function))
-                                  lambda-list &body body)
-  "Defines an infix operator.  (DEFOPERATOR (SYMBOL PRECEDENCE OPTYPE) BODY)
-Where BODY= lambda-list form* or a symbol denoting a function"
-  (let ((prefix-name (intern (mkstr symbol "%OPERATOR") #I@folder))
-        (lisp-op     (ecase kind (:macro 'defmacro) (:function 'defun))))
+(port:define-dspec-form-parser def-macro-operator (name)
+  `(defoperator ,name))
+
+(defun operator-definition (symbol precedence optype lisp-op lambda-list body)
+  (let ((prefix-name (intern (mkstr symbol "%OPERATOR") #I@folder)))
     `(port:dspec (defoperator ,symbol)
        (expose-symbol ',symbol)
        (,lisp-op ,prefix-name ,lambda-list ,@body)
        (add-operator ',symbol ,precedence ,optype ',prefix-name))))
+
+(define-macro defoperator (symbol (precedence optype) lambda-list &body body)
+  "Defines an infix operator with function evaluation semantics.  (DEFOPERATOR (SYMBOL PRECEDENCE OPTYPE) BODY)
+Where BODY= lambda-list form* or a symbol denoting a function"
+  (operator-definition symbol precedence optype 'defun lambda-list body))
+
+(define-macro def-macro-operator (symbol (precedence optype) lambda-list &body body)
+  "Defines an infix operator with macro evaluation semantics.  (DEFOPERATOR (SYMBOL PRECEDENCE OPTYPE) BODY)
+Where BODY= lambda-list form* or a symbol denoting a macro"
+  (operator-definition symbol precedence optype 'defmacro lambda-list body))
 
 (defun delete-operator (symbol)
   (setf (get symbol +operator+) nil

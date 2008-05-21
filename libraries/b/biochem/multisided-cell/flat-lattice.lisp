@@ -95,18 +95,15 @@
 
     
 (defun create-cell (lattice carea length-list n)
-  (let ((cell (make-cell lattice carea n)))
-    (loop for i from 1 to (length length-list)
-          for adj-membrane  = (+ i -1)  
-          for last-membrane = (length length-list)
-          do cell.(add-membrane i (nth (+ i -1) length-list))
-          (when (and (> i 1) (< i last-membrane)) 
-            cell.(define-membrane-interface adj-membrane i)
-            cell.(define-membrane-interface i adj-membrane))
-  
-          (when (eq i last-membrane) 
-            cell.(define-membrane-interface i 1)  
-            cell.(define-membrane-interface 1 i)  ))   cell))
+  (loop with cell = (make-cell lattice carea n)
+        with last-membrane =  (length length-list)
+        for i from 1 to last-membrane
+        do cell.(add-membrane i length-list.[i.1-])
+        ;; make the membrane interfaces
+        finally (loop for i from 1 to last-membrane
+                      for adj-membrane  = (if i.(= 1) last-membrane i.1-)
+                      do cell.(define-membrane-interface adj-membrane i))
+                      finally (return cell))))
 
 (defun make-cell (lattice ar num) 
   (let ((cell   {lattice.(cell num) :#
@@ -122,111 +119,4 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-;;;; (defun apposed-cell (cell1 membrane-1 cell2 membrane-2)  
-;;;;   (let* ((ma  [membrane-apposition membrane-1 membrane-2 ])) 
-;;;;     {(gethash ma cell1.apposed-membranes) := membrane-2} 
-;;;;     {(gethash ma cell2.apposed-membranes) := membrane-1} 
-;;;;     
-;;;;     ma)) 
-
-;;;; (defun make-flat-lattice (verticies cell-list centers cell-areas)
-;;;;   (let* ((membranes   (make-hash-table :test 'equalp)) 
-;;;;          (lattice     [flat-lattice]))
-;;;;     (loop for c in cell-list
-;;;;           for i from 1 to (length cell-list)
-;;;;           for centroid = (nth (+ i -1) centers)
-;;;;           for cell-dim =  (nth (+ i -1) cell-areas) 
-;;;;           for cell = (make-cell flat-lattice cell-dim (car centroid) 
-;;;;                                 (cdr centroid))          
-;;;;           do (loop for p1 in (append (rest c) (list (first c)))
-;;;;                    for j from 1 to (length c) 
-;;;;                    for adj-membrane  = (+ j -1) 
-;;;;                    for p2 in c   
-;;;;                    for length = (distance (nth (+ p1 -1) verticies) (nth (+ p2 -1) verticies))  ;what about index 1 or 0 
-;;;;                    for mykey = (sort (list p1 p2) #'<)                   
-;;;;                    for new-m = (add-membrane cell j length)
-;;;;                    for existing-m = (gethash mykey membranes) 
-;;;;                   
-;;;;                    do                 
-;;;;                    (if (eq existing-m nil)
-;;;;                        (setf (gethash mykey membranes) (list cell new-m)) 
-;;;;                      (appose-cell (first existing-m) (second existing-m) cell new-m))
-
-;;;;                    (if (and (> j 1) (< j (length c))) 
-;;;;                        cell.(defmadj j adj-membrane) 
-;;;;                      (if (eq j (length c)) 
-;;;;                          cell.(defmadj j 1) )))
-
-;;;;          )
-;;;;     flat-lattice))
-
-
-;;;; (defun create-hexagonal-cell (inner-size mlen) 
-;;;;   (let ((cell [multisided-cell]))
-;;;;     {cell.size.value := 1}
-;;;;     {cell.inner.size.value := inner-size } 
-;;;;     (loop for i from 1 to 6
-;;;;           for adj-membrane  = (+ i -1)  
-;;;;           do (add-membrane cell i mlen)
-;;;;           (when (and (> i 1) (< i 6)) 
-;;;;             cell.(defmadj adj-membrane i)
-;;;;                   cell.(defmadj i adj-membrane))
-;;;;   
-;;;;           (when (eq i 6) 
-;;;;             cell.(defmadj i 1)  
-;;;;                   cell.(defmadj 1 i)  ))   cell))
-
-
-
-
-
-;;;; (defun create-cell (lattice carea length-list n) 
-;;;;   (let ((cell (make-cell flat-lattice carea n)))
-;;;;     (loop for i from 1 to (length length-list)
-;;;;           for adj-membrane  = (+ i -1)  
-;;;;           for last-membrane = (length length-list)
-;;;;           do (add-membrane cell i (nth (+ i -1) length-list))
-;;;;           (when (and (> i 1) (< i last-membrane)) 
-;;;;             cell.(defmadj adj-membrane i)
-;;;;             cell.(defmadj i adj-membrane))
-;;;;   
-;;;;           (when (eq i last-membrane) 
-;;;;             cell.(defmadj i 1)  
-;;;;             cell.(defmadj 1 i)  ))   cell))
-
-
-;;;; (defun create-cell-array (lattice cell-areas side-lengths) 
-;;;;   (loop for i from 1 to (length cell-areas)
-;;;;         for carea = (nth (+ i -1) cell-areas)
-;;;;         for slength = (nth (+ i -1) side-lengths)
-;;;;                do (create-cell flat-lattice                         
-;;;;                       carea
-;;;;                        slength i
-;;;;                        
-;;;;                       )))  
-
-
-
-
-
-;;;; (defun make-cell (lattice ar &rest args) 
-;;;;   {lattice.(apply :cell args):#
-;;;;            {(gethash args flat-lattice.cells) := [multisided-cell]}} 
-;;;;   (let ((cell flat-lattice.(apply :cell args))) 
-;;;;     {cell.inner.size.value := ar  }
-;;;;  {cell.size.value := ar}
-;;;;      
-;;;;     cell))  
 

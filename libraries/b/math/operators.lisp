@@ -25,7 +25,7 @@
 ;;; File: operators
 ;;; Description: 
 
-;;; $Id: operators.lisp,v 1.3 2007/11/21 07:10:56 amallavarapu Exp $
+;;; $Id: operators.lisp,v 1.4 2008/05/21 02:08:56 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -110,6 +110,37 @@
 (defun s<= (&rest args)
   (when args (mreduce #'op<= args)))
 
+(define-function fast-add (terms)
+  (let ((ht (make-hash-table))
+        (numeric-key '#:numeric))
+    (labels ((add-numeric (term)
+               (let ((curnum (gethash numeric-key ht)))
+                 (setf (gethash numeric-key ht)
+                       (if curnum (s+ curnum term) term))))
+             (add-var (var &optional (coef 1))
+               (setf (gethash var ht)
+                     (s+ (gethash var ht) coef)))
+             (add-sum-expression (term)
+               (loop for (var . coef) in term.variable
+                     do (add-var var coef)
+                     finally (add-numeric term.numeric))))
+      (loop for term in terms
+            do ;(format t "TYPE:~S~%" (type-of term)) 
+            (typecase term
+                 (numeric  (add-numeric term))
+                 (sum-expression (add-sum-expression term))
+                 (t              (add-var term)))
+            finally (return 
+                     (let ((numeric (prog1 (gethash numeric-key ht) (remhash numeric-key ht)))
+                           (var     (remove-if (lambda (o) (zero-numeric-p (cdr o)))
+                                               (maphash-to-list ht #'cons))))
+                       (cond
+                        ((and (null numeric) (null var)) 0)
+                        ((null var) numeric)
+                        ((null numeric) [sum-expression var (quantity 0 (dimension-of (caar var)))])
+                        (t              [sum-expression var numeric]))))))))
+                                              
+                                      
 
 (defun arithmetic-method-undefined (op x1 x2)
   (b-error "{~S ~S ~S} undefined:  no operator method for ~S ~S ~S." x1 op x2 (type-of x1) op (type-of x2)))

@@ -25,7 +25,7 @@
 ;;; File: Var
 ;;; Description: Vars - named variables for building ODE models
 
-;;; $Id: ode-var.lisp,v 1.3 2008/02/22 19:38:47 amallavarapu Exp $
+;;; $Id: ode-var.lisp,v 1.4 2008/05/21 02:08:56 amallavarapu Exp $
 ;;;
 (in-package #I@FILE)
 
@@ -91,9 +91,8 @@
       (push (cons cause value) .rate-influences))))
 
 (defield ode-var.rate ()
-  (reduce #'s+ (cons (quantity 0 {.dimension / *time-dimension*})
-                     (mapcar (lambda (pair)
-                               (tvar-rate-from-influence-pair object pair)) .rate-influences))))
+  (fast-add (mapcar (lambda (pair)
+                      (tvar-rate-from-influence-pair object pair)) .rate-influences)))
 
 (defmethod set-default-field ((tv ode-var) val)
   (setf tv.t0 val))

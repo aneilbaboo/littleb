@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.15 2008/05/12 22:02:59 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.16 2008/05/21 02:08:50 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -102,17 +102,22 @@
                    (let* ((subloc (first sublocations))
                           (cst    [complex-species-type (gtools:canonical-graph graph)]))
                      {cst @ subloc}))))))
+                     
 
 (defun create-reaction-type-from-complex-reaction-type 
        (cr crt-lhs-entities lhs-species-types rhs-new-graph isomorphisms new-bonds lost-bonds relabels keepers losers rhs-monomer-localizations)
-  (flet ((copy-localization-to-complex-species-type (lcp cst)
-           (if (localization-p lcp) {cst @ lcp.location}
-             cst))
-         (check-localization (loc)
-           (unless loc.(is-valid-for cr.localization)
-             (unless localization.(is-valid-for cr.localization)
-               (b-error "~S is an invalid localization for ~S" loc.location loc.entity)))))
-    (handler-case 
+  (let ((lclass cr.location-class))
+    (flet ((copy-localization-to-complex-species-type (lcp cst)
+             (if (localization-p lcp) {cst _@ lcp.location}
+               cst))
+           (localization-valid-p (x)
+             (etypecase x
+               (species-type (eq x.location-class lclass))
+               (localization x.(is-valid-for lclass)))
+             ;;(b-error "~S is an invalid localization for ~S" loc.location loc.entity))))
+             ))
+      (with-b-error-context ("Matching ~S, with LHS = ~S"
+                             cr lhs-species-types)
         (let* ((lhs-graphs (mapcar ?.id lhs-species-types))
                (localized-lhs-csts (mapcar #'copy-localization-to-complex-species-type
                                            crt-lhs-entities lhs-species-types))
@@ -127,10 +132,10 @@
                                                                 keepers
                                                                 losers
                                                                 rhs-monomer-localizations)))
-               (rtype      [reaction-type 
-                            localized-lhs-csts
-                            localized-rhs-csts
-                            cr.location-class]))
-          [complex-reaction-inference cr rtype (mapcar #'cons crt-lhs-entities localized-lhs-csts)])
-      (error (e) (b-error "When computing reaction-type for ~S, where LHS = ~S, ~A"
-                          cr lhs-species-types e)))))
+               (rtype      (when (notany #'null localized-rhs-csts)
+                             [reaction-type 
+                              localized-lhs-csts
+                              localized-rhs-csts
+                              cr.location-class])))
+          (when rtype
+            [complex-reaction-inference cr rtype (mapcar #'cons crt-lhs-entities localized-lhs-csts)]))))))

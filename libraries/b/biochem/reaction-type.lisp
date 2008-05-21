@@ -25,7 +25,7 @@
 ;;; File: reaction-type.lisp
 ;;; Description:  
 
-;;; $Id: reaction-type.lisp,v 1.12 2008/05/12 22:41:59 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.13 2008/05/21 02:08:50 amallavarapu Exp $
 
 (in-package #I@library/biochem)
 
@@ -61,7 +61,7 @@
                                   (stream *standard-output*) (outer-op t))
   (with-print-context rt
     (let ((lhs-printable (if (find-if #'species-type-p rt.lhs.vars) rt.lhs
-                           {rt.lhs @ rt.location-class})))
+                           {rt.lhs _@ rt.location-class})))
       (pprint-math-form `{,lhs-printable -> ,rt.rhs} stream outer-op))))
 
 
@@ -172,15 +172,19 @@
 
 (defoperator -> ((+ 2 (operator-precedence '+)) :xfy)
   (lhs rhs)
-  (if (localization-p lhs)
-      [reaction-type lhs.entity rhs lhs.location-class]
-    [reaction-type lhs rhs]))
+  [reaction-type lhs rhs])
+
+;;;;   (if (localization-p lhs)
+;;;;       [reaction-type lhs.entity rhs lhs.location-class]
+;;;;     [reaction-type lhs rhs]))
 
 (defoperator <- ((+ 2 (operator-precedence '+)) :xfy)
   (rhs lhs)
-  (if (localization-p lhs)
-      [reaction-type lhs.entity rhs lhs.location-class]
-    [reaction-type lhs rhs]))
+  [reaction-type lhs rhs])
+
+;;;;   (if (localization-p lhs)
+;;;;       [reaction-type lhs.entity rhs lhs.location-class]
+;;;;     [reaction-type lhs rhs]))
 
 
 ;;;; ;;;

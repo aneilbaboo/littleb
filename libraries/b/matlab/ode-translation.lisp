@@ -44,7 +44,7 @@
   :organization "Harvard Medical School"
   :authors ("Aneil Mallavarapu"))
 (define-function create-ode-model (name &key 
-                                        (vars (progn (format t "~&; Querying for variables...~%") (query-time-vars)))
+                                        vars
                                         (ode-comments t)
                                         (display-vars t)
                                         (overwrite :query)
@@ -59,7 +59,9 @@
            (open path :if-exists :supersede :if-does-not-exist :create :direction :output))
          (failed-opening-file (path e)
            (format t "Failed to open ~A (~A)~%" path e)))
+    (format t "~&Creating Matlab ODE ~A " name)
     (let+ ((*print-pretty*          nil)
+           (vars                    (or vars (progn (format t "~&; Querying for variables...~%") (query-time-vars))))
            ((name path)             (parse-model-name name))
            (mm                      (make-matlab-model name
                                                        :path path
@@ -115,10 +117,11 @@
             (first varlist) (rest varlist))))
 
 (defun order-vars (vars)
-  (sort (copy-list vars)  ; must copy the list! Allegro destructively modifies the input list (removing elements!!!)
-        #'string<
-        :key (lambda (o) 
-               (format nil "~(~A~)" o))))
+  (format t "~&; Sorting variables")
+  (mapcar #'cdr
+          (sort (mapcar (lambda (v) (cons (format nil "~(~A~)" v) v)) vars) 
+                #'string<
+                :key #'car)))
 
 (defun query-time-vars (&key prefer (base-set (query ode-var)))
   (compute-ode-vars base-set prefer))
@@ -129,7 +132,7 @@
         (write-run-file run-file mm)
         (write-var-indicies-file indicies-file mm)
         (write-init-script init-file mm)
-        (format t "The following files have been written to ~A:~{~%     ~A.~A~}"
+        (format t "~&The following files have been written to ~A:~{~%     ~A.~A~}"
                 (truename path)
                 (mapcan (lambda (p) (list (carefully-get-filename p) (carefully-get-filetype p)))
                         (list run-file init-file indicies-file)))))
@@ -218,6 +221,7 @@
                   end~%~%" (matlab-model-var-indicies-name mm) plotstr reltolstr abstolstr )))
 
 (defun write-ode-function (file mm)
+  (format t "~&Writing ode functions")
   (let ((vars (matlab-model-ode-vars mm)))
     (format file "function dy = ~A(t,y)~%~
                   ~3T~A~%~
@@ -228,7 +232,8 @@
     (loop for v in vars
           for i = 1 then (1+ i)
           for rate = (compute-ode-expression (nth (1- i) (matlab-model-ode-rates mm)) mm)
-          do  (with-print-context t 
+          do  (princ #\.)
+              (with-print-context t 
                 ;; write comment
                 (if (matlab-model-ode-comments-p mm)
                     (b-format file "~3T% ~A = ~A ~%" v rate))
@@ -243,7 +248,7 @@
 (defun write-initconds (file mm)
   (let ((vars (matlab-model-ode-vars mm)))
     (format file "~A = [ ..." (matlab-model-initconds-var-name mm))
-    
+    (format t "~&Writing initial conditions")
     (loop for v in vars
           for i = 1 then (1+ i)
           do (with-print-context t
@@ -300,11 +305,13 @@
           unless (eq kvar :last-index)
           do (setf (svref kvars (1- i)) kvar))
     (format file "~A= [...~%" name)
+    (format t "~&Writing parameters")
     (with-print-context t
       (loop for k across kvars ;(matlab-model-kvars mm)
             for i = 1 then (1+ i)
             for k-dimension = k.dimension.(calculate-unit (matlab-model-base-units mm))
             for value = k.value
+            do (princ #\.) ; dribble a dot to std-out
             if (math-expression-p value)
                do (with-dimensionless-math (matlab-model-base-units mm)
                     (format file "     0,... % "))
@@ -380,7 +387,9 @@
                           (integrator "ode15s")
                           (gauss-value :mean) 
                           (display-vars nil))
-  (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
+  (let* ((rates (progn (format t "~&; Computing rates...") (loop for var in ode-vars
+                                                                   do (princ #\.)
+                                                                   collect var.rate)))
          (kvars (make-hash-table))) ; (order-vars (compute-kvars rates))))
     (setf (gethash :last-index kvars) 0)
     (_make-matlab-model model-name path ode-vars rates base-units gauss-value kvars display-vars integrator abstol reltol ode-comments-p)))

@@ -25,7 +25,7 @@
 ;;; File: reaction.lisp
 ;;; Description:
 
-;;; $Id: reaction.lisp,v 1.2 2007/10/23 17:25:55 amallavarapu Exp $
+;;; $Id: reaction.lisp,v 1.3 2008/05/21 02:08:50 amallavarapu Exp $
 
 (in-package #I@FOLDER)
 
@@ -45,10 +45,11 @@
 
 (defun satisfy-requirements (rxn-type side loc)
   "Ensures that species are created in loc (or sublocations of loc), as specified by the reaction-type-requirements of rxn-type"
-  (loop for req in rxn-type.,side
-        collect  (cons req
-                       [species req.species-type 
-                                loc.(sublocation req.sublocation)])))
+  (handler-case (loop for req in rxn-type.,side
+                      collect  (cons req
+                                     [species req.species-type 
+                                              loc.(sublocation req.sublocation)]))
+    (error (e) (error "While computing species of ~S: ~A." rxn-type e))))
   
 
 (defield reaction-type.in (loc)
