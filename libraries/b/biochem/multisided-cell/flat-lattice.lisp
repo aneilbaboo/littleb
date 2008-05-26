@@ -103,7 +103,7 @@
         finally (loop for i from 1 to last-membrane
                       for adj-membrane  = (if i.(= 1) last-membrane i.1-)
                       do cell.(define-membrane-interface adj-membrane i))
-                      finally (return cell))))
+                      finally (return cell)))
 
 (defun make-cell (lattice ar num) 
   (let ((cell   {lattice.(cell num) :#
