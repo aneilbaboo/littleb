@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.44 2008/05/21 02:08:50 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.45 2008/07/18 21:32:12 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -332,6 +332,12 @@
     (let ((preds (map 'vector #'calculate-predicate (gtools:graph-labels s))))
       (lambda (si glabel)
         (funcall (svref preds si) glabel)))))
+
+(defun make-pattern-label-test-predicate (pattern)
+  "Makes a label test for testing other pattern graphs"
+  (let ((labels (gtools:graph-labels pattern)))
+    (lambda (si plabel)
+      (equal (svref labels si) plabel))))
 
 
 ;;;
