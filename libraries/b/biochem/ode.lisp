@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.18 2008/05/21 02:08:50 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.19 2008/07/18 18:23:14 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -143,6 +143,7 @@
     (labels ((substitute (o)
                (typecase o
                  (function (funcall o rxn))
+                 (species  o.conc)
                  (t        (let ((subst (or (gethash o type-substs)
                                             (gethash o substs))))
                              (if subst (substitute subst)

@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.19 2008/01/30 08:03:44 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.20 2008/07/18 18:23:14 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -52,7 +52,7 @@
 
 (defparameter *b-major-version* 1)
 (defparameter *b-minor-version* 5)
-(defparameter *b-revision* 8)
+(defparameter *b-revision* 9)
 
 (pushnew *b-root-directory* *central-registry* 
          :test (lambda (x y)
