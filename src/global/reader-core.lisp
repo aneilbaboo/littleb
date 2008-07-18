@@ -25,7 +25,7 @@
 ;;; File: reader-core
 ;;; Description: 
 
-;;; $Id: reader-core.lisp,v 1.3 2007/12/17 01:11:18 amallavarapu Exp $
+;;; $Id: reader-core.lisp,v 1.4 2008/07/18 15:39:31 amallavarapu Exp $
 
 (in-package b)
 
@@ -210,4 +210,3 @@ E.g., \"123\" \"123e456\" \"123s-456\" as well as \"\""
   "Prepends string to the stream (returns a concatenated stream)"
   (make-concatenated-stream (make-string-input-stream str)
                             stream))
-

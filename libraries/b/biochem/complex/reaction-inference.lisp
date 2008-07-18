@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-inference.lisp,v 1.16 2008/05/21 02:08:50 amallavarapu Exp $
+;;; $Id: reaction-inference.lisp,v 1.17 2008/07/18 15:41:00 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: detects when patterns described in complex-reaction-type objects
@@ -37,7 +37,6 @@
       (compute-graph-inference-rule-parts ?cr)
     (add-rule rule-pattern actions (intern (with-print-context t
                                              (format nil "~A" ?cr))))))
-
 
 (defprop reaction-type.pattern-map (:= ()))
 

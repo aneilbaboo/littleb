@@ -44,12 +44,14 @@
   :authors ("Aneil Mallavarapu"))
 
 (define-var *numerica-model* ())
-(define-var *numerica-rate-string-max-length* 2000
-  "Part of a horrendous kludge to deal with a numerica bug")
+(define-var *numerica-rate-string-max-length* 0
+  "Part of a horrendous kludge to deal with a numerica bug, change as needed")
 
 (define-function create-numerica-model (name &key 
                                         (vars (progn (format t "~&; Collecting variables...~%") (query ode-var)))
                                         (ode-comments nil)
+					(sim-options nil)
+					(sim-steps nil)
                                         (display-vars t)
                                         (overwrite :query)
                                         (gauss-value :mean) ; may be mean or random
@@ -62,9 +64,11 @@
                                                            :path path
                                                            :ode-vars vars
                                                            :ode-comments-p ode-comments
+							   :sim-options sim-options
+							   :sim-steps sim-steps
                                                            :gauss-value gauss-value
                                                            :display-vars (order-vars (if (eq t display-vars) vars
-                                                                                       display-vars))
+											 display-vars))
                                                            :base-units  base-units))
              (pathname                (numerica-file-path (numerica-model-name nm) path)))
         (unless vars
@@ -230,13 +234,11 @@
   (let ((vars (numerica-model-ode-vars nm)))
     (format t "~&;  Writing simulation block")
     (format file "SIMULATION ~A~%~
-                  ~2TOPTIONS~%~
-                    ~4TDYNAMIC_REPORTING_INTERVAL := 1 ;~%~
-                    ~4TNORMALIZED_SENS := TRUE ; ~%~
-                    ~4TINIT_PRINT_LEVEL := 0 ; ~%~
-                    ~4TREINIT_PRINT_LEVEL := 0 ; ~%~
-                    ~4TDYNAMIC_PRINT_LEVEL := 0 ; ~%~
-                  ~2TPARAMETER ~%~
+                  ~2TOPTIONS~%"
+	    (numerica-model-simulation-name nm))
+    (dolist (opt (numerica-model-sim-options nm))
+      (format file "~4T~A;~%" opt))
+    (format file "~2TPARAMETER ~%~
                     ~4TL0 AS REAL # Used to control input function L from script~%~
                   ~2TUNIT~%~
                     ~4Tm AS ~A~%~
@@ -244,8 +246,8 @@
                     ~4Tm.k~%~
                   ~2TSET~%~
                     ~4TL0 := 1e-9 ;~%"
-            (numerica-model-simulation-name nm)
             (numerica-model-model-name nm))
+
     ;; write the parameters:
     (write-kvars nm file)
 
@@ -261,13 +263,13 @@
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math 
                   base-units
-                  (b-format file "~%~6Tc(~A) = ~A ; #" i (print-math v.t0 nil)))
+                  (b-format file "~%~6Tc(~A) = ~A;#" i (print-math v.t0 nil)))
                  (b-format file " [~A] ~A~@[ in ~A~]" i v (unless (eq null-unit the-unit) the-unit)))))
 
     (format file "~%~4TEND~%~
                   ~2TSCHEDULE~%~
-                  ~4TCONTINUE FOR 30~%~
-                  END~%")))
+                  ~4TCONTINUE FOR ~A~%~
+                  END~%" (numerica-model-sim-steps nm))))
 
 
 (defun write-kvars (nm file)
@@ -361,7 +363,7 @@
 ;; the numerica-model structure stores information about how NUMERICA code is to be generated
 ;;
 (defstruct (numerica-model (:constructor _make-numerica-model 
-                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars ode-comments-p)))
+                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
   _name ; string indicating the name of the model
   path ; the path in which files for this model are stored
   ode-vars ; an ordered list of n ode-vars/derived-vars which map to y(1)...y(n) in the numerica ODE system
@@ -370,7 +372,9 @@
   gauss-value ; either :mean or :random - controls how gaussians are sampled G.mean or G.random-value
   kvars ; ordered list of vars which represent parameters (as opposed to ode-vars)
   display-vars ; a list of ode-vars/derived-vars which should be displayed in numerica
-  ode-comments-p)  ; print comments for ode-models
+  ode-comments-p ; print comments for ode-models
+  sim-options ; string list for options in the model 
+  sim-steps) ; number of steps for the simulation
  
 
 (defmethod print-object ((nm numerica-model) stream)
@@ -379,17 +383,19 @@
             (length (numerica-model-ode-vars nm)))))
 
 (defun make-numerica-model (model-name 
-                          &key 
-                          (ode-comments-p t)
-                          (path nil)
-                          (ode-vars (query [ode-var ?])) 
-                          (base-units nil) 
-                          (gauss-value :mean) 
-                          (display-vars nil))
+			    &key 
+			    (ode-comments-p t)
+			    (sim-options nil)
+			    (sim-steps nil)
+			    (path nil)
+			    (ode-vars (query [ode-var ?])) 
+			    (base-units nil) 
+			    (gauss-value :mean) 
+			    (display-vars nil))
   (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
          (kvars (make-hash-table))) ; (order-vars (compute-kvars rates))))
     (setf (gethash :last-index kvars) 0)
-    (_make-numerica-model model-name path ode-vars rates base-units gauss-value kvars display-vars ode-comments-p)))
+    (_make-numerica-model model-name path ode-vars rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
 
 (defun numerica-model-name (nm)
   (etypecase nm
@@ -612,13 +618,3 @@ ODE-VARs, the system must decide which form to prefer.  By default normal-vars a
 ;;;;       (let ((low-t0     (lowest-non-zero (numerica-model-ode-vars ci) ?.t0))
 ;;;;             (low-kvar   (lowest-non-zero (numerica-model-kvars ci) ?.value)))
 ;;;;         {low-t0 low-kvar}))))
-
-
-
-
-
-
-
-
-
-
