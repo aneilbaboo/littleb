@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.14 2008/05/21 00:36:52 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.15 2008/07/19 00:17:59 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -665,7 +665,12 @@
 (def-lisp-fields list
                  multiset-same-p 
                  exclusion
-                 nexclusion)
+                 nexclusion
+                 car cdr caar cadr cdar cddr caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar
+                 caaadr caadar caaddr cadaar cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar 
+                 cddadr cdddar cddddr
+                 first second third fourth fifth sixth seventh eighth ninth
+                 last butlast nthcdr)
 
 (def-lisp-fields number
                  + - / * 1+ 1-
