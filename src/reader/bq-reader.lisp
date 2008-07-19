@@ -194,7 +194,7 @@
      ((null rest)              (list (bq-expand first)))
 
      ;; last elt of dotted list... (a b ,c . d) => (list* 'a 'b c 'd)
-     ((dotted-cons-p x)        (list (bq-expand rest)))
+     ((dotted-cons-p x)        (list (bq-expand first) (bq-expand rest)))
      
      ;; dotted list with comma. E.g., (a b c . ,d) => (list* 'a 'b 'c d)
      ((comma-form-p rest)      (list (remove-comma rest)))
