@@ -52,6 +52,15 @@
   `(dspec:location)
   #-lispworks ()))
 
+(defmacro at-location ((location &rest extra-args) &body body)
+  #+:lispworks
+  `(dspec:at-location (,location ,@extra-args)
+     ,@body)
+  #-:lispworks
+  `(let ((*load-truename* ,location)
+         (*load-truename* ,location))
+     ,@body))
+
 (defmacro dspec (dspec &body body)
   (declare (ignorable dspec))
   #+Lispworks

@@ -46,7 +46,7 @@
 ;;;              * :USE - indicates that the included packages should be used (as by USE-PACKAGE)
 ;;;              * :EXPOSE - indicates that the included packages should be exposed (as by EXPOSE-PACKAGE) 
 ;;;
-;;; $Id: include.lisp,v 1.10 2008/01/17 07:43:38 amallavarapu Exp $
+;;; $Id: include.lisp,v 1.11 2008/07/19 00:15:11 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -330,29 +330,32 @@
     ((or (eq type :binary)
          *debugger-enabled*)  (load file :verbose nil))
     (:source  
-     (let ((code            (read-file-to-string file))
-           (*package*       *package*)
-           (*load-pathname* file)
-           (*load-truename* (pathname (enough-namestring file))))
-       (loop with eof = '#:eof
-             with start = 0
-             for (form end) = (multiple-value-list (read-from-string code nil eof :start start))
-             until (eq form eof)
-             do (handler-case (eval form)
-                  (error (e) 
-                    (let+ ((start-line (line-number-from-position code start))
-                           ((start-offset end-offset lines) 
-                            (code-start-end-lines code :start start :end end)))
-                      (b-error "While evaluating lines ~S-~S in ~A.~
+     (let* ((*load-pathname* file)
+            (*load-truename* (pathname (enough-namestring file)))
+            (*compile-file-truename* nil)
+            (*compile-file-pathname* nil)
+            (*package*       *package*))
+       (port:at-location (*load-pathname*)
+         (loop with code = (read-file-to-string file)
+               with eof = '#:eof
+               with start = 0
+               for (form end) = (multiple-value-list (read-from-string code nil eof :start start))
+               until (eq form eof)
+               do (handler-case (eval form)
+                    (error (e) 
+                      (let+ ((start-line (line-number-from-position code start))
+                             ((start-offset end-offset lines) 
+                              (code-start-end-lines code :start start :end end)))
+                        (b-error "While evaluating lines ~S-~S in ~A.~
                                 ~&FORM: ~A~@[~&~6T~A~6T...~]~
                                 ~&~A"
-                               (+ start-line start-offset)
-                               (+ start-line end-offset)
-                               file
-                               (nth start-offset lines) 
-                               (nth (1+ start-offset) lines)
-                               e))))
-             (setf start end))))))
+                                 (+ start-line start-offset)
+                                 (+ start-line end-offset)
+                                 file
+                                 (nth start-offset lines) 
+                                 (nth (1+ start-offset) lines)
+                                 e))))
+               (setf start end)))))))
 
 (defun code-start-end-lines (string &key (start 0) (end 0))
   (flet ((code-line-p (str)
