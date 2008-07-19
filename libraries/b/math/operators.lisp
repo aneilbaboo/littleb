@@ -25,7 +25,7 @@
 ;;; File: operators
 ;;; Description: 
 
-;;; $Id: operators.lisp,v 1.4 2008/05/21 02:08:56 amallavarapu Exp $
+;;; $Id: operators.lisp,v 1.5 2008/07/19 00:17:31 amallavarapu Exp $
 ;;;
 (in-package b/math)
 
@@ -331,7 +331,7 @@
 
 (defmethod ^op ((e null) p) (declare (ignore e p)) nil)
 (defmethod ^op ((n1 number) (n2 number)) 
-  (careful-expt n1 n2)) ; explored the idea of returning a product-expression
+  (expt n1 n2)) ; explored the idea of returning a product-expression
 
 (defmethod ^op ((s sum-expression) (p number))
   (cond 
