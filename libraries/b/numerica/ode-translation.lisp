@@ -232,7 +232,7 @@
 
 (defun write-simulation-block (nm file)
   (let ((vars (numerica-model-ode-vars nm)))
-    (format t "~&;  Writing simulation block")
+    (format t "~&; Writing simulation block")
     (format file "SIMULATION ~A~%~
                   ~2TOPTIONS~%"
 	    (numerica-model-simulation-name nm))
