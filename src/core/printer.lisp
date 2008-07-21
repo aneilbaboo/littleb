@@ -54,7 +54,7 @@
 ;;;
 (defun pprint-newline-selectively (kind &optional (stream *standard-output*))
   "Prints a newline only when *print-pretty* is true."
-  (when *print-pretty* (pprint-newline kind stream)))
+  #-:clisp (when *print-pretty* (pprint-newline kind stream)))
 
 
 (defconstant +special-cons-printers+ (make-hash-table :test #'equal))
