@@ -56,7 +56,6 @@
   "Prints a newline only when *print-pretty* is true."
   #-:clisp (when *print-pretty* (pprint-newline kind stream)))
 
-
 (defconstant +special-cons-printers+ (make-hash-table :test #'equal))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
