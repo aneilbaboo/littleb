@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.46 2008/07/19 00:15:46 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.47 2008/07/29 03:22:36 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -58,7 +58,7 @@
                        ,@(if doc `(:documentation ,doc))])
        ',symbol)))
 
-(port:define-dspec-class defmonomer () "" name)
+(port:define-dspec-class defmonomer () "")
 (defcon monomer ()
   (&optional (name := *name*)
    &property (location-class := compartment)
