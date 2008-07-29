@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.8 2008/02/14 22:33:34 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.9 2008/07/29 15:49:19 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -37,7 +37,7 @@
   (loop with table = (make-hash-table)
         for o being the hash-values of +objects+
         do (incf (gethash (type-of o) table 0))
-        finally return (maphash-to-list table)))
+        finally (return (maphash-to-list table))))
         
 (defun kb-find-object (hashkey)
   (gethash hashkey +OBJECTS+))

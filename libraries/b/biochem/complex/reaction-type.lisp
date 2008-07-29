@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.23 2008/05/21 02:08:50 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.24 2008/07/29 15:49:19 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -485,4 +485,4 @@
                   (not (site-label-has-state-p lab))
                   (= 1 (length (gtools:graph-vertex-outputs cg i))))
         do (setf (gtools:graph-vertex-edge-p cg i i) t)
-        finally return cg))
+        finally (return cg)))

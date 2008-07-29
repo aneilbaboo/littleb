@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.14 2008/05/09 18:21:39 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.15 2008/07/29 15:49:19 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -1029,7 +1029,7 @@ destructures the body, binding variables to the method qualifiers, the argument 
            (if last-iter (setf (cdr last-iter) iter)
              (setf list-head (cdr list-head)))
         else do (setf last-iter iter)
-        finally return (values list-head list2)))
+        finally (return (values list-head list2))))
 
 (defun exclusion (list1 list2 &key (test 'eql))
   "Returns the elements of list1 not present in list2, and the elements of list2 not present in list1."
@@ -1221,20 +1221,8 @@ to the function returned by testform if INVERT is nil.  Otherwise, KEYFORM is th
           and do (loop-finish)
         finally (return (values (if from-end (nreverse newlist) newlist) count))))
 
-;;;; (defun ninsert-after-if (predicate item list &key (key 'identity) from-end)
-;;;;   (loop for rest on (if from-end (reverse list) list)
-;;;;         for head = (funcall key (first rest))
-;;;;         when (funcall predicate head)
-;;;;         do (setf (cdr rest) (cons item (rest rest))
-;;;;                  rest (cdr rest))
-;;;;         and sum 1 into count
-;;;;         finally return (values (if from-end (reverse list) list) count)))
-;;;;         
 (defun insert-after (predecessor item list &key (test 'eql) (key 'identity) from-end)
   (insert-after-if (lambda (x) (funcall test x predecessor)) item list :key key :from-end from-end))
-
-;;;; (defun ninsert-after (predecessor item list &key (test 'eql) (key 'identity) from-end)
-;;;;   (ninsert-after-if (lambda (x) (funcall test x predecessor))  item list :key key :from-end from-end))
 
 
 ;;;
