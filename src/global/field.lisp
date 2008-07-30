@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.15 2008/07/19 00:17:59 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.16 2008/07/30 16:58:40 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -232,6 +232,8 @@
 ;;;           (eq ?.X     ?.Y     returns NIL
 ;;;           (eq ?.X     (let ((f :X))
 ;;;                         ?.,f))  returns T
+#+:allegro (eval-when (:compile-toplevel :load-toplevel :execute)
+             (mop:finalize-inheritance (find-class 'standard-object)))
 (defclass anonymous-fld-function ()
   ((object :initarg :object :reader anonymous-fld-function-object)
    (field :initarg :field :reader anonymous-fld-function-field)
