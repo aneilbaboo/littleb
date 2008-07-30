@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.47 2008/07/29 03:22:36 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.48 2008/07/30 16:55:33 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -44,6 +44,11 @@
 ;;; MONOMER concept - main role is to hold sites
 ;;;
 
+(defcon monomer ()
+  (&optional (name := *name*)
+   &property (location-class := compartment)
+             (patterns := ())))
+
 (define-macro defmonomer (name-lclass &body def)
   (mutils:let+ (((symbol lclass) (etypecase name-lclass
                                    (symbol (values name-lclass 'compartment))
@@ -57,12 +62,6 @@
                         :sites ',sites
                        ,@(if doc `(:documentation ,doc))])
        ',symbol)))
-
-(port:define-dspec-class defmonomer () "")
-(defcon monomer ()
-  (&optional (name := *name*)
-   &property (location-class := compartment)
-             (patterns := ())))
 
      
 (defield monomer.[] (x)
