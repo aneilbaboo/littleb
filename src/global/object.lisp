@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.5 2007/11/21 07:10:57 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.6 2008/08/04 14:31:36 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -63,7 +63,14 @@ A list of initializers is of the form:
           and do (setf iter (cdr iter))
           else collect 1st)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)         
+(eval-when (:compile-toplevel :load-toplevel :execute)
+(defun tree-find-if (fn list &key (key 'identity))
+  (find-if (lambda (o) 
+             (if (listp o) (tree-find-if fn o :key key)
+               (funcall fn (funcall key o))))
+           list))
+(defun tree-find (x list &key (key 'identity) (test 'eql))
+  (tree-find-if (lambda (o) (funcall test (funcall key x) o)) list))
 (defmacro with-fields (form &body body &environment env)
   "Provides easy access to fields & field functions defined on the object.
 The symbol OBJECT is bound to the object computed by FORM.  Fields may be
@@ -92,17 +99,22 @@ accessed with symbols like .field-name."
              (pbound-args     `(,@(if (boundp 'current-property)
                                       `(&optional (1st ,current-property))
                                     `(1st &optional))
-                                (2nd nil 2nd-p))))
+                                (2nd nil 2nd-p)))
+             (pboundp-def      (if (tree-find 'property-bound-p body)
+                                   `((property-bound-p ,pbound-args
+                                                       (if 2nd-p (concept-property-bound-p 1st 2nd)
+                                                         (concept-property-bound-p object 1st))))))
+             (apply-def        (if (tree-find '|.APPLY| body) 
+                                   `((|.APPLY| (field &rest args) (fld object :apply field args)))))
+             (nth-object-def   (if (tree-find 'nth-object body) `((nth-object (n) (nth n *objects*))))))
         `(let* ((,obj-var ,form)
                 (*objects* (cons ,obj-var *objects*)))
            (symbol-macrolet ((object ,typed-obj)
                              ,@smacro-specs)
              (declare (ignorable ,@(mapcar #'first smacro-specs)))
-             (flet ((nth-object (n) (nth n *objects*))
-                    (|.APPLY| (field &rest args) (fld object :apply field args))
-                    (property-bound-p ,pbound-args
-                      (if 2nd-p (concept-property-bound-p 1st 2nd)
-                        (concept-property-bound-p object 1st)))
+             (flet (,@nth-object-def
+                    ,@pboundp-def
+                    ,@apply-def
                     ,@func-specs)
                ,@new-body))))))
    (t form)))

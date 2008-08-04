@@ -355,7 +355,17 @@
 ;;; VECTOR-PRINTER
 ;;;
 (defmethod print-b-object ((vector vector) &optional stream)
-  (cons-printer stream (coerce vector 'list) "#("))
+  (if (stringp vector)
+      (if *print-readably*
+          (with-standard-io-syntax
+            (loop initially (princ #\" stream)
+                  for c across vector
+                  if (char= c #\") 
+                  do (princ #\\ stream) (princ #\" stream)
+                  else do (princ c stream)
+                  finally (princ #\" stream)))              
+        (map nil (lambda (c) (princ c stream)) vector))
+    (cons-printer stream (coerce vector 'list) "#(")))
 
 #-:clisp
 (port:allowing-redefinitions

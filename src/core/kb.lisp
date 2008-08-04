@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.9 2008/07/29 15:49:19 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.10 2008/08/04 14:31:35 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -138,32 +138,34 @@
 (defvar *monitor-interval* 10
   "Used by some monitors - # of instances seen before a report is issued.")
 
-(defun verbose-tracer (o)
+(defun verbose-kb-monitor (o)
+  "Shows all objects"
   (cond 
    ((traceable-object-p o) (format t "~&(new) ~S~%" o))
    (t                      (princ #\+ o))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-(defun quiet-tracer (&optional (n *monitor-interval*))
+(defun make-quiet-kb-monitor (&optional (n *monitor-interval*))
   "Prints a + for every N new objects."
   (let ((counter 0))
-    (flet ((quiet-trace (o)
+    (flet ((quiet-kb-monitor (o)
              (declare (ignore o))
              (when (zerop (mod (incf counter) n))
                (princ #\+)
                #+:clisp
                (force-output))))
-      #'quiet-trace))))
+      #'quiet-kb-monitor))))
 
-(defun memory-monitor (&optional (n *monitor-interval*))
+(defun make-memory-kb-monitor (&optional (n *monitor-interval*))
+  "returns a monitor which calls (ROOM) every N objects"
   (let ((counter 0))
-    (flet ((memory-trace (o)
+    (flet ((memory-kb-monitor (o)
              (declare (ignore o))
              (when (zerop (mod (incf counter) n))
                (room))))
-      #'memory-trace)))
+      #'memory-kb-monitor)))
 
-(defun all-tracer (o)
+(defun all-kb-monitor (o)
   "Prints a verbose trace of every object added to the DB"
   (format t "~&(new) ~S~%" o))
 
@@ -172,7 +174,9 @@
     (and (subtypep (type-of class) 'kb-class)
        (kb-class-traceable-p class))))
 
-(defun difference-tracer (&key (step 100) test)
+(defun make-difference-kb-monitor (&key (step 100) test)
+  "Calculates the difference in the number of objects of a particular type every STEP inferences.  
+   If test is given, then only objects which satisfy TEST are counted"
   (flet ((type-count-difference (tc1 tc2)
            (loop for (t1 . c1) in tc1
                  for (nil . c2) = (or (assoc t1 tc2) '(nil . 0))
@@ -181,7 +185,7 @@
     (let ((instance-counter 0)
           (type-count (kb-type-count))
           (type-count-new ()))
-      (flet ((difference-trace (o)
+      (flet ((difference-kb-monitor (o)
                (incf instance-counter)
                (if test (funcall test o))
                (when (= (mod instance-counter step) 0)
@@ -190,9 +194,9 @@
                      ~{~S +~S~~%~}"
                          (type-count-difference type-count-new type-count))
                  (setf type-count type-count-new))))
-        #'difference-trace))))
+        #'difference-kb-monitor))))
 
-(setf *kb-monitors* (list (quiet-tracer)))
+(setf *kb-monitors* (list (make-quiet-kb-monitor)))
 
 
 ;;;; ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept

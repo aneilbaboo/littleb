@@ -25,7 +25,7 @@
 ;;; File: concept-class
 ;;; Description: Defines the meta-class CONCEPT-CLASS. 
 
-;;; $Id: concept-class.lisp,v 1.6 2008/05/09 18:21:39 amallavarapu Exp $
+;;; $Id: concept-class.lisp,v 1.7 2008/08/04 14:31:36 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -60,6 +60,7 @@
 ;;;
 ;;; CONCEPT-CLASS
 ;;;
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defclass concept-class (kb-class)  
   ((ctor-args-fn       :accessor cclass-ctor-args-fn :initform nil)
    (pattern-args-fn    :accessor cclass-pattern-args-fn :initform nil)
@@ -71,7 +72,7 @@
    (where-patterns     :initform nil 
                        :reader cclass-where-patterns) ; key = :KEY val = property-class
    (base-property      :initform nil
-                       :reader cclass-base-property)))
+                       :reader cclass-base-property))))
 
 
 (allowing-redefinitions

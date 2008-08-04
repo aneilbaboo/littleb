@@ -27,7 +27,7 @@
 ;;;              Provides an object that has fields which are flexibly added.
 ;;;
 
-;;; $Id: dictionary.lisp,v 1.7 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: dictionary.lisp,v 1.8 2008/08/04 14:31:35 amallavarapu Exp $
 (in-package b/util)
 
 (include-declaration :expose-packages (mallavar-utility)
@@ -61,7 +61,7 @@
          (dict    (gensym "DICTIONARY"))
          (result (gensym "RESULT")))
      `(loop with ,dict = ,dictionary
-               for ,valvar being the hash-values of (|DICTIONARY._HASH-TABLE| ,dict)
+               for ,valvar being the hash-values of (fld dict :_hash-table) ;changed to accomodate allegro
                ,@(when keyvar `(for ,keyvar being the hash-keys of ,dict))
                for ,result = (progn ,@body)
                ,@(when collect-results `(collect ,result)))))
