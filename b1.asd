@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.21 2008/07/21 16:14:54 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.22 2008/08/07 19:51:06 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -77,7 +77,7 @@
     :serial t)
    (:module #:utility
     :components ((:file "utility")  
-                 (:file "datatable")
+                 ;(:file "datatable")
                  (:file "form-inspection")
                  (:file "context-info")
                  (:file "predicate")
@@ -146,6 +146,7 @@
                  (:file "def-with-fields")
                  (:file "assume")
                  (:file "system")
+                 (:file "datatable")
                  (:file "initialize"))
     :serial t))
 
