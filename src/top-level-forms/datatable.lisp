@@ -26,7 +26,7 @@
 ;;; Description: a set of defmacro-like macros which do raw substitutions on 
 ;;;              code (without the use of backquote operator)
 ;;;
-(in-package :mallavar-utility)
+(in-package :b)
 
 ;;;;
 ;;;; 
@@ -43,11 +43,20 @@
                          (lambda (substs)
                            (mutils:mapatoms 
                             (lambda (atom)
-                              (let ((sub (assoc atom substs)))
-                                (if sub 
-                                    (values (second sub)
-                                            (at-symbol-p atom))
-                                  atom)))
+                              (let* ((assoc    (assoc atom substs))
+                                     (var      (first assoc))
+                                     (sub      (second assoc))
+                                     (splicep  (at-symbol-p atom)))
+                                (cond
+                                 (assoc 
+                                  (when (and splicep 
+                                             (not (and (listp sub)
+                                                       (not (fld-form-p sub)))))
+                                    (error "Invalid substitution ~S for splice variable ~S" 
+                                           sub var))
+                                  (values sub
+                                          splicep))
+                                 (t atom))))
                             body))
                          binding-sets)))
       `(progn ,@subst-bodies))))
