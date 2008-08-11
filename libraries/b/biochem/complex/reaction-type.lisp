@@ -21,7 +21,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: reaction-type.lisp,v 1.24 2008/07/29 15:49:19 amallavarapu Exp $
+;;; $Id: reaction-type.lisp,v 1.25 2008/08/11 18:45:24 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-reaction-type.lisp
@@ -119,6 +119,12 @@
 (deftype location-definition ()
   `(satisfies location-definition-p))
 
+(defun graph-from-reaction-elt (elt)
+  (typecase elt
+    (reference-pattern elt.id) ;; IN MAIN LOCATION
+    (localization elt.entity.id) ;; IN SUBLOCATION
+    (t (b-error "Invalid input to complex-reaction-type: ~S" elt))))
+
 (defun graphs-in-expression (x)
   "Returns complex-graph objects plus the corresponding vars in the expression"
   (etypecase x
@@ -127,10 +133,7 @@
     ;; (a b c ...)
     (list           (loop for elt in x
                           collect elt into rxn-vars
-                          collect (typecase elt
-                                    (reference-pattern elt.id) ;; IN MAIN LOCATION
-                                    (localization elt.entity.id) ;; IN SUBLOCATION
-                                    (t (b-error "Invalid input to complex-reaction-type: ~S" elt)))
+                          collect (graph-from-reaction-elt elt)
                           into graphs
                           finally (return (values graphs rxn-vars))))
     ;; {a + b + c...}

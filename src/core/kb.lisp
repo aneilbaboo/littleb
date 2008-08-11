@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.10 2008/08/04 14:31:35 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.11 2008/08/11 18:45:25 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -190,9 +190,11 @@
                (if test (funcall test o))
                (when (= (mod instance-counter step) 0)
                  (setf type-count-new (kb-type-count))
-                 (format t "~&New entities after ~S steps:~%~
-                     ~{~S +~S~~%~}"
-                         (type-count-difference type-count-new type-count))
+                 (let ((entities  (type-count-difference type-count-new type-count)))
+                   (if entities
+                       (apply #'format t "~&New entities after ~S steps:~%~
+                     ~{~S +~S~%~}"
+                              entities)))
                  (setf type-count type-count-new))))
         #'difference-kb-monitor))))
 

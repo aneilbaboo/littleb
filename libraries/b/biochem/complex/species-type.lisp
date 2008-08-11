@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.48 2008/07/30 16:55:33 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.49 2008/08/11 18:45:25 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -586,10 +586,10 @@
                   ;; multiple bonds - ensure every site in the list 
                   ;; is connected to every other site in the list
                   (otherwise 
-                  ;(error "Too many occurrences of bond label ~S." var)
+                   (error "Too many occurrences of bond label ~S." var)
                    ;; in future, we may allow this - using this code to compute
                    ;; the mutual bonds:
-                   (maplist #'identity bindings)
+                   ;(maplist #'identity bindings)
                    ;; and maybe do a check here to ensure that all
                    ;; connector sites can support this many bonds
                    )) into especs
