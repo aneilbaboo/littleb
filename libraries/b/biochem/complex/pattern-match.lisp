@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: pattern-match.lisp,v 1.3 2007/11/29 17:36:57 amallavarapu Exp $
+;;; $Id: pattern-match.lisp,v 1.4 2008/08/18 03:25:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; Description: Matches complex patterns in the database
@@ -39,7 +39,10 @@
   (:and (?pattern [complex-pattern ?subgraph])
         (?species-type [complex-species-type ?graph]))
   =>
-  (dolist (iso (gtools:find-subgraph-isomorphisms ?subgraph ?graph))
+  (dolist (iso (gtools:find-subgraph-isomorphisms 
+                ?subgraph ?graph 
+                :vertex-test (make-complex-graph-vertex-test-fn ?subgraph ?graph)
+                :row-fn (make-complex-graph-row-fn ?subgraph ?graph)))
     [complex-pattern-match ?pattern ?species-type iso]))
 
 

@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.49 2008/08/11 18:45:25 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.50 2008/08/18 03:25:30 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -63,7 +63,6 @@
                        ,@(if doc `(:documentation ,doc))])
        ',symbol)))
 
-     
 (defield monomer.[] (x)
   object.(site x))
 
@@ -84,7 +83,6 @@
      (b-error "Duplicate site name (~S) in ~S" object 
               (site-info-name (first setdif))))
    sites))
-     
 
 (defield monomer.site (x)
   (etypecase x
@@ -220,6 +218,50 @@
 (defstruct (complex-graph (:constructor %make-complex-graph)
                           (:include gtools:labelled-graph)))
 
+(defun make-complex-graph-vertex-test-fn (s g)
+  (let ((scounts    (map 'vector #'logcount (gtools:graph-matrix s)))
+        (gcounts    (map 'vector #'logcount (gtools:graph-matrix g))))
+    (labels ((complex-graph-vertex-test (s svertex g gvertex)
+               (declare (ignore g))          
+               (let ((soutdegree (svref scounts svertex))
+                     (goutdegree (svref gcounts gvertex)))
+                 (cond
+                  ;; it's a valid bond-site
+                  ((consp (gtools:graph-vertex-label s svertex))
+                   (or (= soutdegree 1) ; outdegree=1 means * bond or a state site
+                       (= soutdegree goutdegree))) ; otherwise, an exact match of # bonds is required
+                  ((<= soutdegree goutdegree) ; otherwise, just match the label, as long as enough outedges
+                   t)))))
+      #'complex-graph-vertex-test)))
+  
+(defun make-complex-graph-row-fn (s g)
+  (let* ((label-tests (make-complex-graph-label-test-fns s))
+         (cache       (make-hash-table :test #'equal)) ; a hash from slabels to int bitvectors
+         (slabels     (gtools:graph-labels s))
+         (glabels     (gtools:graph-labels g))
+         (gcount      (gtools:graph-vertex-count g))
+         (startrow    (gtools:bitmask gcount)))
+    (labels ((compute-row (svertex)
+               (loop with test = (svref label-tests svertex)
+                     with rowbits = startrow
+                     for j from 0 below gcount
+                     for glabel = (svref glabels j)
+                     unless (funcall test glabel) ; if the test fails
+                     do (gtools:clearbitf rowbits j) ; clear the bits
+                     finally (return rowbits)))
+             (complex-graph-isomap-row (s svertex g)
+               (declare (ignore s g))
+               (gethash (svref slabels svertex) cache)))
+      (loop for svertex from 0 below (gtools:graph-vertex-count s)
+            for slabel = (svref slabels svertex)
+            for cached = (gethash slabel cache)
+            unless cached
+            do (let ((computed  (compute-row svertex)))
+                 (if (zerop computed)
+                     (return-from make-complex-graph-row-fn (constantly 0))
+                   (setf (gethash slabel cache) computed))))
+      #'complex-graph-isomap-row)))
+           
 (defmethod gtools:graph-type-label-less-predicate ((type (eql 'complex-graph)))
   (labels ((complex-graph-label< (x y)
               (etypecase x
@@ -256,15 +298,10 @@
                   (fld-form nil)
                   (cons   (or (complex-graph-label< (first x) (first y))
                               (and (equal (first x) (first y))
-                                   (complex-graph-label< (rest x) (rest y))))))))))
-                          ;(or (and (eq (first x) (first y))
-                          ;         (or (and (eq (second x) (second y))
-                          ;                  (complex-graph-l
-                          ;             (complex-graph-label< (second x) (second y)))
-                          ;    (complex-graph-label< (first x) (first y)))))))))
+                                   (complex-graph-label< (rest x) (rest y))))))))))                         
     #'complex-graph-label<))
 
-(defmethod gtools:graph-label-test-predicate ((s complex-graph))
+(defun make-complex-graph-label-test-fns (s)
   (labels ((test-state (test state)
              (or (eq test '*)
                  (eq test ':*)
@@ -329,9 +366,7 @@
                 ; if here, test must be an ordinary site-label
               (t (lambda (glabel) (equal test glabel))))))
     
-    (let ((preds (map 'vector #'calculate-predicate (gtools:graph-labels s))))
-      (lambda (si glabel)
-        (funcall (svref preds si) glabel)))))
+    (map 'vector #'calculate-predicate (gtools:graph-labels s))))
 
 (defun make-pattern-label-test-predicate (pattern)
   "Makes a label test for testing other pattern graphs"
@@ -488,18 +523,22 @@
 (defun site-label-p (x) 
   "true if x = (n d), where n is a number, d a monomer symbol"
   (and (consp x) (integerp (first x))))
+(defun bond-site-label-p (x)
+  "True if x is a site-label, and the site-label represents a bond site"
+  (and (site-label-p x)
+       (bond-site-info-p (site-label-to-site-info x))))
 (defun site-label-sindex (x) (first x))
 (defun site-label-monomer (x) (second x))
 (defun site-label-state (x) (third x))
 (defun (setf site-label-state) (value x) (setf (third x) value))
 (defun site-label-has-state-p (x) (> (length x) 2))
-
+(defun site-label-to-site-info (slabel)
+  (monomer-site-info (second slabel) (first slabel)))
 (defun complex-graph-label-to-site-labels (glabel)
   "Given a GLABEL, e.g., (0 KSR), returns the labels of that site."
-  (let ((sindex (site-label-sindex glabel))
-        (monomer (site-label-monomer glabel)))
+  (let ((sinfo (site-label-to-site-info glabel)))
     (if (wildcard-monomer-symbol-p monomer) (third glabel)
-      (site-info-tags (monomer-site-info (second glabel) (first glabel))))))
+      (site-info-tags sinfo))))
 
 ;;;
 ;;; LOGICAL-LABEL:
@@ -586,10 +625,10 @@
                   ;; multiple bonds - ensure every site in the list 
                   ;; is connected to every other site in the list
                   (otherwise 
-                   (error "Too many occurrences of bond label ~S." var)
+                   ;;(error "Too many occurrences of bond label ~S." var)
                    ;; in future, we may allow this - using this code to compute
                    ;; the mutual bonds:
-                   ;(maplist #'identity bindings)
+                   (maplist #'identity bindings)
                    ;; and maybe do a check here to ensure that all
                    ;; connector sites can support this many bonds
                    )) into especs
@@ -1008,7 +1047,7 @@
      ((monomer-form-ref-p first)
        `(make-complex ',(mapcar #'object-form-body args))))))
 
-(defun make-complex (cdescr &optional patternp)  
+(defun make-complex (cdescr)  
   "Given a list of the form ((D1 1a 1b 1c) (D2 2a 2b 2c)...) where Dn are domain symbols and nx are bindings, constructs a complex"
   (cond
    (*reference-labels*    [reference-pattern 
