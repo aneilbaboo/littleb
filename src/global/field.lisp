@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.17 2008/08/19 03:38:43 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.18 2008/08/19 15:39:38 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -661,8 +661,26 @@
                  delete-duplicates)
 
 (defmethod fld ((list sequence) (field (eql :alpha-order)) &rest args)
-  (destructuring-bind (&key reverse) args
-    (sort list (if reverse #'string> #'string<) :key (lambda (x) (format nil "~S" x)))))
+  (destructuring-bind (&key reverse (printer #'prin1) case-insensitive) args
+    (sort list
+          (lambda (str1 str2)
+            (string-alpha< str1 str2 :reverse reverse :case-insensitive case-insensitive))
+          :key (lambda (x) (with-output-to-string (string)
+                             (funcall printer x string))))))
+
+(defun string-alpha< (seq1 seq2 &key reverse case-insensitive)
+  (loop with test< =  (if case-insensitive
+                          (if reverse #'char-greaterp #'char-lessp)
+                        (if reverse #'char> #'char<))
+        with test= = (if case-insensitive #'char-equal #'char=)
+        for c1 across seq1
+        for c2 across seq2
+        unless (funcall test= c1 c2)
+        if (funcall test< c1 c2) 
+        return t
+        else return nil
+        finally (return (< (length seq1) 
+                           (length seq2)))))
 
 (defmethod fld ((list1 sequence) (field (eql :multiset-same-p)) &rest args)
   (destructuring-bind (list2 &key (test 'eql)) args
