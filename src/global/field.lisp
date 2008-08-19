@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.16 2008/07/30 16:58:40 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.17 2008/08/19 03:38:43 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -659,6 +659,10 @@
                  (delete-if-not :object 1)
                  remove-duplicates 
                  delete-duplicates)
+
+(defmethod fld ((list sequence) (field (eql :alpha-order)) &rest args)
+  (destructuring-bind (&key reverse) args
+    (sort list (if reverse #'string> #'string<) :key (lambda (x) (format nil "~S" x)))))
 
 (defmethod fld ((list1 sequence) (field (eql :multiset-same-p)) &rest args)
   (destructuring-bind (list2 &key (test 'eql)) args
