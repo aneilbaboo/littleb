@@ -26,7 +26,7 @@
 ;;; Description:
 
 
-;;; $Id: std-rate-functions.lisp,v 1.6 2007/11/05 18:48:04 amallavarapu Exp $
+;;; $Id: std-rate-functions.lisp,v 1.7 2008/08/20 16:07:44 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -81,7 +81,7 @@
       (store-parameter key val)))
   expr)
 
-(define-custom-rate hill-function (species &key (kd 1) (hill 1)) ()
+(define-custom-rate hill (species &key (kd 1) (hill 1)) ()
   ;; NEED TO WRITE DIMENSION CHECKING CODE
   (store-parameter :kd kd)
   (store-parameter :hill hill)

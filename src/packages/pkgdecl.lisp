@@ -25,7 +25,7 @@
 ;;; File: pkgdecl
 ;;; Description: package declaration
 
-;;; $Id: pkgdecl.lisp,v 1.20 2008/08/04 14:31:36 amallavarapu Exp $
+;;; $Id: pkgdecl.lisp,v 1.21 2008/08/20 16:07:44 amallavarapu Exp $
 ;;;
 
 
@@ -106,7 +106,7 @@
    #:with-print-context #:*print-context*
    #:*debug-printing* 
    ;; monitoring system
-   #:*kb-monitors* #:make-quiet-kb-monitor #:verbose-kb-monitor #:all-kb-monitor #:make-difference-kb-monitor
+   #:*kb-monitor* #:make-quiet-kb-monitor #:make-verbose-kb-monitor #:all-kb-monitor #:make-difference-kb-monitor
    #:memory-monitor
    ;; b error functions and macros
    #:b-error #:b-assert #:b-warn #:*debugger-enabled* #:with-b-error-context

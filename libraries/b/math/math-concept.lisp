@@ -34,7 +34,7 @@
 ;;;              arithmetic-value and any combinations.
 ;;;              
 
-;;; $Id: math-concept.lisp,v 1.5 2008/03/06 19:35:08 amallavarapu Exp $
+;;; $Id: math-concept.lisp,v 1.6 2008/08/20 16:07:44 amallavarapu Exp $
 ;;; $Log $
 
 (in-package b/math)
@@ -47,6 +47,9 @@
 
 (defcon math-concept (:abstract) ())
 
+(defield math-concept.terms () object)
+(defield number.terms ()
+  (if (zerop number) nil number))
 (defgeneric math-expression-to-list (self)
   (:method (self) self))
 ;;;

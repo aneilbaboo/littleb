@@ -70,10 +70,11 @@
                                                            :display-vars (order-vars (if (eq t display-vars) vars
 											 display-vars))
                                                            :base-units  base-units))
-             (pathname                (numerica-file-path (numerica-model-name nm) path)))
+             (output                  (numerica-file-path (numerica-model-name nm) path)))
         (unless vars
           (warn "*** No ode vars selected ***~%"))
-        (with-open-file (stream pathname :direction :output :if-does-not-exist :create :if-exists :supersede)
+        (ensure-directories-exist output)
+        (with-open-file (stream output :direction :output :if-does-not-exist :create :if-exists :supersede)
           (let ((*math-print-function*   (compute-numerica-math-print-function nm)))
             (write-numerica-code nm stream)))
         (setf *numerica-model* nm)))))

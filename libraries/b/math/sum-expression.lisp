@@ -40,6 +40,12 @@
     (b-error "Invalid argument to sum-expression - ~S - expecting a list." variable)))
 
 
+(defield sum-expression.terms ()
+  (let ((sterms (mapcar (lambda (se)
+                          {(sum-element-coef se) * (sum-element-var se)})
+                        .variable)))
+    (if (zero-numeric-p .numeric) sterms
+      (list* .numeric sterms))))
 
 (defmethod math-expression-to-list ((self sum-expression))
   (flet ((se-to-prefix (se)

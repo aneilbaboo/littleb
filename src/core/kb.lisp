@@ -25,13 +25,13 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.11 2008/08/11 18:45:25 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.12 2008/08/20 16:07:44 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
     
-(defvar *kb-monitors* ()
-  "A list of single-argument functions which are called when an object is added to the database.")
+(defvar *kb-monitor* ()
+  "A single-argument function which is called when an object is added to the database.")
 
 (defun kb-type-count ()
   (loop with table = (make-hash-table)
@@ -53,6 +53,7 @@
      (t (push object (kb-class-unmatched-instances class))))
     (setf (gethash hashkey +objects+) object
           (kb-object-hashkey object) hashkey)
+    (unless (pclassp class) (funcall *kb-monitor* object))
     object))
 
 (Defun kb-unwind-object (hashkey object)
@@ -101,7 +102,6 @@
         do (lisa:assert-instance object)))
 
 (defun kb-do-add-command (object)
-  (dolist (monitor *kb-monitors*) (funcall monitor object))
   (lisa:assert-instance object)
   object)
 
@@ -138,19 +138,73 @@
 (defvar *monitor-interval* 10
   "Used by some monitors - # of instances seen before a report is issued.")
 
-(defun verbose-kb-monitor (o)
+(defun make-type-signal-table (type-signals)
+  "Provides a table which enables kb-monitor fns to quickly determine what action to 
+   take given an object. 
+   Type-cmds is a list of conses, where CAR = indicator, CDR = signal
+   On input, indicator is a string or a symbol representing a type
+    - eg b/math:sum-expression
+         \"b/math:sum-expression\"
+         \"b/math::sum-expression\"
+         \"sum-expression\".
+   The first 3 indicators match the type SUM-EXPRESSION in the package B/MATH,
+   whereas the last indicator matches SUM-EXPRESSION in any package.
+   The SIGNAL is provided by the fn which creates the kb-monitor, and is usually just T."
+  (let ((type-table (make-hash-table :test #'equalp)))
+    (mapc (lambda (typesig) 
+            (setf (gethash (compute-type-indicator (car typesig)) type-table) (cdr typesig)))
+          type-signals)
+    type-table))
+
+(defun compute-type-indicator (ind)
+  (cond
+   ((stringp ind) 
+    (let ((symbol-elts  (mapcar #'string-upcase 
+                                (remove-if #'zerop (tok '(#\:) ind) :key #'length))))
+      (case (length symbol-elts)
+        (1 (first symbol-elts))
+        (2 (apply #'cons symbol-elts))
+        (t (error "Invalid input: ~S" ind)))))
+   (t (compute-componentized-indicator ind))))
+  
+(defun compute-componentized-indicator (type &optional shortp)
+  (mapatoms (lambda (a) (if (symbolp a) (symbol-components a shortp) a))
+            type))
+(defun symbol-components (symbol shortp)
+  (if shortp (symbol-name symbol)
+    (cons (package-name (symbol-package symbol))
+          (symbol-name symbol))))
+(defun get-object-type-signal (o type-table)
+  "Given an object and a type-table, returns the type signal for that object"
+  (let+ ((class           (class-of o))
+         ((signal found)  (gethash class type-table)))
+    (cond
+     (found  signal)
+     (t      (let* ((type     (type-of o))
+                    (signal   (or (gethash (compute-componentized-indicator type nil) type-table)
+                                  (gethash (compute-componentized-indicator type t) type-table))))
+               (setf (gethash class type-table) signal))))))
+             
+(defun type-signalify (indicators signal)
+  (mapcar (lambda (ind) (cons ind signal)) indicators))
+
+(defun make-verbose-kb-monitor (&key quiet-types)
   "Shows all objects"
-  (cond 
-   ((traceable-object-p o) (format t "~&(new) ~S~%" o))
-   (t                      (princ #\+ o))))
+  (let ((ttable (make-type-signal-table (type-signalify quiet-types t))))
+    (labels ((verbose-kb-monitor (o)
+               (if (get-object-type-signal o ttable)
+                   (format t "~&(new) ~S~%" o)
+                 (princ #\+ *standard-output*)))))
+    #'verbose-kb-monitor))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-(defun make-quiet-kb-monitor (&optional (n *monitor-interval*))
+(defun make-quiet-kb-monitor (&key (n *monitor-interval*) ignore-types)
   "Prints a + for every N new objects."
-  (let ((counter 0))
+  (let ((counter 0)
+        (ttable (make-type-signal-table (type-signalify ignore-types t))))
     (flet ((quiet-kb-monitor (o)
-             (declare (ignore o))
-             (when (zerop (mod (incf counter) n))
+             (when (and (null (get-object-type-signal o ttable))
+                        (zerop (mod (incf counter) n)))
                (princ #\+)
                #+:clisp
                (force-output))))
@@ -168,7 +222,7 @@
 (defun all-kb-monitor (o)
   "Prints a verbose trace of every object added to the DB"
   (format t "~&(new) ~S~%" o))
-
+ 
 (defun traceable-object-p (o)
   (let ((class (class-of o)))
     (and (subtypep (type-of class) 'kb-class)
@@ -198,7 +252,8 @@
                  (setf type-count type-count-new))))
         #'difference-kb-monitor))))
 
-(setf *kb-monitors* (list (make-quiet-kb-monitor)))
+(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor))
+(setf *kb-monitor* 'default-kb-monitor)
 
 
 ;;;; ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
