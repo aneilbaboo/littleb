@@ -54,6 +54,7 @@
 ;;;
 (defun pprint-newline-selectively (kind &optional (stream *standard-output*))
   "Prints a newline only when *print-pretty* is true."
+  #+:clisp (declare (ignore kind stream))
   #-:clisp (when *print-pretty* (pprint-newline kind stream)))
 
 (defconstant +special-cons-printers+ (make-hash-table :test #'equal))
@@ -481,12 +482,11 @@
     (flet ((print-value (o stream)
              (prin1 (self-evalify o) stream)))
       (with-print-context o
-    ;(format stream "~&CONTEXT-LENGTH: ~S~%" (length *print-context*))
         (pprint-logical-block (stream nil :prefix "[" :suffix "]")
           (prin1 cclass stream)
           (pprint-logical-block (stream nil)
             (loop for fld in (cclass-id-field-order cclass)
-                  do             ;  (pprint-newline :linear stream)
+                  do             
                   (let* ((fldinfo (class-fieldinfo cclass fld))
                          (ls  (fieldinfo-lambda-switch fldinfo))
                          (sym (fieldinfo-symbol fldinfo))

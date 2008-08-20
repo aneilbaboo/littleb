@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.12 2008/08/20 16:07:44 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.13 2008/08/20 17:16:47 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -138,6 +138,10 @@
 (defvar *monitor-interval* 10
   "Used by some monitors - # of instances seen before a report is issued.")
 
+(defstruct (type-signal-table
+            (:constructor %make-type-signal-table 
+             (indicators signals)))
+  indicators signals)
 (defun make-type-signal-table (type-signals)
   "Provides a table which enables kb-monitor fns to quickly determine what action to 
    take given an object. 
@@ -150,40 +154,57 @@
    The first 3 indicators match the type SUM-EXPRESSION in the package B/MATH,
    whereas the last indicator matches SUM-EXPRESSION in any package.
    The SIGNAL is provided by the fn which creates the kb-monitor, and is usually just T."
-  (let ((type-table (make-hash-table :test #'equalp)))
-    (mapc (lambda (typesig) 
-            (setf (gethash (compute-type-indicator (car typesig)) type-table) (cdr typesig)))
-          type-signals)
-    type-table))
+  (let* ((signals  (make-hash-table :test #'equalp))
+         (tinds    (mapcar (lambda (typesig)
+                             (let ((ind (compute-type-indicator (car typesig)))) ; comput the indicator
+                               (setf (gethash ind signals) (cdr typesig))        ; associate indicator with signal
+                               ind))
+                           type-signals)))
+    (%make-type-signal-table tinds signals)))
 
 (defun compute-type-indicator (ind)
-  (cond
-   ((stringp ind) 
+  "Returns a cons pair of strings (PACKAGE . SYMBOL-NAME) representing a symbol 
+   or just a string for the symbol name"
+  (etypecase
+   (string
     (let ((symbol-elts  (mapcar #'string-upcase 
                                 (remove-if #'zerop (tok '(#\:) ind) :key #'length))))
       (case (length symbol-elts)
         (1 (first symbol-elts))
         (2 (apply #'cons symbol-elts))
         (t (error "Invalid input: ~S" ind)))))
-   (t (compute-componentized-indicator ind))))
+   (symbol (symbol-components ind))
+   (cons (symbol-components (first ind)))))
   
-(defun compute-componentized-indicator (type &optional shortp)
-  (mapatoms (lambda (a) (if (symbolp a) (symbol-components a shortp) a))
-            type))
-(defun symbol-components (symbol shortp)
+(defun indicator-typep (o indicator)
+  "Given an object, and an indicator, determines whether o is of the type specified by indicator"
+  (let ((type (typify-indicator indicator)))
+    (if type (ignore-errors (typep o type)))))
+
+(defun typify-indicator (ind)
+  (etypecase ind
+    (cons   (if (find-package (car ind))
+                (find-symbol (cdr ind) (car ind))
+              'null))
+    (string `(or ,@(remove 'null (mapcar (lambda (p) (typify-indicator (cons ind p)))
+                                         (list-all-packages)))))))
+
+(defun symbol-components (symbol &optional shortp)
   (if shortp (symbol-name symbol)
     (cons (package-name (symbol-package symbol))
           (symbol-name symbol))))
-(defun get-object-type-signal (o type-table)
+
+(defun get-object-type-signal (o ttable)
   "Given an object and a type-table, returns the type signal for that object"
   (let+ ((class           (class-of o))
-         ((signal found)  (gethash class type-table)))
+         (signals         (type-signal-table-signals ttable))
+         ((signal found)  (gethash class signals)))
     (cond
      (found  signal)
-     (t      (let* ((type     (type-of o))
-                    (signal   (or (gethash (compute-componentized-indicator type nil) type-table)
-                                  (gethash (compute-componentized-indicator type t) type-table))))
-               (setf (gethash class type-table) signal))))))
+     (t      (let* ((ind (find-if (lambda (ind) (indicator-typep o ind))
+                                  (type-signal-table-indicators ttable))))
+               (setf (gethash class signals) 
+                     (gethash ind signals)))))))
              
 (defun type-signalify (indicators signal)
   (mapcar (lambda (ind) (cons ind signal)) indicators))
@@ -252,17 +273,5 @@
                  (setf type-count type-count-new))))
         #'difference-kb-monitor))))
 
-(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor))
+(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor :ignore-types '("sum-expression")))
 (setf *kb-monitor* 'default-kb-monitor)
-
-
-;;;; ;;; CCLASS-CREATE-FROM-HASHKEY - added to support reify-concept
-;;;; (defun cclass-create-from-hashkey (hashkey)
-;;;;   (let ((cclass   (first hashkey))
-;;;;         (id-vals  (rest hashkey)))
-;;;;     (cclass-create-instance
-;;;;      cclass
-;;;;      (loop for id-fld in (cclass-id-field-order cclass)
-;;;;            for val    in id-vals
-;;;;            nconc (list id-fld val)))))
-
