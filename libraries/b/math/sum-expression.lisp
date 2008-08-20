@@ -42,7 +42,7 @@
 
 (defield sum-expression.terms ()
   (let ((sterms (mapcar (lambda (se)
-                          {(sum-element-coef se) * (sum-element-var se)})
+                          (s* (sum-element-coef se) * (sum-element-var se)))
                         .variable)))
     (if (zero-numeric-p .numeric) sterms
       (list* .numeric sterms))))

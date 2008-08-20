@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.13 2008/08/20 17:16:47 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.14 2008/08/20 17:21:54 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -165,7 +165,7 @@
 (defun compute-type-indicator (ind)
   "Returns a cons pair of strings (PACKAGE . SYMBOL-NAME) representing a symbol 
    or just a string for the symbol name"
-  (etypecase
+  (etypecase ind
    (string
     (let ((symbol-elts  (mapcar #'string-upcase 
                                 (remove-if #'zerop (tok '(#\:) ind) :key #'length))))
@@ -190,9 +190,11 @@
                                          (list-all-packages)))))))
 
 (defun symbol-components (symbol &optional shortp)
-  (if shortp (symbol-name symbol)
-    (cons (package-name (symbol-package symbol))
-          (symbol-name symbol))))
+  (cond
+   (shortp                          (symbol-name symbol))
+   ((null (symbol-package symbol))  (symbol-name symbol))
+   (t                               (cons (package-name (symbol-package symbol))
+                                          (symbol-name symbol)))))
 
 (defun get-object-type-signal (o ttable)
   "Given an object and a type-table, returns the type signal for that object"
@@ -273,5 +275,5 @@
                  (setf type-count type-count-new))))
         #'difference-kb-monitor))))
 
-(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor :ignore-types '("sum-expression")))
+(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor :ignore-types '("b-user::y")))
 (setf *kb-monitor* 'default-kb-monitor)
