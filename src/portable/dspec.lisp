@@ -186,7 +186,7 @@
    #+:lispworks `(let ((hcl:*packages-for-warn-on-redefinition* nil)
 		       (LISPWORKS:*HANDLE-WARN-ON-REDEFINITION* :QUIET)
 		       (LISPWORKS:*REDEFINITION-ACTION* :QUIET)) ,@body)
-   #+:clisp `(let ((custom:*suppress-check-redefinition* t)) ,@body)
+   #+:clisp `(ext:without-package-lock () (let ((custom:*suppress-check-redefinition* t)) ,@body))
    #+(or :mcl (and :CCL (not :lispworks))) `(let ((ccl:*warn-if-redefine-kernel* nil)) ,@body)
    #+(and :allegro-version>= (:version>= 4 1)) `(excl:without-package-locks ,@body)
    #+:cmu `(extensions:without-package-locks ,@body)

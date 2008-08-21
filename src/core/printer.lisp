@@ -32,14 +32,34 @@
 ;;;
 (in-package :b)
 
+
 ;; +top-level-pprint-dispatch-table+ is needed for correct CLISP printing
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +top-level-pprint-dispatch-table+ 
     (with-standard-io-syntax (copy-pprint-dispatch)))
 
   (defmacro with-platform-printing-environment (&body body)
-    #+:clisp `(let ((*readtable* +standard-readtable+))
-                ,@body)
+    #+:clisp  (let ((block-name '#:PPRINT-BLOCK-NAME)
+                    (list-name  '#:LIST))
+                `(let ((*readtable* +standard-readtable+))
+                   (macrolet ((pprint-logical-block ((stream 
+                                                      list 
+                                                      &key
+                                                      (prefix nil prefixp) 
+                                                      (suffix nil suffixp)
+                                                      (per-line-prefix nil plprefixp))
+                                                     &body pbody)
+                                (let ((,block-name (gensym "PPRINT-BLOCK-NAME")))
+                                  `(block ,',block-name
+                                     (let ((,',list-name ,list))
+                                       (macrolet ((pprint-pop () `(pop ,',',list-name)))
+                                         (flet ((pprint-exit-if-list-exhausted ()
+                                                  (if (null ,',list-name) (return-from ,',block-name))))
+                                           ,(if prefixp `(princ ,prefix ,stream))
+                                           ,(if plprefixp (error "Per-line-prefix not allowed here"))
+                                           ,@pbody
+                                           ,(if suffixp `(princ ,suffix ,stream)))))))))
+                     ,@body)))
     #-:clisp `(progn ,@body))
 
   (defmacro def-pprint-dispatcher (name (type &optional (priority 0)) lambda-list &body body)
@@ -319,7 +339,8 @@
 	
 	(print-escaped-name name stream)
 	symbol)))
-
+#+:clisp (set-pprint-dispatch 
+          'symbol (lambda (stream o) (print-b-object o stream)) 99 +top-level-pprint-dispatch-table+)
 
 ;;;
 ;;; CONS PRINTER

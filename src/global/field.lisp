@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.18 2008/08/19 15:39:38 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.19 2008/08/21 14:57:34 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -85,8 +85,10 @@
     `(defield ,(fld-form-to-symbol ff))))
   
 (defmacro defield (fe &body method-body)
-  `(port:dspec ,(defield-dspec fe)
-     (define-field-method ,fe ,@method-body)))
+  (let ((body `(port:dspec ,(defield-dspec fe)
+                 (define-field-method ,fe ,@method-body))))
+    #+:clisp `(ext:without-package-lock () ,body)
+    #-:clisp body))
 
 (defmacro define-field-method (fe &rest method-body)
   `(define-field ,fe (t &method nil) ,@method-body))
@@ -570,6 +572,7 @@
 
 (defmethod fld ((o list) (field (eql :subsetp)) &rest args)
   (destructuring-bind (list2 &rest subsetp-args &key key (test (quote eql) testp) (test-not nil notp)) args
+    (declare (ignore key test test-not))
     (apply #'subsetp o list2 subsetp-args)))
 
 (defmethod fld ((o list) (field (eql '*bracket*)) &rest indexes)
@@ -684,7 +687,7 @@
 
 (defmethod fld ((list1 sequence) (field (eql :multiset-same-p)) &rest args)
   (destructuring-bind (list2 &key (test 'eql)) args
-    (multiset-same-p (coerce l1 'list) (coerce l2 'list) :test test)))
+    (multiset-same-p (coerce list1 'list) (coerce list2 'list) :test test)))
 
 (def-lisp-fields list
                  multiset-same-p 
@@ -692,7 +695,9 @@
                  nexclusion
                  car cdr caar cadr cdar cddr caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar
                  caaadr caadar caaddr cadaar cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar 
-                 cddadr cdddar cddddr
+                 cddadr cdddar cddddr 
+                 (mapcar :object 1) (mapc :object 1) (maplist :object 1) (mapl :object 1)
+                 (mapcan :object 1) (mapcon :object 1)
                  first second third fourth fifth sixth seventh eighth ninth
                  last butlast nthcdr)
 

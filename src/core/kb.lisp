@@ -25,7 +25,7 @@
 ;;; File: kb
 ;;; Description: Mostly internal functions for dealing with the knowledge base
 
-;;; $Id: kb.lisp,v 1.14 2008/08/20 17:21:54 amallavarapu Exp $
+;;; $Id: kb.lisp,v 1.15 2008/08/21 14:57:34 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -217,8 +217,8 @@
     (labels ((verbose-kb-monitor (o)
                (if (get-object-type-signal o ttable)
                    (format t "~&(new) ~S~%" o)
-                 (princ #\+ *standard-output*)))))
-    #'verbose-kb-monitor))
+                 (princ #\+ *standard-output*))))
+    #'verbose-kb-monitor)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (defun make-quiet-kb-monitor (&key (n *monitor-interval*) ignore-types)
@@ -275,5 +275,5 @@
                  (setf type-count type-count-new))))
         #'difference-kb-monitor))))
 
-(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor :ignore-types '("b-user::y")))
+(setf (symbol-function 'default-kb-monitor) (make-quiet-kb-monitor :ignore-types '("B/MATH:MATH-CONCEPT")))
 (setf *kb-monitor* 'default-kb-monitor)
