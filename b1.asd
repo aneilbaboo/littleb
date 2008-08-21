@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.22 2008/08/07 19:51:06 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.23 2008/08/21 23:25:45 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -122,8 +122,8 @@
                  (:file "field-pattern")
                  (:file "lisa-extensions")
                  (:file "order")
+                 #+:clisp (:file "clisp-pprinter")
                  (:file "printer")
-                 ;(:file "error")
                  (:file "query")
                  (:file "kb")
                  (:file "expose"))

@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.50 2008/08/18 03:25:30 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.51 2008/08/21 23:25:45 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -415,7 +415,6 @@
             do (format stream "[~{~S~^ ~}]" mdescr)
             (pprint-exit-if-list-exhausted)
             (pprint-newline-selectively :linear stream)))))
-
 
 ;;;
 ;;;  COMPLEX-SPECIES-TYPE:
@@ -1198,7 +1197,7 @@
                                     (monomer-style :filled)
                                     (monomer-color :lightgrey))
   (declare (ignorable site-style site-color monomer-style monomer-color))
-  (apply #'complex-graph-write-dot-file *complex-graph-dot-script-temp-file*
+  (apply #'complex-graph-write-dot-file cg *complex-graph-dot-script-temp-file*
          args)
   (port:run-shell-command "dotty ~A" "~/.lbgraph.dot"))
 

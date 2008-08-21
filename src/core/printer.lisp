@@ -38,29 +38,8 @@
   (defconstant +top-level-pprint-dispatch-table+ 
     (with-standard-io-syntax (copy-pprint-dispatch)))
 
-  (defmacro with-platform-printing-environment (&body body)
-    #+:clisp  (let ((block-name '#:PPRINT-BLOCK-NAME)
-                    (list-name  '#:LIST))
-                `(let ((*readtable* +standard-readtable+))
-                   (macrolet ((pprint-logical-block ((stream 
-                                                      list 
-                                                      &key
-                                                      (prefix nil prefixp) 
-                                                      (suffix nil suffixp)
-                                                      (per-line-prefix nil plprefixp))
-                                                     &body pbody)
-                                (let ((,block-name (gensym "PPRINT-BLOCK-NAME")))
-                                  `(block ,',block-name
-                                     (let ((,',list-name ,list))
-                                       (macrolet ((pprint-pop () `(pop ,',',list-name)))
-                                         (flet ((pprint-exit-if-list-exhausted ()
-                                                  (if (null ,',list-name) (return-from ,',block-name))))
-                                           ,(if prefixp `(princ ,prefix ,stream))
-                                           ,(if plprefixp (error "Per-line-prefix not allowed here"))
-                                           ,@pbody
-                                           ,(if suffixp `(princ ,suffix ,stream)))))))))
-                     ,@body)))
-    #-:clisp `(progn ,@body))
+  #-:clisp (defmacro with-platform-printing-environment (&body body)
+             `(progn ,@body))
 
   (defmacro def-pprint-dispatcher (name (type &optional (priority 0)) lambda-list &body body)
     `(progn (defun ,name ,lambda-list
@@ -74,8 +53,7 @@
 ;;;
 (defun pprint-newline-selectively (kind &optional (stream *standard-output*))
   "Prints a newline only when *print-pretty* is true."
-  #+:clisp (declare (ignore kind stream))
-  #-:clisp (when *print-pretty* (pprint-newline kind stream)))
+  (when *print-pretty* (pprint-newline kind stream)))
 
 (defconstant +special-cons-printers+ (make-hash-table :test #'equal))
 
@@ -314,10 +292,6 @@
 	(print-escaped-name name stream)
 	symbol)))
 
-#-:clisp
-(port:allowing-redefinitions 
- (defmethod print-object ((s symbol) stream)
-   (print-b-object s stream)))
 
 (defmethod print-b-object ((symbol symbol) &optional stream)
   (with-platform-printing-environment
@@ -339,6 +313,12 @@
 	
 	(print-escaped-name name stream)
 	symbol)))
+
+#-:clisp
+(port:allowing-redefinitions 
+ (defmethod print-object ((s symbol) stream)
+   (print-b-object s stream)))
+
 #+:clisp (set-pprint-dispatch 
           'symbol (lambda (stream o) (print-b-object o stream)) 99 +top-level-pprint-dispatch-table+)
 

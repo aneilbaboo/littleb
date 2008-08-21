@@ -34,7 +34,7 @@
 ;;;              arithmetic-value and any combinations.
 ;;;              
 
-;;; $Id: math-concept.lisp,v 1.6 2008/08/20 16:07:44 amallavarapu Exp $
+;;; $Id: math-concept.lisp,v 1.7 2008/08/21 23:25:45 amallavarapu Exp $
 ;;; $Log $
 
 (in-package b/math)
@@ -44,12 +44,13 @@
   :institution "Harvard Medical School"
   :author "Aneil Mallavarapu")
 
-
 (defcon math-concept (:abstract) ())
 
 (defield math-concept.terms () object)
+
 (defield number.terms ()
-  (if (zerop number) nil number))
+  (if (zerop object) nil object))
+
 (defgeneric math-expression-to-list (self)
   (:method (self) self))
 ;;;

@@ -76,7 +76,7 @@
 ;;;    #3spec => source file pathname
 ;;;    #4spec => compiled file pathname
 ;;;
-;;; $Id: include-path.lisp,v 1.6 2008/08/21 14:57:34 amallavarapu Exp $
+;;; $Id: include-path.lisp,v 1.7 2008/08/21 23:25:45 amallavarapu Exp $
 ;;;
 
 
@@ -473,7 +473,7 @@ Returns 2 values - the package (or nil), created (bool representing whether it w
   (let+ (((path lib) (include-path-compiled-signature-file include-path)))
     (with-open-file (stream path :if-does-not-exist nil)
       (when stream
-        (let ((signature (read stream nil)))
+        (let ((signature (ignore-errors (read stream nil))))
           (unless (consp signature)
             (warn "Invalid signature file ~S - deleting compiled file." path)
             (close stream)
