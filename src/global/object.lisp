@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.6 2008/08/04 14:31:36 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.7 2008/08/22 13:44:32 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -119,6 +119,52 @@ accessed with symbols like .field-name."
                ,@new-body))))))
    (t form)))
 )
+
+;;;;
+;;;; OBJECT MACROEXPANSION SYSTEM:
+;;;;
+(defvar *object-macros* (make-hash-table))
+(defmacro define-object-macro (name lambda-list &body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (gethash ',name *object-macros*) (lambda ,lambda-list ,@body))
+     ',name))
+
+(defun object-macro-makunbound (name)
+  (remhash name *object-macros*))
+
+(defun object-macroexpand-1 (form)
+  (cond
+   ((object-form-p form) 
+    (let ((macro (gethash (object-form-object form) *object-macros*)))
+      (cond
+       (macro  (values (apply macro (object-form-args form))
+                       t))
+       (t      (values form nil)))))
+   (t          (values form nil))))
+
+(defun object-macroexpand (form)
+  (let+ (((new-form exp?) (object-macroexpand-1 form)))
+    (cond
+     ;; if expanded, expand recursively:
+     (exp?                        
+      (let ((final-expansion (object-macroexpand new-form)))
+        ;; if an object-form is returned, return it
+        (if (object-form-p final-expansion) final-expansion
+          ;; otherwise, put the list in an object form:
+          (list* 'object final-expansion))))
+     
+     ;; if the form is an object form, then expand the body of the form:
+     ((object-form-p new-form)
+      (apply #'append
+             (mapcar (lambda (subform) 
+                       (let ((subexp (object-macroexpand subform)))
+                         (cond 
+                          ((object-form-p subexp) (list subexp))
+                          (t                      subexp))))
+                     (object-form-body new-form))))
+     (t new-form))))
+                         
+                       
 
 ;;;
 ;;; PRIORITY LISTs - base functionality for adding/removing prioritized names
