@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.51 2008/08/21 23:25:45 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.52 2008/08/22 15:04:52 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -577,6 +577,71 @@
            (wildcard-monomer-symbol-p (fld-form-object x)))))
 (defun wildcard-binding-p (x)  (member x '(* :*)))
 
+
+;;;
+;;; PARSER SUPPORT FNS:
+;;;
+
+(defun monomer-form-p (o)
+  (and (object-form-p o) 
+       (monomer-symbol-p (object-form-object o))))
+
+(defun complex-form-p (o)
+  (and (object-form-p o)
+       (monomer-form-p (object-form-object o))))
+
+(defun monomer-symbol-ref-p (o)
+  "MONOMER-SYMBOL or MONOMER-SYMBOL.REFVAR"
+  (if (fld-form-p o) (monomer-symbol-p (fld-form-object o))
+    (monomer-symbol-p o)))
+
+(defun monomer-form-ref-p (o)
+  (and (object-form-p o)
+       (monomer-symbol-ref-p (object-form-object o))))
+
+(defvar *reference-labels* nil)
+(defun ensure-monomer-is-reference-labelled (dname)
+  (cond
+   ((fld-form-p dname) 
+    (push (fld-form-field dname) (gethash nil *reference-labels*))
+    dname)
+   (t
+    `.dname.,(make-reference-label dname))))
+
+(defun make-az-string (n)
+  (if (< n 26)
+      (string (code-char (+ #.(char-code #\A) n)))
+    (concatenate 'string 
+                 (make-az-string (1- (truncate (/ n 26))))
+                 (make-az-string (rem n 26)))))
+    
+(defun make-reference-label (dname)
+  (labels ((gen-ref-label (&optional (n 0))
+             (let ((newreflab (intern (make-az-string n) :keyword)))
+               (cond
+                ((find newreflab (gethash nil
+                                          *reference-labels*))
+                 (gen-ref-label (1+ n)))
+                (t
+                 (push newreflab (gethash nil *reference-labels*))
+                 newreflab)))))
+    (when dname ; if dname is NIL, then don't look up ref label
+      (let ((id (cons dname (incf (gethash dname *reference-labels* 0)))))
+        (or (gethash id *reference-labels*)
+            (setf (gethash id *reference-labels*)
+                  (gen-ref-label)))))))
+
+(defmacro in-complex-pattern-mode (&body body)
+  `(let ((*reference-labels* (make-hash-table :test #'equal)))
+     ,@body))
+
+(defun reset-reference-labels ()
+  "Used to reset the counters on automatically determined reference labels"
+  (loop for k being the hash-keys of *reference-labels*
+        when (monomer-symbol-p k)
+        do (remhash k *reference-labels*)))
+
+
 ;;;
 ;;; GRAPH GENERATION FUNCTIONS:
 ;;;
@@ -723,64 +788,6 @@
 
      (t (error "Unrecognized monomer: ~S" monomer)))))
 
-
-;;;
-;;; RECORDING BONDS:
-;;;
-;;;; (defun record-monomer-site (mindex sindex binding-table)
-;;;;   "Records bonds between the monomer indicies and the sites"
-;;;;   (push sindex (gethash (coerce mindex 'float) binding-table)))
-
-(defun record-monomer (mindex nsites binding-table)
-  "Records the edges of the monomer in binding-table"
-  (push (make-number-list mindex (+ mindex nsites))
-        (gethash '|monomer-edges| binding-table)))
-
-(defun make-number-list (start end &optional (increment 1))
-  (loop for i from start to end by increment
-        collect i))
-
-(defun gen-bond-label (binding-table &optional (num -1))
-  (if (gethash num binding-table) (gen-bond-label binding-table (1- num))
-    num))
-
-(defun record-bond-binding (sindex binding binding-table)
-  "Records that site index is bound by variable indicated in BINDING.
-  Returns nil on failure."
-  (cond
-   ((wildcard-binding-p binding) t) ; * means no bonds - used for patterns
-
-   ((unbonded-label-p binding)
-    (setf (gethash (gen-bond-label binding-table) 
-                   binding-table)
-          (list sindex sindex)))
-
-   ((bond-label-p binding)
-    (push sindex (gethash binding binding-table)))
-
-   (t (error "Invalid bond label: ~S" binding))))
-
-(defvar *default-site-binding* 'non-pattern-default-site-binding
-  "A function which calculates the default binding to use for a site")
-
-(defun non-pattern-default-site-binding (monomer site-num binding) 
-  (or binding
-      (let* ((site (svref (monomer-sites monomer) site-num)))
-        (etypecase site
-          (bond-site-info '_)
-          (state-site-info (state-site-info-default site))))))
-
-;;; not yet used:
-(defun pattern-default-site-binding (monomer site-num binding)
-  (declare (ignore monomer site-num))
-  (or binding '*))
- 
-(defun default-site-binding (monomer site-num &optional binding) 
-  (funcall *default-site-binding* monomer site-num binding))
-
-(defun square-bracket-fld-form-p (x)
-  (and (fld-form-p x)
-       (equal (fld-form-field x) '#.(fld-form-field '().[]))))
 
 ;;;
 ;;; PARSE-NAMED-MONOMER-DESCRIPTION
@@ -960,196 +967,65 @@
 (defun user-bond-label-p (x)
   "Objects allowed to be used by the user to indicate a bond in a complex"
   (and (integerp x) (not (minusp x))))
-  
+
 ;;;
+;;; RECORDING BONDS:
 ;;;
-;;; SQUARE BRACKET MACRO-READER
-;;;
+;;;; (defun record-monomer-site (mindex sindex binding-table)
+;;;;   "Records bonds between the monomer indicies and the sites"
+;;;;   (push sindex (gethash (coerce mindex 'float) binding-table)))
 
-(defun monomer-form-p (o)
-  (and (object-form-p o) 
-       (monomer-symbol-p (object-form-object o))))
+(defun record-monomer (mindex nsites binding-table)
+  "Records the edges of the monomer in binding-table"
+  (push (make-number-list mindex (+ mindex nsites))
+        (gethash '|monomer-edges| binding-table)))
 
-(defun complex-form-p (o)
-  (and (object-form-p o)
-       (monomer-form-p (object-form-object o))))
+(defun make-number-list (start end &optional (increment 1))
+  (loop for i from start to end by increment
+        collect i))
 
-(defun monomer-symbol-ref-p (o)
-  "MONOMER-SYMBOL or MONOMER-SYMBOL.REFVAR"
-  (if (fld-form-p o) (monomer-symbol-p (fld-form-object o))
-    (monomer-symbol-p o)))
+(defun gen-bond-label (binding-table &optional (num -1))
+  (if (gethash num binding-table) (gen-bond-label binding-table (1- num))
+    num))
 
-(defun monomer-form-ref-p (o)
-  (and (object-form-p o)
-       (monomer-symbol-ref-p (object-form-object o))))
-
-(defvar *reference-labels* nil)
-(defun ensure-monomer-is-reference-labelled (dname)
+(defun record-bond-binding (sindex binding binding-table)
+  "Records that site index is bound by variable indicated in BINDING.
+  Returns nil on failure."
   (cond
-   ((fld-form-p dname) 
-    (push (fld-form-field dname) (gethash nil *reference-labels*))
-    dname)
-   (t
-    `.dname.,(make-reference-label dname))))
+   ((wildcard-binding-p binding) t) ; * means no bonds - used for patterns
 
-(defun make-az-string (n)
-  (if (< n 26)
-      (string (code-char (+ #.(char-code #\A) n)))
-    (concatenate 'string 
-                 (make-az-string (1- (truncate (/ n 26))))
-                 (make-az-string (rem n 26)))))
-    
-(defun make-reference-label (dname)
-  (labels ((gen-ref-label (&optional (n 0))
-             (let ((newreflab (intern (make-az-string n) :keyword)))
-               (cond
-                ((find newreflab (gethash nil
-                                          *reference-labels*))
-                 (gen-ref-label (1+ n)))
-                (t
-                 (push newreflab (gethash nil *reference-labels*))
-                 newreflab)))))
-    (when dname ; if dname is NIL, then don't look up ref label
-      (let ((id (cons dname (incf (gethash dname *reference-labels* 0)))))
-        (or (gethash id *reference-labels*)
-            (setf (gethash id *reference-labels*)
-                  (gen-ref-label)))))))
+   ((unbonded-label-p binding)
+    (setf (gethash (gen-bond-label binding-table) 
+                   binding-table)
+          (list sindex sindex)))
 
-(defmacro in-complex-pattern-mode (&body body)
-  `(let ((*reference-labels* (make-hash-table :test #'equal)))
-     ,@body))
+   ((bond-label-p binding)
+    (push sindex (gethash binding binding-table)))
 
-(defun reset-reference-labels ()
-  "Used to reset the counters on automatically determined reference labels"
-  (loop for k being the hash-keys of *reference-labels*
-        when (monomer-symbol-p k)
-        do (remhash k *reference-labels*)))
+   (t (error "Invalid bond label: ~S" binding))))
 
-;;;;                                    
-;;;; (defun selector-graph-ignorable-vertex-p (rg i)
-;;;;   (let ((label (gtools:graph-vertex-label rg i)))
-;;;;   (cond
-;;;;    ((site-label-has-state-p label) 
-;;;;     (eq label '*))
-;;;;    (t (= (length (gtools:graph-vertex-outputs rg i)) 1)))))
+(defvar *default-site-binding* 'non-pattern-default-site-binding
+  "A function which calculates the default binding to use for a site")
 
-;;;
-;;; COMPLEX-EXPANDER: implements [] syntax
-;;;
-(add-object-expander 'complex-expander 0)
-(defun complex-expander (args environment)
-  (declare (ignorable environment))
-  (let ((first (first args)))
-    (cond
-     ((monomer-symbol-ref-p first)
-       `(make-complex '(,args)))
-     ((monomer-form-ref-p first)
-       `(make-complex ',(mapcar #'object-form-body args))))))
+(defun non-pattern-default-site-binding (monomer site-num binding) 
+  (or binding
+      (let* ((site (svref (monomer-sites monomer) site-num)))
+        (etypecase site
+          (bond-site-info '_)
+          (state-site-info (state-site-info-default site))))))
 
-(defun make-complex (cdescr)  
-  "Given a list of the form ((D1 1a 1b 1c) (D2 2a 2b 2c)...) where Dn are domain symbols and nx are bindings, constructs a complex"
-  (cond
-   (*reference-labels*    [reference-pattern 
-                           (make-complex-graph
-                            (mapcar
-                             (lambda (ddescr) 
-                               (list* (ensure-monomer-is-reference-labelled (first ddescr))
-                                      (rest ddescr)))
-                             cdescr)
-                            t)])
-   (t (if (complex-pattern-description-p cdescr)
-          [complex-pattern cdescr]
-        [complex-species-type cdescr]))))
-
-(defun complex-pattern-description-p (cdescr)
-  (some #'pattern-monomer-description-p cdescr))
-
-(defun pattern-monomer-description-p (x)
-  (and (consp x)
-       (let ((head (first x)))
-         (or (fld-form-p head)
-             (null head)
-             (some (lambda (x) (member x '(* **))) x)))))
-
-(defun firsthash (keys hash-table &optional default)
-  "Returns the first hash-value available for a list of keys, otherwise default"
-  (or (loop for k in keys
-            for v = (gethash k hash-table #1='#:nohash)
-            unless (eq v #1#)
-            return v)
-      default))
-
-(defun complex-graph-description (graph)
-  (let* ((mvertexes (complex-graph-monomer-vertexes graph))
-         (cnxn-num  0)
-         (var-table (make-hash-table :test #'equal))
-         (labels    (gtools:graph-labels graph)))
-    (labels ((add-bond (cnxns)
-               (or (firsthash cnxns var-table)
-                   (loop with new-var = (incf cnxn-num)
-                         for c in cnxns
-                         do (setf (gethash c var-table) new-var)
-                         finally (return new-var))))
-             (calculate-bond-label (mindex sindex)               
-               (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
-                 (cond
-                  ((null cnxns) '*)
-                  ((equal cnxns `((,mindex ,sindex)))  ; connected to self = empty
-                   '_)
-                  (t  
-                   (add-bond (list* (list mindex sindex) cnxns))))))
-             (simplify-tags-test (x)
-               (if (and (consp x) 
-                        (eq (first x) 'and))
-                   (rest x)
-                 x))
-             (simplify-state-test (x)
-               (cond
-                ((equal x '(or :*)) '(*))
-                ((eq (first x) 'or) (rest x))
-                (t x))))
-                 
-      (loop 
-       for mindex = 0 then (1+ mindex)
-       for mvertex in mvertexes
-       for monomer = (elt labels mvertex)
-       if (wildcard-monomer-reference-p monomer)
-       collect 
-       (list* monomer
-              (loop for svertex in (complex-graph-monomer-site-vertexes graph mindex)
-                    for site-label = (gtools:graph-vertex-label graph svertex)
-                    for sindex = 0 then (1+ sindex)
-                    for test-label = (simplify-tags-test (wildcard-label-tags site-label))
-                    collect 
-                    (cond 
-                     ;; state sites:
-                     ((wildcard-state-label-p site-label)
-                      `,.test-label.[,@(simplify-state-test (wildcard-label-state site-label))])
-
-                     ;; connector sites:
-                     (t              
-                      (let* ((blabel (keywordify (calculate-bond-label mindex sindex))))
-                      `,.test-label.,blabel)))))
-
-       else
-       collect
-       (list* monomer
-              (loop with sinfos = (monomer-sites monomer)
-                    for sindex from 0 below (length sinfos)
-                    for sinfo = (svref sinfos sindex)
-                    collect (cond
-                             ;; state sites
-                             ((state-site-info-p sinfo)
-                              (site-label-state
-                               (gtools:graph-vertex-label
-                                graph 
-                                (complex-graph-mindex-sindex-to-vertex graph mindex sindex))))
-                             
-                             ;; connector sites
-                             ((bond-site-info-p sinfo)
-                              (calculate-bond-label mindex sindex)))))))))
+;;; not yet used:
+(defun pattern-default-site-binding (monomer site-num binding)
+  (declare (ignore monomer site-num))
+  (or binding '*))
  
-        
+(defun default-site-binding (monomer site-num &optional binding) 
+  (funcall *default-site-binding* monomer site-num binding))
+
+(defun square-bracket-fld-form-p (x)
+  (and (fld-form-p x)
+       (equal (fld-form-field x) '#.(fld-form-field '().[]))))
+
 ;;;;
 ;;;; CONSTRUCTOR FORMAT
 ;;;;
@@ -1340,17 +1216,144 @@ Returns the vertexes representing sites in the correct order."
   (b-error "Invalid monomer [~S~{ ~S~}]~@[: ~?~]" monomer bindings msg args))
 
 
+(defun complex-graph-description (graph)
+  (let* ((mvertexes (complex-graph-monomer-vertexes graph))
+         (cnxn-num  0)
+         (var-table (make-hash-table :test #'equal))
+         (labels    (gtools:graph-labels graph)))
+    (labels ((add-bond (cnxns)
+               (or (firsthash cnxns var-table)
+                   (loop with new-var = (incf cnxn-num)
+                         for c in cnxns
+                         do (setf (gethash c var-table) new-var)
+                         finally (return new-var))))
+             (calculate-bond-label (mindex sindex)               
+               (let ((cnxns (complex-graph-site-bonds graph mindex sindex)))
+                 (cond
+                  ((null cnxns) '*)
+                  ((equal cnxns `((,mindex ,sindex)))  ; connected to self = empty
+                   '_)
+                  (t  
+                   (add-bond (list* (list mindex sindex) cnxns))))))
+             (simplify-tags-test (x)
+               (if (and (consp x) 
+                        (eq (first x) 'and))
+                   (rest x)
+                 x))
+             (simplify-state-test (x)
+               (cond
+                ((equal x '(or :*)) '(*))
+                ((eq (first x) 'or) (rest x))
+                (t x))))
+                 
+      (loop 
+       for mindex = 0 then (1+ mindex)
+       for mvertex in mvertexes
+       for monomer = (elt labels mvertex)
+       if (wildcard-monomer-reference-p monomer)
+       collect 
+       (list* monomer
+              (loop for svertex in (complex-graph-monomer-site-vertexes graph mindex)
+                    for site-label = (gtools:graph-vertex-label graph svertex)
+                    for sindex = 0 then (1+ sindex)
+                    for test-label = (simplify-tags-test (wildcard-label-tags site-label))
+                    collect 
+                    (cond 
+                     ;; state sites:
+                     ((wildcard-state-label-p site-label)
+                      `,.test-label.[,@(simplify-state-test (wildcard-label-state site-label))])
+
+                     ;; connector sites:
+                     (t              
+                      (let* ((blabel (keywordify (calculate-bond-label mindex sindex))))
+                      `,.test-label.,blabel)))))
+
+       else
+       collect
+       (list* monomer
+              (loop with sinfos = (monomer-sites monomer)
+                    for sindex from 0 below (length sinfos)
+                    for sinfo = (svref sinfos sindex)
+                    collect (cond
+                             ;; state sites
+                             ((state-site-info-p sinfo)
+                              (site-label-state
+                               (gtools:graph-vertex-label
+                                graph 
+                                (complex-graph-mindex-sindex-to-vertex graph mindex sindex))))
+                             
+                             ;; connector sites
+                             ((bond-site-info-p sinfo)
+                              (calculate-bond-label mindex sindex)))))))))
+ 
+(defun complex-pattern-description-p (cdescr)
+  (some #'pattern-monomer-description-p cdescr))
+
+(defun pattern-monomer-description-p (x)
+  (and (consp x)
+       (let ((head (first x)))
+         (or (fld-form-p head)
+             (null head)
+             (some (lambda (x) (member x '(* **))) x)))))
+
+(defun firsthash (keys hash-table &optional default)
+  "Returns the first hash-value available for a list of keys, otherwise default"
+  (or (loop for k in keys
+            for v = (gethash k hash-table #1='#:nohash)
+            unless (eq v #1#)
+            return v)
+      default))
+
 (defun complex-form-to-complex-description (o)
   (assert (object-form-p o))
   (let ((body (object-form-body o)))
     (cond
      ((object-form-p (first body)) (mapcar #'object-form-body body))
      (t                            (list body)))))
-      
 
+;;;
+;;; PARSER
+;;;
+
+;;;
+;;; COMPLEX-EXPANDER: installs [] syntax 
+;;;  
+
+(add-object-expander 'complex-expander 0)
+(defun complex-expander (args environment)
+  (declare (ignorable environment))
+  (let ((first (first args)))
+    (cond
+     ((or (monomer-symbol-ref-p first)
+          (user-defined-complex-function first))
+       `(make-complex ',(expand-user-complex args)))
+     ((monomer-form-ref-p first)
+       `(make-complex ',(mapcar #'object-form-body (expand-user-complex args)))))))
+
+(defun make-complex (cdescr)  
+  "Given a list of the form ((D1 1a 1b 1c) (D2 2a 2b 2c)...) where Dn are domain symbols and nx are bindings, constructs a complex"
+  (cond
+   (*reference-labels*    [reference-pattern 
+                           (make-complex-graph
+                            (mapcar
+                             (lambda (ddescr) 
+                               (list* (ensure-monomer-is-reference-labelled (first ddescr))
+                                      (rest ddescr)))
+                             cdescr)
+                            t)])
+   (t (if (complex-pattern-description-p cdescr)
+          [complex-pattern cdescr]
+        [complex-species-type cdescr]))))
+
+
+;;;
+;;; for rules:
+;;;
 (defun complex-pattern-expander (form &optional objvar queryp)
-  (when (or (monomer-form-p form)
-            (complex-form-p form))
+  (when (and (object-form-p form)
+             (or (monomer-form-p form)
+                 (complex-form-p form)
+                 (user-defined-complex-function (object-form-object form))))
     (let ((cdescr (complex-form-to-complex-description form)))
       (cond
        ((and queryp
@@ -1366,4 +1369,55 @@ Returns the vertexes representing sites in the correct order."
                             ,cst-graph :continue-if nil))))))))))
 
 (add-pattern-expander 'complex-pattern-expander)
+     
+;;;;
+;;;; USER-DEFINED COMPLEX EXPANSION SYSTEM:
+;;;;
+(defvar *complex-expansions* (make-hash-table))
+(define-macro defcomplex (name lambda-list &body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (gethash ',name *complex-expansions*) 
+           (lambda ,lambda-list (process-complex-macro-output ',name (progn ,@body))))
+     ',name))
+(defun user-defined-complex-function (name)
+  (gethash name *complex-expansions*))
+(defun process-complex-macro-output (name complex-form)
+  (assert (and (object-form-p complex-form) (object-form-p (object-form-object complex-form)))
+      ()
+    "Invalid complex specification ~S produced by (DEFINE-COMPLEX ~S ...)" complex-form name)
+  (mapcar #'object-form-body (object-form-body complex-form)))
 
+(define-function undefine-complex (name)
+  (remhash name *complex-expansions*))
+
+(defun user-complex-expand-1 (form)
+  (cond
+   ((consp form)
+    (let ((macro (user-defined-complex-function (first form))))
+      (cond
+       (macro  (values (apply macro (rest form))
+                       t))
+       (t      (values form nil)))))
+   (t          (values form nil))))
+
+(defun expand-user-complex (form)
+  (let+ (((new-form exp?) (user-complex-expand-1 form)))
+    (cond
+     ;; if expanded, expand recursively:
+     (exp? (values (expand-user-complex new-form) t))
+     
+     ;; if this is an object form which contains object-forms e.g., [[...][...]]
+     ;; expand it
+     ((and (consp new-form)
+           (consp (first new-form)))
+      (values
+       (apply #'append
+              (mapcar (lambda (subform) 
+                        (let+ (((subexp sexp?) (expand-user-complex subform)))
+                          (cond
+                           (sexp? subexp) ; already a list with lists ((x 1 2) (y 2 3)...)
+                           (t     (list subexp))))) ; because we're appending, keep the new form as is
+                      new-form))
+       t))
+     (t (values new-form nil)))))
+                         
