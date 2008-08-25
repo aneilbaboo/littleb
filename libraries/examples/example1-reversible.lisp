@@ -10,10 +10,7 @@
 (def-species-types compartment enz sub prod)
 
 ;; REACTIONS
-(define rxn {enz + sub <-> enz + prod})  ; generates a reversible-reaction
-
-rxn.fwd.(set-rate-function 'mass-action 1)
-rxn.rev.(set-rate-function 'mass-action .5)
+{enz + sub <-> enz + prod}.(set-rate-function 'mass-action :fwd 1 :rev .5)
 
 ;;; LOCATIONS
 (define c1 [compartment]) ; by default, {.size.value := 1}
