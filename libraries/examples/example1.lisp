@@ -6,24 +6,25 @@
 (include b-user/ode-biochem)
 
 ;; SPECIES
-(def-species-types compartment enz sub prod)
+(def-species-types compartment
+  (e  :documentation "enzyme")
+  (s  :documentation "substrate")
+  (es :documentation "enzyme-substrate complex")
+  (p  :documentation "product"))
 
 ;; REACTIONS
-(define fwd {enz + sub -> enz + prod}) 
-(define rev {enz + sub <- enz + prod}) 
-
-fwd.(set-rate-function 'mass-action 1)
-rev.(set-rate-function 'mass-action .5)
+{e + s <-> es}.(set-rate-function 'mass-action :fwd 1 :rev .4)
+{es -> p}.(set-rate-function 'mass-action .1)
 
 ;;; LOCATIONS
 (define c1 [compartment]) ; by default, {.size.value := 1}
 
 ;; MODEL
-c1.(contains enz sub) ;; put enz and sub in the compartment - prod.(in c1) is inferred
+c1.(contains e s) ;; put enz and sub in the compartment - p.(in c1) is inferred
 
  
-{enz.(in c1).conc.t0 := .1}
-{sub.(in c1).conc.t0 := .2}
-{prod.(in c1).conc.t0 := 0} ; not necessary, since t0 = 0 by default
+{e.(in c1).conc.t0 := .1}
+{s.(in c1).conc.t0 := .2}
+{p.(in c1).conc.t0 := 0} ; not necessary, since t0 = 0 by default
 
 (create-ode-model  "ESP")
