@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: ode.lisp,v 1.9 2008/01/15 06:37:08 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.10 2008/08/28 14:20:14 amallavarapu Exp $
 ;;; Description:  Extends the complex-reaction-type and complex-species-type objects to support ode modeling
 
 (in-package #I@file)
@@ -54,17 +54,18 @@
          (stoichiometries  (make-list (length entities) :initial-element 1))
          (dimensions       (mapcar #'entity-dimension entities)))
    (setf .rate-calculator (list* fn args)
-         .rate-fn (funcall fn
-                           args
-                           {(location-class-dimension .location-class)
-                            * *molecular-amount-dimension* 
-                            / *time-dimension*}
-                           .k
-                           entities 
-                           stoichiometries
-                           dimensions))))
+         .rate-fn (fix-complex-rate-expr
+                   (funcall fn
+                            args
+                            {(location-class-dimension .location-class)
+                             * *molecular-amount-dimension* 
+                             / *time-dimension*}
+                            .k
+                            entities 
+                            stoichiometries
+                            dimensions)))))
   
-
+(defun fix-complex-rate-expr (x) x)
 (defield reversible-complex-reaction-type.set-rate-function (fn &key fwd rev)
   (values .fwd.(apply :set-rate-function fn (ensure-list fwd))
           .rev.(apply :set-rate-function fn (ensure-list rev))))

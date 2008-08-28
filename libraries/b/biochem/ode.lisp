@@ -25,7 +25,7 @@
 ;;; File: reaction-ode.lisp
 ;;; Description:  Extends the reaction and reaction-type objects to support ode modeling
 
-;;; $Id: ode.lisp,v 1.19 2008/07/18 18:23:14 amallavarapu Exp $
+;;; $Id: ode.lisp,v 1.20 2008/08/28 14:20:14 amallavarapu Exp $
 
 (in-package #I@FILE)
 
@@ -70,6 +70,10 @@
                                                     rtr.species-type.location-class)))
                                            .lhs-requirements))))
     object))
+
+(defield reversible-reaction.set-rate-function (fn &key fwd rev)
+  .fwd.(apply :set-rate-function fn (if (listp fwd) fwd (list fwd)))
+  .rev.(apply :set-rate-function fn (if (listp rev) rev (list rev))))
 
 ;;; DEFINE-CUSTOM-RATE: allows user to define a rate calculator 
 ;;;     - function of 5 or more arguments which return a math expression expression

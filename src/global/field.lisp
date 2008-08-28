@@ -25,7 +25,7 @@
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.19 2008/08/21 14:57:34 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.20 2008/08/28 14:20:14 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -664,12 +664,15 @@
                  delete-duplicates)
 
 (defmethod fld ((list sequence) (field (eql :alpha-order)) &rest args)
-  (destructuring-bind (&key reverse (printer #'prin1) case-insensitive) args
+  (destructuring-bind (&key reverse (printer #'prin1) key case-insensitive) args
     (sort list
           (lambda (str1 str2)
             (string-alpha< str1 str2 :reverse reverse :case-insensitive case-insensitive))
-          :key (lambda (x) (with-output-to-string (string)
-                             (funcall printer x string))))))
+          :key (if key (lambda (x) (with-output-to-string (string)
+                                     (funcall printer (funcall key x) string)))
+                  (lambda (x) (with-output-to-string (string)
+                                (funcall printer x string)))))))
+          
 
 (defun string-alpha< (seq1 seq2 &key reverse case-insensitive)
   (loop with test< =  (if case-insensitive

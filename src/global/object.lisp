@@ -26,7 +26,7 @@
 ;;; Description: defines the OBJECT macro
 
 ;;; $Name:  $
-;;; $Id: object.lisp,v 1.8 2008/08/22 15:04:52 amallavarapu Exp $
+;;; $Id: object.lisp,v 1.9 2008/08/28 14:20:14 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -211,6 +211,13 @@ accessed with symbols like .field-name."
                   :fast-query ,bindings ,key-form ,obj-form ,find-actions ,create-actions)))
      ,@body))
 
+(defun object-form-operator (oform)
+  "Given [[[[x ...]...]]], returns X for arbitrarily nested object form"
+  (assert (object-form-p oform))
+  (let ((obj (object-form-object oform)))
+    (if (object-form-p obj) (object-form-operator obj)
+      obj)))
+  
 (defun object-expansion (args force-new env)
   (or (loop for (expander) in *object-expanders*
             for expansion = (funcall expander args env)

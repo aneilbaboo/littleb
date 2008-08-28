@@ -133,7 +133,7 @@
         (write-var-indicies-file indicies-file mm)
         (write-init-script init-file mm)
         (format t "~&The following files have been written to ~A:~{~%     ~A.~A~}"
-                (truename path)
+                (setf *previous-model-output-pathname* (truename path))
                 (mapcan (lambda (p) (list (carefully-get-filename p) (carefully-get-filetype p)))
                         (list run-file init-file indicies-file)))))
  ;   (error (e) (format t "Error while writing files: ~A" e))))
@@ -376,9 +376,11 @@
     (format stream "~A (~A vars)" (matlab-model-name mm)
             (length (matlab-model-ode-vars mm)))))
 
+(defvar *previous-model-output-pathname* nil)
 (defun make-matlab-model (model-name 
                           &key 
-                          (path *model-output-default-pathname*)
+                          (path (or *model-output-default-pathname*
+                                    *previous-model-output-pathname*))
                           (ode-comments-p t)
                           (ode-vars (query [ode-var ?])) 
                           (base-units nil) 
