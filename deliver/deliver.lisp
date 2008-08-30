@@ -121,10 +121,9 @@
   (compile-file-if-needed (sys:example-file   "configuration/macos-application-bundle") :load t)
   (setq *delivered-image-name*
         (write-macos-application-bundle "~/littleb.app"   
-            :document-types nil)))  
+            :document-types nil)))
 
 (clrhash b::*package-clearable-items*)
-(setf *features* (set-difference *features* +compile-features+))
 
 (defun existing-packages (plist)
   (delete-if #'null
@@ -142,12 +141,8 @@
           *littleb-id-string*)
   (in-package :b-user)
   (b:init)
-  (system::%top-level-internal :read-a-command 'system::read-a-command 
-                               :eval-function 'eval
-                               :debug-level 0
-                               :read-stream *standard-input*
-                               :print-stream *standard-output*))
-
+  (start-tty-listener nil))
+(compile 'b::run-b-top-level)
 ;;; Deliver the application
 (apply #'deliver 'b::run-b-top-level *delivered-image-name* 
          1
