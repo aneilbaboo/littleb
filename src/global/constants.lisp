@@ -26,7 +26,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.7 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.8 2008/08/30 22:55:46 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -85,7 +85,7 @@ on (RESET) or (INIT).  Useful for storing an object which must be used as an ide
     `(let* ((,hk (cons :user ,key)))
        (or (gethash ,hk +objects+)
            (setf (gethash ,hk +objects+) ,form)))))
-#+:lispworks (editor:setup-indent 'unique-object 2 4 2)
+(port:setup-indent 'unique-object 2 4 2)
 
 (defconstant +names+ (make-hash-table  ; a map of objects to ids
                         :size  10007 ; 10007 is a prime

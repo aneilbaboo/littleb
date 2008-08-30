@@ -195,4 +195,6 @@
    
    
 
-   
+
+(defun setup-indent (form-name no-of-args &rest args)
+  #+(and :lispworks (not :ignore-lw-editor)) (apply #'editor:setup-indent form-name no-of-args args))

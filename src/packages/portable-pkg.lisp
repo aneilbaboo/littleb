@@ -25,7 +25,7 @@
 ;;; File: portable-pkg
 ;;; Description: much of the code within lifted from the CLOCC PORTABLE project
 
-;;; $Id: portable-pkg.lisp,v 1.6 2008/07/19 00:15:11 amallavarapu Exp $
+;;; $Id: portable-pkg.lisp,v 1.7 2008/08/30 22:55:46 amallavarapu Exp $
 ;;;
 (defpackage portable
   (:use cl)
@@ -54,7 +54,7 @@
    #:variable-information #:declaration-information #:function-information
    #:dspec #:define-dspec-form-parser #:define-dspec-class #:find-dspec-locations
    #:define-dspec-alias #:location #:record-definition  #:location-redefinition-check
-   #:*file-extensions* #:destroy-symbol #:destroy-dspec #:at-location
+   #:*file-extensions* #:destroy-symbol #:destroy-dspec #:at-location #:setup-indent
 
    ;; misc
    #:user-documents-folder #+:win32 #:get-windows-pathname

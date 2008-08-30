@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.24 2008/08/28 14:20:14 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.25 2008/08/30 22:55:46 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -84,7 +84,7 @@
                  (:file "trie"))
     :serial t)
    (:module #:platform
-    :components (#+:lispworks (:file "lispworks")
+    :components (#+(and :lispworks (not :delete-lw-editor)) (:file "lispworks")
                  #+:clisp (:file "clisp")))
    (:module #:global
     :components ((:file "constants")

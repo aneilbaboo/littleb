@@ -29,14 +29,11 @@
 ;;;              as 1 form by the altered lisp reader.
 ;;;
 
-;;; $Id: lispworks.lisp,v 1.9 2008/02/12 14:26:18 amallavarapu Exp $
+;;; $Id: lispworks.lisp,v 1.10 2008/08/30 22:55:46 amallavarapu Exp $
 
 (in-package editor)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-
-;(setf (editor:variable-value "CURRENT-PACKAGE" :global) nil) ;"B-USER")
-  
 
 (defparameter *b-syntax-table*
   (create-syntax-table  :string-escape #\\

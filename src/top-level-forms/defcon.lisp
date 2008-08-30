@@ -26,7 +26,7 @@
 ;;; Description: defcon, the definer of concepts 
 ;;;
 
-;;; $Id: defcon.lisp,v 1.3 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: defcon.lisp,v 1.4 2008/08/30 22:55:46 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -145,8 +145,7 @@
              ,name)))
     (error (e) (error "Invalid concept ~S: ~A" name e))))
 
-#+Lispworks
-(editor:setup-indent 'defcon 2 2 4)
+(port:setup-indent 'defcon 2 2 4)
 
 (defun cclass-property-symbol (cclass-name)
   (sym cclass-name #\. "PROPERTY"))

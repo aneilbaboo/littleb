@@ -217,5 +217,5 @@
     `(progn ,@forms)))
 
 
-#+:lispworks (editor:setup-indent 'macro-multilet 2 2)
+(port:setup-indent 'macro-multilet 2 2)
 

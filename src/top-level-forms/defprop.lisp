@@ -26,7 +26,7 @@
 ;;; Description: defprop, the definer of properties
 ;;;
 
-;;; $Id: defprop.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: defprop.lisp,v 1.2 2008/08/30 22:55:46 amallavarapu Exp $
 ;;;
 
 (in-package b)
@@ -215,5 +215,4 @@
 (defun make-property-class-symbol (cclass-symbol property-symbol)
   (delim-sym #\. cclass-symbol property-symbol))
 
-#+Lispworks
-(editor:setup-indent 'defprop 2 2 4)
+(port:setup-indent 'defprop 2 2 4)

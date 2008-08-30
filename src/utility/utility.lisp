@@ -26,7 +26,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.15 2008/07/29 15:49:19 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.16 2008/08/30 22:55:46 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -221,6 +221,7 @@ immediately following the replacement, or NIL if no substitution was made."
         while pos
         finally (return newseq)))
 
+;(port:setup-indent 'ifit 2 2 4)
 (defmacro ifit (test then &optional else)
   "Anaphoric if - the symbol 'it' may be used to refer to the result."
   (let ((itvar (intern "IT")))
@@ -432,8 +433,6 @@ E.g., (let+ ((a     1)
         (stream (gensym "STREAM")))        
   `(defmethod print-object ((,o ,type) ,stream)
      (print-unreadable-object (,o ,stream :type t :identity t)))))
-#+Lispworks
-(editor:setup-indent 'ifit 2 2 4)
           
 (defun contains-duplicates (l)
   "Returns t if the list contains duplicate entries"

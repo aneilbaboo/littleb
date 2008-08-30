@@ -116,7 +116,7 @@ the file."
     (clear-package (find-package "B-USER"))
     (clear-assumptions)
     (clear-signatures)
-    #+Lispworks (hcl:mark-and-sweep 3)
+    #+Lispworks (hcl:mark-and-sweep 2)
     (when *include-verbose*
       (format t "~&; Cleared ~A package~:P." 
               (hash-table-count *package-clearable-items*)))

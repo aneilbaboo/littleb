@@ -27,7 +27,7 @@
 ;;;              var is declared in one location (defplaceholder)
 ;;;              alternate values are provided in different locations (defplaceholder-value)
 
-;;; $Id: defplaceholder.lisp,v 1.1 2007/09/25 17:54:14 amallavarapu Exp $
+;;; $Id: defplaceholder.lisp,v 1.2 2008/08/30 22:55:46 amallavarapu Exp $
 
 (in-package b)
 
@@ -47,7 +47,7 @@
        (portable:record-definition ',placeholder-dspec (portable:location) t)
        ',name)))
 
-#+Lispworks (editor:setup-indent 'defplaceholder 1 2 4)
+(port:setup-indent 'defplaceholder 1 2 4)
 
 (defun check-placeholders-defined (symbols error-format-string &rest format-args)
   (unless (every (lambda (symbol)
@@ -56,7 +56,7 @@
                  (ensure-list symbols))
     (apply #'error error-format-string format-args)))
 
-#+Lispworks (editor:setup-indent 'check-placeholders-defined 1 2 4)
+(port:setup-indent 'check-placeholders-defined 1 2 4)
 
 (portable:define-dspec-class defplaceholder-value () "")
 (portable:define-dspec-form-parser defplaceholder-value (name)

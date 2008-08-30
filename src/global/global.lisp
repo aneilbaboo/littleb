@@ -98,7 +98,7 @@
 ;;;
 ;;; (test-set-global) => error undefined function (SETF B.GLOBAL::B*G)
 
-;;; $Id: global.lisp,v 1.3 2008/05/06 20:33:36 amallavarapu Exp $
+;;; $Id: global.lisp,v 1.4 2008/08/30 22:55:46 amallavarapu Exp $
 
 (in-package b)
 
@@ -114,15 +114,13 @@
 (defmacro define-global-parameter (s form)
   `(_define-global-symbol defparameter ,s ,form))
 
-#+Lispworks
-(editor:setup-indent 'define-global-parameter 1 2 4)
+(port:setup-indent 'define-global-parameter 1 2 4)
 
 ;;; GLOBAL VAR - expands to a hidden VAR
 (defmacro define-global-var (s form)
   `(_define-global-symbol defvar ,s ,form))
 
-#+Lispworks
-(editor:setup-indent 'define-global-var 1 2 4)
+(port:setup-indent 'define-global-var 1 2 4)
 
 ;;;
 ;;; GLOBAL-CONST - a global constant value 
@@ -136,8 +134,7 @@
     (portable:destroy-symbol it :undefinep t :forget-dspec-p t)
     (unintern it +global-package+)))
 
-#+Lispworks
-(editor:setup-indent 'define-global-const 1 2 4)
+(port:setup-indent 'define-global-const 1 2 4)
 
 (defun reload-global-definition (symbol place ctor)
   (declare (ignorable symbol))
@@ -196,8 +193,7 @@
          ',s))))
 
 
-#+Lispworks
-(editor:setup-indent 'define-global 1 2 4)
+(port:setup-indent 'define-global 1 2 4)
 
 ;;;; (defmacro define-global-block (&rest body)
 ;;;;   "A defines a resettable block of code without defining a symbol."

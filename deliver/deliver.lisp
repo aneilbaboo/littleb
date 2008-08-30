@@ -1,7 +1,7 @@
 ;; -*- Mode: Lisp -*-
 
 ;; (un)comment features to affect the way this script builds
-
+(push :delete-lw-editor *features*)
 (defconstant +compile-features+ '( :compile-library
                                    :copy-all
                                    :copy-libraries
@@ -145,8 +145,8 @@
 (compile 'b::run-b-top-level)
 ;;; Deliver the application
 (apply #'deliver 'b::run-b-top-level *delivered-image-name* 
-         1
-         ;:compact t
+         4
+         :compact t
          :keep-gc-cursor t
          :multiprocessing t
         ; :display-progress-bar t
@@ -155,10 +155,9 @@
          :keep-pretty-printer t
          :keep-package-manipulation t
          :keep-clos t
-         :keep-macros t                      ; T is required
-         :keep-pretty-printer t
-         :keep-package-manipulation t
+         :keep-macros t   
          :keep-eval t
+         :keep-editor nil
          :keep-documentation t
          :keep-debug-mode t
          :keep-top-level t
@@ -181,7 +180,10 @@
 
          ;; delete all the b/ library packages:
          :delete-packages (existing-packages (list*
-                                              "UFFI" "CAPI"
+                                              "UFFI" "CAPI" "PKG" "INS" 
+                                              "CAPI-LAYOUT" "CAPI-INTERNALS"
+                                              "STEPPER" "HQN-WEB" "CAPI-LIBRARY"
+                                              "GRAPHICS-PORTS" "COLOR" "CAPI-WIN32-LIB"
                                               (remove-if-not (lambda (p) 
                                                                (let ((name (package-name p)))  
                                                                  (and (> (length name) 2)

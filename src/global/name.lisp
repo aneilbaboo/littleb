@@ -49,8 +49,7 @@ E.g.,  (setf-name P F) is syntactic sugar for (let ((Z (has-name P F)))
                while    iter               
                collect   `(setf ,place (has-name ,(if (symbolp place) place-expansion place)
                            ,form))))))
-#+Lispworks
-(editor:setup-indent 'setf-name 0 7 7)
+(port:setup-indent 'setf-name 0 7 7)
 
 (defun make-name (o) 
   (typecase o
