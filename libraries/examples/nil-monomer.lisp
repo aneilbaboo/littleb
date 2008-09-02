@@ -1,7 +1,3 @@
-(in-package :b-user)
-
-;; include non-dimensional library
-(include b-user/ode-biochem) 
 
 ;; The NIL monomer is used to stand in for a monomer
 ;; which should be ignored.  It is primarily useful 
@@ -9,6 +5,11 @@
 ;; you want to encode a set of related complexes one
 ;; of which may differ by excluding a member of the 
 ;; complex.
+
+(in-package :b-user)
+
+;; include non-dimensional library
+(include b-user/ode-biochem) 
 
 
 ;; three monomers  

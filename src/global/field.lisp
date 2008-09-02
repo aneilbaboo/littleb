@@ -1,31 +1,24 @@
 ;;;; This file is part of little b.
 
-;;;; The MIT License
+;;;; Copyright (c) 2005-8 Aneil Mallavarapu
 
-;;;; Copyright (c) 2007 Aneil Mallavarapu
+;;;; Little b is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
 
-;;;; Permission is hereby granted, free of charge, to any person obtaining a copy
-;;;; of this software and associated documentation files (the "Software"), to deal
-;;;; in the Software without restriction, including without limitation the rights
-;;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-;;;; copies of the Software, and to permit persons to whom the Software is
-;;;; furnished to do so, subject to the following conditions:
+;;;; Little b is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
 
-;;;; The above copyright notice and this permission notice shall be included in
-;;;; all copies or substantial portions of the Software.
-
-;;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-;;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-;;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-;;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-;;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-;;;; THE SOFTWARE.
+;;;; You should have received a copy of the GNU General Public License
+;;;; along with little b.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; File: field
 ;;; Description: 
 
-;;; $Id: field.lisp,v 1.20 2008/08/28 14:20:14 amallavarapu Exp $
+;;; $Id: field.lisp,v 1.21 2008/09/02 14:58:10 amallavarapu Exp $
 ;;;
 (in-package b)
 
@@ -663,9 +656,9 @@
                  remove-duplicates 
                  delete-duplicates)
 
-(defmethod fld ((list sequence) (field (eql :alpha-order)) &rest args)
+(defmethod fld ((seq sequence) (field (eql :alpha-order)) &rest args)
   (destructuring-bind (&key reverse (printer #'prin1) key case-insensitive) args
-    (sort list
+    (sort seq
           (lambda (str1 str2)
             (string-alpha< str1 str2 :reverse reverse :case-insensitive case-insensitive))
           :key (if key (lambda (x) (with-output-to-string (string)

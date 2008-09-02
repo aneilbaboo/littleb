@@ -26,13 +26,9 @@ ANSI Common Lisp implementations:
   * Allegro 8.x, another high quality, fast CL implementation
 
 To run the source code, you'll need a Lisp interpreter, and an editor.  Any 
-of the above will do. If you manage to get little b working on other Lisps, please
-let us know.
+of the above will do. If you manage to get little b working on other Lisps, please let us know.
 
-Note: We have discovered a bug which makes little b unreliable on CLisp.  Although
-little b runs and produces working Matlab files, we have discovered that inferences
-and mathematical expressions are incorrect on CLisp. We are trying to trace down
-the problem, and will notify when it's fixed.
+Note: We have discovered a bug which makes little b unreliable on CLisp.  Although little b runs and produces working Matlab files, we have discovered that inferences and mathematical expressions are incorrect on CLisp. We are trying to trace down the problem.
   * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
           (Works with Emacs and SLIME).
  	
@@ -43,39 +39,84 @@ Changes:
 1.6.0 (Sept 1, 2008)
 ==================
 << Know Issues >>
-* Will not load on SBCL
+* Will not yet load on SBCL 
 * CLisp implementation is buggy - bad inferences/incorrect mathematics
 
 << User-visible changes >>
 Features
-* source now contains a console application deliverable on Lispworks
-* with-data-table now includes splicing variables - variables beginning with @
+* Console application on Lispworks - see deliver subdirectory
+* WITH-DATA-TABLE now includes splicing variables - variables beginning with @
   will be spliced into the code body (the bound value must be a list)
-* improved and updated examples library
-* def-location-class - easier definition of location-classes
-* defcomplex - complex definitions
-* NIL monomers
-* numerica/jacobian output working
-* little b builds on Allegro again
-* many new field methods added to sequences and lists:
+* Improved, updated examples library
+* DEF-LOCATION-CLASS - easier definition of location-classes
+* DEFCOMPLEX - square bracket template for writing complexes easily
+* NIL monomers - a syntax for encoding monomers which does not exist
+* Numerica/Jacobian output working
+* Little b builds on Allegro again
+* Many new field methods added to sequences and lists:
    mylist.(mapcar pred) mylist.first, .second, etc all work
-* added .alpha-order which alphabetically orders the elements of the list based
-  on the printed form
-* wildcard monomer pattern matching now works:
-	{[[mon a.1][* *.1]] ->> ...} ; mon A site may bind any other monomer site
-* added NIL monomers (see examples)
-* destruction/production reactions now work - e.g., {a -> }, {-> a}
+* Several new field methods for sequences and lists, most of which are fieldified versions of ANSI CL functions:
 
-Bug fixes/changes
+	CL sequence fields: .length, .fill, .subseq, .map, .map-into, .count
+		.count-if, .count-if-not, .reverse, .nreverse, .sort,
+		.stable-sort, .find, .find-if, .find-if-not, .position,
+		.position-if, .position-if-not, .search, .mismatch, .replace
+		.substitute, .substitute-if, .substitute-if-not ,
+		.nsubstitute, .nsubstitute-if, .nsubstitute-if-not,
+		.remove,.remove-if,.remove-if-not,.delete,.delete-if,
+		.delete-if-not,.remove-duplicates,.delete-duplicates
+
+	New sequence fields: 
+		.alpha-order - alphabetically order based on
+			printed representations of objects
+		.[] - aref, or svref or nth as appropriate
+			e.g.,	mylist.[3] - returns 0-based 3rd element
+				myarray.[2 4] - returns elt in 2d array
+
+	CL list methods:
+		.car, .cdr, .caar, .cadr, .cdar, .cddr, .caaar, .caadr, 
+		.cadar, .caddr, .cdaar, .cdadr, .cddar, .cdddr, .caaaar
+		.caaadr, .caadar, .caaddr, .cadaar, .cadadr, .caddar, 
+		.cadddr, .cdaaar, .cdaadr, .cdadar, .cdaddr, .cddaar, 
+		.cddadr, .cdddar, .cddddr, 
+		.mapcar, .mapc, .maplist, .mapl,
+                .mapcan, .mapcon 
+		.first, .second, .third, .fourth, .fifth, .sixth, 
+		.seventh, .eighth, .ninth, .last, .butlast, .nthcdr
+
+	New list fields:
+		.exclusion, .nexclusion - given two lists, computes 2
+			lists representing the elements excluded by the
+			other list.
+
+	CL number methods:
+		.+, .-, ./, .*, .1+, .1-
+		.>, .<, .=, .>=, .<=, ./=
+                .ash, .zerop, .plusp, .minusp
+		.floor, .ffloor, .ceiling, .fceiling, 
+		.truncate, .ftruncate, .round, .fround
+                .sin, .cos, .tan, .asin, .acos, .atan
+		.abs, .evenp, .oddp, .exp, .expt
+                .gcd
+
+* Wildcard monomers [* ...] work:
+  {[[mon a.1][* *.1]] ->> ...} ; mon A site may bind any other monomer site
+
+* Destruction/production reactions now work - e.g., {a -> }, {-> a}
+
+<< Bug fixes/changes >>
 * b/biochem/std-rate-functions/hill-function is now just hill
-* cleaned up *kb-monitor* system - (apropos "kb-monitor") to see a list of 
-  functions which can be assigned to *kb-monitor*
+* Cleaned up *kb-monitor* system - (apropos "kb-monitor") to see a list of 
+  Functions which can be assigned to *kb-monitor*
 * *kb-monitors* variable is now *kb-monitor* which should be a single function
-  which takes a singe argument (the object to being added to the db)
-* multibonds are now possible and work - e.g., [[a 1][a 1][a 1]]
+  which takes a single argument (the object to being added to the db)
+* Multibonds are now possible and work - e.g., [[a 1][a 1][a 1]]
   bonds must match exactly the number of stated in a pattern
   ie., [[a 1 **][a 1 **]] will not match [[a 1][a 1][a 1]]
-* clisp printing works ok now
+* Clisp printing works ok now
+
+<< Other >>
+* Little b is now licensed under the GPL
 
 1.5.6 (2007-12-23)
 ==================

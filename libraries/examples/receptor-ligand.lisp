@@ -1,14 +1,13 @@
-(in-package :b-user)
-
-;; include non-dimensional library
-(include b-user/ode-biochem) 
-
 ;;; Defines a receptor, a ligand, and an internal 
 ;;; signal transduction molecule.
 
 ;;; The receptor dimerizes when bound to ligand
 ;;; and phosphorylates itself
 
+(in-package :b-user)
+
+;; include non-dimensional library
+(include b-user/ode-biochem) 
 
 ;;; define the monomers
 (defmonomer (receptor membrane)
