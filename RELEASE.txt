@@ -1,4 +1,4 @@
-This file contains notes for the little b source code, version 1-5-6.  If 
+This file contains notes for the little b source code, version 1-6-0  If 
 you are interested in getting started right away with using little b to 
 build models, it may be easier to download the GUI application from the 
 little b website: http://littleb.org/download.html.
@@ -17,27 +17,66 @@ and object-oriented definitions. The syntax is designed to be terse and
 human-readable to facilitate communication. Since little b is based in Lisp,
 the environment is both interactive and compilable.
 
-The source code works on Windows XP and Linux.  Mac OS support is under 
-development.  Little b runs on these ANSI Common Lisp implementations:
+The source code works on Windows XP, Linux and MacOS.  Little b runs on these 
+ANSI Common Lisp implementations:
 
   * Lispworks 4.x and 5.x, commercial Lisp IDE w/ in line debugger
         - little b does not run on the Free Personal Edition 
                     because of memory restrictions
   * Allegro 8.x, another high quality, fast CL implementation
-  * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
-          (Works with Emacs and SLIME)
-	
-Others may work too.  We'd be happy to hear about it.
 
 To run the source code, you'll need a Lisp interpreter, and an editor.  Any 
-of the above will do.  If you use CLisp, you should consider using Emacs 
-with SLIME, an editor mode that provides a Lisp command line and syntax
-highlighting.
+of the above will do. If you manage to get little b working on other Lisps, please
+let us know.
 
+Note: We have discovered a bug which makes little b unreliable on CLisp.  Although
+little b runs and produces working Matlab files, we have discovered that inferences
+and mathematical expressions are incorrect on CLisp. We are trying to trace down
+the problem, and will notify when it's fixed.
+  * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
+          (Works with Emacs and SLIME).
+ 	
 More information at: http://littleb.org
 
 --------------------------------------------------------------------------------
 Changes:
+1.6.0 (Sept 1, 2008)
+==================
+<< Know Issues >>
+* Will not load on SBCL
+* CLisp implementation is buggy - bad inferences/incorrect mathematics
+
+<< User-visible changes >>
+Features
+* source now contains a console application deliverable on Lispworks
+* with-data-table now includes splicing variables - variables beginning with @
+  will be spliced into the code body (the bound value must be a list)
+* improved and updated examples library
+* def-location-class - easier definition of location-classes
+* defcomplex - complex definitions
+* NIL monomers
+* numerica/jacobian output working
+* little b builds on Allegro again
+* many new field methods added to sequences and lists:
+   mylist.(mapcar pred) mylist.first, .second, etc all work
+* added .alpha-order which alphabetically orders the elements of the list based
+  on the printed form
+* wildcard monomer pattern matching now works:
+	{[[mon a.1][* *.1]] ->> ...} ; mon A site may bind any other monomer site
+* added NIL monomers (see examples)
+* destruction/production reactions now work - e.g., {a -> }, {-> a}
+
+Bug fixes/changes
+* b/biochem/std-rate-functions/hill-function is now just hill
+* cleaned up *kb-monitor* system - (apropos "kb-monitor") to see a list of 
+  functions which can be assigned to *kb-monitor*
+* *kb-monitors* variable is now *kb-monitor* which should be a single function
+  which takes a singe argument (the object to being added to the db)
+* multibonds are now possible and work - e.g., [[a 1][a 1][a 1]]
+  bonds must match exactly the number of stated in a pattern
+  ie., [[a 1 **][a 1 **]] will not match [[a 1][a 1][a 1]]
+* clisp printing works ok now
+
 1.5.6 (2007-12-23)
 ==================
 Bugs discovered by German Enciso and Carlos Lopez in the graph-based reaction
