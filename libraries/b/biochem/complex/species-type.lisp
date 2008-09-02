@@ -20,7 +20,7 @@
 ;;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;;;; THE SOFTWARE.
 
-;;; $Id: species-type.lisp,v 1.53 2008/08/28 14:20:14 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.54 2008/09/02 08:02:07 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -964,12 +964,17 @@
 (defun unbonded-label-p (x) 
   (member x '(_ :_)))
 
+(defun complex-bond-label-p (x)
+  (and (symbolp x) (char= (char (symbol-name x) 0) #\!)))
+
 (defun bond-label-p (x)
-  (or (integerp x) (and (symbolp x) (char= (char (symbol-name x) 0) #\!))))
+  (or (integerp x) (complex-bond-label-p x)))
 
 (defun user-bond-label-p (x)
   "Objects allowed to be used by the user to indicate a bond in a complex"
-  (and (bond-label-p x) (plusp x)))
+  (or (and (integerp x)
+           (plusp x))
+      (complex-bond-label-p x)))
 
 ;;;
 ;;; RECORDING BONDS:
@@ -1395,7 +1400,13 @@ Returns the vertexes representing sites in the correct order."
   (assert (and (object-form-p complex-form) (object-form-p (object-form-object complex-form)))
       ()
     "Invalid complex specification ~S produced by (DEFINE-COMPLEX ~S ...)" complex-form name)
-  (mapcar #'object-form-body (object-form-body complex-form)))
+  (let ((complex-bond-renaming (make-hash-table)))
+    (flet ((rename-if-complex-bond (x) (if (complex-bond-label-p x) 
+                                           (or (gethash x complex-bond-renaming)
+                                               (setf (gethash x complex-bond-renaming) (gensym "!")))
+                                         x)))            
+      (mapatoms #'rename-if-complex-bond
+                (mapcar #'object-form-body (object-form-body complex-form))))))
 
 (define-function undefine-complex (name)
   (remhash name *complex-expansions*))

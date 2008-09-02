@@ -25,7 +25,7 @@
 ;;; File: location
 ;;; Description: locations where species-types may reside.
 
-;;; $Id: location.lisp,v 1.12 2008/01/22 16:42:40 amallavarapu Exp $
+;;; $Id: location.lisp,v 1.13 2008/09/02 08:02:07 amallavarapu Exp $
 
 
 (in-package #I@FOLDER)
@@ -193,4 +193,20 @@
 (define-function location-class-dimension (lclass)
   {*distance-dimension* ^ (location-class-dimensionality lclass) })
 
+;;;
+;;; DEF-LOCATION-CLASS
+;;;
+(define-macro def-location-class (name &optional superclass &body sublocations)
+  (let ((subloc-fields (mapcar #'first sublocations)))
+    (labels ((dot-field (x)      (intern (concatenate 'string "." (symbol-name x))))
+             (dot-field-symbol-macro-def (x) `(,(dot-field x) object.,(key x)))
+             (process-deflocclass-subloc (x)
+               (destructuring-bind (name def &rest prop-def) x
+                 (if (and (symbolp def) (ignore-errors (subtypep def 'location)))
+                     `(,name :#= [[,def] ,@prop-def])
+                   `(,name := [,def ,@prop-def])))))
+      `(symbol-macrolet ,(mapcar #'dot-field-symbol-macro-def subloc-fields)           
+         (defcon ,name ,superclass
+           (&optional (id := *name*)
+                      &property ,@(mapcar #'process-deflocclass-subloc sublocations)))))))
 
