@@ -18,7 +18,7 @@
 ;;; File: littleb.lisp
 ;;; Description: Loads the little b language.
 
-;;; $Id: littleb.lisp,v 1.9 2008/09/02 14:58:09 amallavarapu Exp $
+;;; $Id: littleb.lisp,v 1.10 2008/09/02 20:23:08 amallavarapu Exp $
 ;;; $Name:  $
 
 #-:asdf+ (load (merge-pathnames "asdf/asdf+.lisp" *load-truename*))
@@ -62,7 +62,7 @@
 #+:lispworks (b::enable-b-key-bindings)
 
 (when (find-package "SWANK")
-  (eval (read-from-string "(swank:listener-eval \"(in-package :b-user)\")")))
+  (ignore-errors (eval (read-from-string "(swank:listener-eval \"(in-package :b-user)\")"))))
 
 (unless (eq *package* (find-package :b-user))
   (format t "~%Change to package B-USER: (IN-PACKAGE :B-USER)~%"))

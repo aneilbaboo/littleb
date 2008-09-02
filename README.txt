@@ -18,12 +18,12 @@ I Installing the Source Tree:
         
 	   b) Either execute the script/batch file found in the b1 folder: 
                       get-cvs-modules.bat (on windows)
-                      sh get-cvs-modules.bat (on unix)
+                      bash get-cvs-modules.sh (on unix)
 
            The cvs program will need to be in the Shell's path.
 
            Or, do it manually:
-		cvs -z3 -d :pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa co -P lisa
+		cvs -z3 -d :pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb co -P lisa
         	 => creates the folder lisa/ inside b1/
 		cvs -z3 -d :pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb co -P graph-tools
         	 => creates the folder graph-tools/ inside b1/
@@ -39,22 +39,29 @@ I Installing the Source Tree:
 	  \support			<--- initialization files
 	  .cvsignore
 	  b1.asd			<--- the ASDF system specification file 
-	  license.txt		<--- MIT license
-	  littleb.lisp		<--- loads little b
-	  readme.txt 		<--- this file
+	  LICENSE.txt		<--- software license 
+	  CHANGELOG.txt		<--- CVS comments
+	  SOURCES.txt		<--- how to work with the sources
+	  RELEASE.txt           <--- release notes (bugs / what's new)
+	  README.txt 		<--- this file
+	  littleb.lisp		<--- loads little b 
+
 	
 II Loading Little b:
 
 	1. Open your Lisp implementation, at the prompt, load the littleb.lisp file,
 	changing "path/to/b1/" to point to the location of your b1 folder:
 
-      (load "path/to/b1/littleb.lisp") 
+	      (load "path/to/b1/littleb.lisp") 
   
 
-	2. Compile the library.  You should only need to this once, or anytime you update 
-	the little b source code:
+	2. If you have trouble loading, you may want to try the following steps:
 
-      (compile-library 'b)
+	(asdf:delete-binaries :b1)
+	(asdf:delete-binaries :lisa)
+	(asdf:delete-binaries :graph-tools)
+	(b:delete-library-binaries 'b) ;; this may not be possible depending on how the load went
+	(load "path/to/b1/littleb.lisp")
 
 III Lisp Implementations
 
@@ -72,4 +79,5 @@ Little b depends on LISA (Lisp Intelligent Software Agents) and the Graph-tools 
 V Bug Reports:
 
 Any bug reports should be submitted to http://sourceforge.net/tracker/?atid=851502&group_id=169724
+Any feature requests should be submitted to http://sourceforge.net/tracker/?group_id=169724&atid=851505
 

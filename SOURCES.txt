@@ -1,0 +1,31 @@
+This file describes how to run little b source code within a Lisp environment. The source code works on Windows XP, Linux and MacOS.  Little b runs on these ANSI Common Lisp implementations:
+
+  * Lispworks 4.x and 5.x, commercial Lisp IDE w/ in line debugger
+        - little b does not run on the Free Personal Edition 
+                    because of memory restrictions
+  * Allegro 8.x, another high quality, fast CL implementation
+
+Note: Little b loads and runs on CLisp, but we have discovered a bug which makes it unreliable on this Lisp.  Although little b runs and produces working Matlab files, we have discovered that inferences and mathematical expressions are incorrect on CLisp. We are trying to trace down the problem.  Don't rely on littleb on Clisp for anything!!!
+  * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
+          (Works with Emacs and SLIME)
+
+To run the source code, you'll need a Lisp interpreter, and an editor.  Any of the above will do. If you manage to get little b working on other Lisps, please let us know.
+
+Here's what you need to do:
+
+1. If you haven't already, get a version of the CVS tree:
+   a. Play it safe:
+     cvs -z3 -d :pserver:anonymous@littleb.sourceforge.net:/cvsroot/littleb co b1 -r WORKING
+   b. or... Live dangerously if you want to work with the most current version (which may be buggy!):
+     cvs -z3 -d :pserver:anonymous@littleb.sourceforge.net:/cvsroot/littleb co b1 
+
+   This will create a folder named b1.
+
+2. Run the get-cvs-modules.sh or get-cvs-modules.bat script in the b1 directory         
+     This will get necessary supporting modules from CVS
+
+3. Start your Lisp and enter (load "path/to/b1/littleb.lisp")
+     replacing path/to/b1 with the actual path to your b1 directory
+ 	
+More information at: http://littleb.org
+

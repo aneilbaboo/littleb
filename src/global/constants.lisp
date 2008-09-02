@@ -19,7 +19,7 @@
 ;;; Description: Constants, vars & parameters used by the language.  
 ;;;              Some are user-accessible.
 
-;;; $Id: constants.lisp,v 1.9 2008/09/02 14:58:10 amallavarapu Exp $
+;;; $Id: constants.lisp,v 1.10 2008/09/02 20:23:08 amallavarapu Exp $
 ;;; $Name:  $
 
 (in-package b)
@@ -114,7 +114,7 @@ any rules are triggered."
   (let ((child       (or child #P""))
         (path        (ecase name
                          ;; file which is run when little b is initialized:
-                         (:init-file            (get-b-path :root "init.lisp"))
+                         (:init-file            (or b-system:*b-init-file* (get-b-path :root "init.lisp")))
 
                          ;; location of executable or source tree
                          (:root                 *b-root-directory*)

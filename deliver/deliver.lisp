@@ -37,17 +37,17 @@
 ;;; Where we are going to save the application (except on Cocoa)
 
 (defvar *current-dir* (make-pathname :name nil :type nil :defaults *load-truename*))
-(defvar *delivered-image-name* (merge-pathnames (format nil "build/littleb~@[.~A~]"
-                                                        #+:win32 "exe" #-:win32 nil)
-                                                *current-dir*))
+(defun current-dir (&optional (relpath #P""))
+  (merge-pathnames relpath *current-dir*))
+(defvar *delivered-image-name* (current-dir (format nil "build/littleb~@[.~A~]"
+                                                    #+:win32 "exe" #-:win32 nil)))
 
-#-:asdf (load (merge-pathnames "../asdf/asdf+.lisp" *load-truename*))
-(push (probe-file (merge-pathnames
-                   #P"../"
-                   (make-pathname :name nil :type nil :defaults *load-truename*)))
-      asdf:*central-registry*)
-
+#-:asdf (load (current-dir "../asdf/asdf+.lisp"))
+(push (probe-file (current-dir #P"../")) asdf:*central-registry*)
+(push (probe-file (current-dir #P"../slime/")) asdf:*central-registry*)
+(asdf:load-system :swank)
 (asdf:load-system :b1)
+(compile-file (current-dir "console.lisp") :load t)
 (b:init)
 
 #+:compile-library (b:compile-library 'b)
@@ -69,9 +69,9 @@
 ;;;             * a user init file which supports multi-directory installation is provided in build/support
 ;;;
 (defun make-build-folder ()
-  (let* ((littleb (make-pathname :name nil :type nil :defaults *load-truename*))
-         (littleb* (merge-pathnames "*.*" littleb))
-         (build (merge-pathnames "build/" littleb))
+  (let* ((littleb    (current-dir "../"))
+         (littleb*   (merge-pathnames "*.*" littleb))
+         (build      (merge-pathnames "build/" littleb))
          (build-libs (merge-pathnames "libraries/" build))
          (root    (b:get-b-path :root))
          (root*   (b:get-b-path :root "*.*")))
@@ -135,12 +135,12 @@
 ;;; the bundle more than once, we check the result of
 ;;; SAVE-ARGUMENT-REAL-P before creating the bundle.
 
-#+cocoa
-(when (save-argument-real-p)
-  (compile-file-if-needed (sys:example-file   "configuration/macos-application-bundle") :load t)
-  (setq *delivered-image-name*
-        (write-macos-application-bundle "~/littleb.app"   
-            :document-types nil)))
+;;;; #+cocoa
+;;;; (when (save-argument-real-p)
+;;;;   (compile-file-if-needed (sys:example-file   "configuration/macos-application-bundle") :load t)
+;;;;   (setq *delivered-image-name*
+;;;;         (write-macos-application-bundle "~/littleb.app"   
+;;;;             :document-types nil)))
 
 (clrhash b::*package-clearable-items*)
 
@@ -148,28 +148,14 @@
   (delete-if #'null
              (mapcar (lambda (pspec) (if (find-package pspec) pspec)) plist)))
 
-(defvar *littleb-id-string* (multiple-value-bind (major minor revision) (b:littleb-version)
-                              (format nil "little b Version ~A.~A.~A" major minor revision)))
-(defun b::run-b-top-level ()
-  (setf b-system:*b-root-directory* (make-pathname :name nil :type nil :version nil
-                                                   :defaults (probe-file (first system:*line-arguments-list*)))
-        b:*library-search-paths* (list (merge-pathnames "libraries/" b-system:*b-root-directory*)))
-  (format t "~A~%~
-             Copyright (C) 2005-8, Aneil Mallavarapu~%~
-             http://www.littleb.org~%~%"
-          *littleb-id-string*)
-  (in-package :b-user)
-  (b:init)
-  (start-tty-listener nil))
-(compile 'b::run-b-top-level)
 ;;; Deliver the application
-(apply #'deliver 'b::run-b-top-level *delivered-image-name* 
-         4
+(apply #'deliver 'b-console:run-b-top-level *delivered-image-name* 
+         0
          :compact t
          :keep-gc-cursor t
          :multiprocessing t
         ; :display-progress-bar t
-         :product-name *littleb-id-string*
+         :product-name b-console:*littleb-id-string*
          :format t
          :keep-pretty-printer t
          :keep-package-manipulation t
@@ -208,8 +194,8 @@
                                                                  (and (> (length name) 2)
                                                                       (equalp (subseq name 0 2) "B/"))))
                                                              (list-all-packages))))
-         :never-shake-packages '(#:b #:setf #:cl #:mallavar-utility #:lisa #:lisa-user  #:cl-user
-                                     #:compiler #:slot-symbol)
+         :never-shake-packages '(#:b #:setf #:cl #:mallavar-utility #:lisa #:lisa-user #:cl-user
+                                     #:compiler #:slot-symbol #:swank)
 
                      
          (append

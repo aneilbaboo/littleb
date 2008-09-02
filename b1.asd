@@ -25,13 +25,14 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.26 2008/09/02 03:09:28 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.27 2008/09/02 20:23:08 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
            #:*b-compile-name* *b-compiled-path*
            #:*b-major-version* #:*b-minor-version* #:*b-revision*
            #:*b-core-signature*
+           #:*b-init-file*
            #:load-b))
 
 (in-package #:b-system)
@@ -39,6 +40,7 @@
 (defparameter *b-root-directory* (make-pathname :host (pathname-host *load-truename*)
                                            :device (pathname-device *load-truename*)
                                            :directory (pathname-directory *load-truename*)))
+(defparameter *b-init-file*      ())
 (defparameter *b-source-path*    (merge-pathnames "src/" *b-root-directory*))
 (defparameter *b-all-versions-compiled-path* (merge-pathnames "bin/" *b-root-directory*))
 (defparameter *b-compile-name*   (platform-name))

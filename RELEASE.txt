@@ -1,38 +1,11 @@
-This file contains notes for the little b source code, version 1-6-0  If 
-you are interested in getting started right away with using little b to 
-build models, it may be easier to download the GUI application from the 
-little b website: http://littleb.org/download.html.
+This file contains notes for little b, version 1-6-0.  
 
-Little b is a Lisp-based language designed to allow the user to 
-build models from shared libraries.  It was written and designed by 
-Aneil Mallavarapu at the Harvard Medical School Department of Systems 
-Biology in Boston.  
+Little b is a Lisp-based language designed to allow the user to build models from shared libraries.  It was written and designed by Aneil Mallavarapu at the Harvard Medical School Department of Systems 
+Biology.  
 
-Libraries have been developed for building ODE models of molecular networks 
-in multi-compartment systems such as cellular epithelia.  As of version 1.5
-it includes a graph-based method for representing molecular complexes.
+Libraries have been developed for building ODE models of molecular networks in multi-compartment systems such as cellular epithelia.  As of version 1.5 it includes a graph-based method for representing molecular complexes.
 
-The language contains mechanisms for rule-based reasoning, symbolic mathematics 
-and object-oriented definitions. The syntax is designed to be terse and 
-human-readable to facilitate communication. Since little b is based in Lisp,
-the environment is both interactive and compilable.
-
-The source code works on Windows XP, Linux and MacOS.  Little b runs on these 
-ANSI Common Lisp implementations:
-
-  * Lispworks 4.x and 5.x, commercial Lisp IDE w/ in line debugger
-        - little b does not run on the Free Personal Edition 
-                    because of memory restrictions
-  * Allegro 8.x, another high quality, fast CL implementation
-
-To run the source code, you'll need a Lisp interpreter, and an editor.  Any 
-of the above will do. If you manage to get little b working on other Lisps, please let us know.
-
-Note: We have discovered a bug which makes little b unreliable on CLisp.  Although little b runs and produces working Matlab files, we have discovered that inferences and mathematical expressions are incorrect on CLisp. We are trying to trace down the problem.
-  * CLisp 2.39+, free, open source GPL-licensed Common Lisp 
-          (Works with Emacs and SLIME).
- 	
-More information at: http://littleb.org
+The language contains mechanisms for rule-based reasoning, symbolic mathematics and object-oriented definitions. The syntax is designed to be terse and human-readable to facilitate communication. Since little b is based in Lisp, the environment is both interactive and compilable.
 
 --------------------------------------------------------------------------------
 Changes:
