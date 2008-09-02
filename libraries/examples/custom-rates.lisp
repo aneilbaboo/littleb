@@ -4,12 +4,13 @@
 
 (def-species-types compartment e s p)
 
-{e + s <-> p}.
+;; hill function, using a one-off custom rate function:
+{e + s -> p}.
   (set-rate-function 'custom-rate {s ^ :hill / {s ^ :hill + :half-max ^ :hill}}
                      :hill 1.5
                      :half-max .5)
 
-;; alternatively, provide a reusable for the  hill function:
+;; alternatively, provide a reusable custom rate-function
 
 ;; Note: the following code is just an example - you should use the HILL
 ;; function provided in b/biochem/std-rate-functions 
@@ -24,6 +25,9 @@
   (save-parameter :half-max half-max)
 
   {s ^ :hill / {s ^ :hill + :half-max ^ :hill}})
+
+;; then, we can simply say:
+{e + s -> p}.(set-rate-function 'hill s :hill 1.5 :half-max .5)
 
 
                
