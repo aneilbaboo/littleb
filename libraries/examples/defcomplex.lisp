@@ -5,12 +5,12 @@
 
 (include b-user/ode-biochem)
 
-(defmonomer mon dim a b (p :states (member :u :p))
+(defmonomer mon a b (p :states (member :u :p)))
 
 ;;; (DEFCOMPLEX name sites complex-definition)
 (defcomplex dimer (b1 b2 p1.u p2.u) ;; note: state must be provided for state sites
-  `[[mon a.!1 b1.,b1 p1.,p1]        ;; use ! for bonds in complex definitions
-    [mon a.!1 b2.,b2 p2.,p2]])
+  `[[mon a.!1 b.,b1 p.,p1]        ;; use ! for bonds in complex definitions
+    [mon a.!1 b.,b2 p.,p2]])
 
 ;;; examples
 
