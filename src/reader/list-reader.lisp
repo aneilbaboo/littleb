@@ -26,7 +26,7 @@
 ;;; Description: replaces the lisp list-reader so that lists can participate
 ;;;              in dot expressions.  E.g., (build-object).access-field
 
-;;; $Id: list-reader.lisp,v 1.1 2007/09/25 17:54:13 amallavarapu Exp $(in-package b)
+;;; $Id: list-reader.lisp,v 1.2 2008/09/02 03:09:28 amallavarapu Exp $(in-package b)
 
 (in-package b)
 
@@ -87,6 +87,7 @@
 
 (defun b-reader-error (stream &rest args)
   (cond
+   #+(and :lispworks (not :delete-lw-editor))
    ((interactive-stream-p stream)
     (fresh-line stream)
     (princ "Error while reading: " stream)
@@ -95,7 +96,8 @@
     (let* ((*read-suppress* t))
       (read-line stream nil nil t))
     (apply #'b-reader-error stream args))
-   
+
+   #+(and :lispworks (not :delete-lw-editor))  
    ((typep stream 'concatenated-stream)
     (let ((istream (find-if #'interactive-stream-p 
                             (concatenated-stream-streams stream))))

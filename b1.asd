@@ -25,7 +25,7 @@
 
 ;;; Description: little b language system definition file
 
-;;; $Id: b1.asd,v 1.25 2008/08/30 22:55:46 amallavarapu Exp $
+;;; $Id: b1.asd,v 1.26 2008/09/02 03:09:28 amallavarapu Exp $
 ;;;
 (defpackage #:b-system (:use #:cl #:asdf)
   (:export #:*b-root-directory* #:*b-source-path* #:*b-all-versions-compiled-path*
@@ -51,8 +51,8 @@
   "Determines the revision level of the core by include to determine whether library files should be recompiled.")
 
 (defparameter *b-major-version* 1)
-(defparameter *b-minor-version* 5)
-(defparameter *b-revision* 11)
+(defparameter *b-minor-version* 6)
+(defparameter *b-revision* 0)
 
 (pushnew *b-root-directory* *central-registry* 
          :test (lambda (x y)
