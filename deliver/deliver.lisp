@@ -118,7 +118,8 @@
     (copy "README.txt" :from (b:get-b-path :root))
     (copy "RELEASE.txt" :from (b:get-b-path :root))
     (copy "CHANGELOG.txt" :from (b:get-b-path :root))
-    (copy "LICENSE.txt" :from (b:get-b-path :root)))))
+    (copy "LICENSE.txt" :from (b:get-b-path :root))
+    (copy "SOURCES.txt" :from (b:get-b-path :root)))))
 (make-build-folder)
 
 (in-package :cl-user)
@@ -148,9 +149,19 @@
   (delete-if #'null
              (mapcar (lambda (pspec) (if (find-package pspec) pspec)) plist)))
 
+
+(defun package-begins-with (str)
+  (let ((len (length str)))
+    (lambda (p) 
+      (let ((name (package-name p)))  
+        (and (>= (length name) len)
+             (equalp (subseq name 0 len) str))))))
+(defun packages-beginning-with (str)
+  (remove-if-not (package-begins-with str) (list-all-packages)))
+
 ;;; Deliver the application
 (apply #'deliver 'b-console:run-b-top-level *delivered-image-name* 
-         0
+         4
          :compact t
          :keep-gc-cursor t
          :multiprocessing t
@@ -176,12 +187,13 @@
          :packages-to-keep-symbol-names '(#:cl #:setf ) ; vain attempt to deal with CL::SETF-GET error
 
          :packages-to-keep (existing-packages
-                            '(#:b #:b-user #:fli-internals #:flii #:pkg
-                                  #:cl #:setf                      ; cl & to deal with common-lisp::setf-get
-                                  #:b.global #:b #:slot-symbol     ; b 
-                                  #:graph-tools
-                                  #:lisa-user #:lisa-lisp           ; lisa
-                                  ))
+                            (append '(#:b #:b-user #:fli-internals #:flii #:pkg
+                                          #:cl #:setf                      ; cl & to deal with common-lisp::setf-get
+                                          #:b.global #:b #:slot-symbol     ; b 
+                                          #:graph-tools
+                                          #:lisa-user #:lisa-lisp           ; lisa
+                                          )
+                                    (packages-beginning-with "SWANK")))
 
          ;; delete all the b/ library packages:
          :delete-packages (existing-packages (list*
@@ -189,11 +201,7 @@
                                               "CAPI-LAYOUT" "CAPI-INTERNALS"
                                               "STEPPER" "HQN-WEB" "CAPI-LIBRARY"
                                               "GRAPHICS-PORTS" "COLOR" "CAPI-WIN32-LIB"
-                                              (remove-if-not (lambda (p) 
-                                                               (let ((name (package-name p)))  
-                                                                 (and (> (length name) 2)
-                                                                      (equalp (subseq name 0 2) "B/"))))
-                                                             (list-all-packages))))
+                                              (packages-beginning-with "B/")))
          :never-shake-packages '(#:b #:setf #:cl #:mallavar-utility #:lisa #:lisa-user #:cl-user
                                      #:compiler #:slot-symbol #:swank)
 
