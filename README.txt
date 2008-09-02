@@ -61,7 +61,7 @@ III Lisp Implementations
 Little b is known to run in
     * Allegro CL 8.x
     * Lispworks 4.x and 5.x
-    * CLISP 2.41 and higher
+    * CLISP 2.41 and higher (buggy - produces bad math!)
 
 
 IV Dependencies:
