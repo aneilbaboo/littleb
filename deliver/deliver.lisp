@@ -39,6 +39,7 @@
 (defvar *current-dir* (make-pathname :name nil :type nil :defaults *load-truename*))
 (defun current-dir (&optional (relpath #P""))
   (merge-pathnames relpath *current-dir*))
+(defvar *build-dir* (current-dir "build/"))
 (defvar *delivered-image-name* (current-dir (format nil "build/littleb~@[.~A~]"
                                                     #+:win32 "exe" #-:win32 nil)))
 
@@ -69,9 +70,9 @@
 ;;;             * a user init file which supports multi-directory installation is provided in build/support
 ;;;
 (defun make-build-folder ()
-  (let* ((littleb    (current-dir "../"))
+  (let* ((littleb    (current-dir))
          (littleb*   (merge-pathnames "*.*" littleb))
-         (build      (merge-pathnames "build/" littleb))
+         (build      *build-dir*)
          (build-libs (merge-pathnames "libraries/" build))
          (root    (b:get-b-path :root))
          (root*   (b:get-b-path :root "*.*")))
