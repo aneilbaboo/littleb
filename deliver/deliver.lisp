@@ -98,8 +98,11 @@
     #+(or :copy-all :copy-libraries) (copy-lib "scaffold/")
     #+(or :copy-all :copy-support) (copy "support/" :subdirs t)
     #+(or :copy-all :copy-lisa) (copy "lisa/" :subdirs t :from #+:win32 root* #+:unix root)
-    (copy "init.lisp" :from (b:get-b-path :root "support/init.lisp"))))
-)
+    (copy "init.lisp" :from (b:get-b-path :root "support/init.lisp"))
+    (copy "README.txt" :from (b:get-b-path :root))
+    (copy "RELEASE.txt" :from (b:get-b-path :root))
+    (copy "CHANGELOG.txt" :from (b:get-b-path :root))
+    (copy "LICENSE.txt" :from (b:get-b-path :root)))))
 (make-build-folder)
 
 (in-package :cl-user)
