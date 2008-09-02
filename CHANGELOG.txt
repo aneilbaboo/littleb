@@ -1,6 +1,239 @@
 
-Changes for 'b1' beetween V1-5-6 (excluded) and V1-5-11 (included)
+Changes for 'b1' beetween V1-5-6 (excluded) and V1-6-0 (included)
  built by cvschangelogbuilder 2.4 (build 1.83) with option listdeltabydate.
+
+2008-09-02
+	* b1@libraries/b/biochem/complex/species-type.lisp 1.54 (changed):
+	* b1@libraries/b/biochem/location.lisp 1.13 (changed):
+		* defcomplex now ensures bonds labelled with ! are unique
+		* added def-location-class
+	* b1@deliver/console.lisp 1.1 (added):
+	* b1@deliver/deliver.lisp 1.8 (changed):
+		* deliver now copies over LICENSE.txt  and keeps SWANK packages in delivered binary
+		* added console.lisp
+	* b1@README.txt 1.4 (changed):
+	* b1@RELEASE.txt 1.8 (changed):
+	* b1@SOURCES.txt 1.1 (added):
+	* b1@b1.asd 1.27 (changed):
+	* b1@deliver/deliver.lisp 1.7 (changed):
+	* b1@get-cvs-modules.bat 1.6 (changed):
+	* b1@get-cvs-modules.sh 1.6 (changed):
+	* b1@littleb.lisp 1.10 (changed):
+	* b1@src/global/constants.lisp 1.10 (changed):
+		* updated text files
+		* little b console accepts command line arguments
+	* b1@b1.asd 1.26 (changed):
+	* b1@src/reader/list-reader.lisp 1.2 (changed):
+		* upgraded to little b version 1.6.0 for release
+		* fixed reader-error to work correctly on non-lispworks on command lines
+	* b1@libraries/examples/custom-rates.lisp 1.2 (changed):
+		*** empty log message ***
+	* b1@libraries/examples/cell-location.lisp 1.1 (added):
+	* b1@libraries/examples/data-table.lisp 1.1 (added):
+	* b1@libraries/examples/defcomplex.lisp 1.1 (added):
+	* b1@libraries/examples/example1-simple.lisp 1.1 (added):
+	* b1@libraries/examples/example2-complexes.lisp 1.1 (added):
+	* b1@libraries/examples/nil-monomer.lisp 1.1 (added):
+	* b1@libraries/examples/receptor-ligand.lisp 1.1 (added):
+	* b1@libraries/examples/simple.lisp 1.1 (added):
+	* b1@libraries/examples/substitution-table.lisp 1.1 (added):
+		Added new examples
+	* b1@.cvsignore 1.4 (changed):
+	* b1@LICENSE.txt 1.2 (changed):
+	* b1@RELEASE.txt 1.7 (changed):
+	* b1@deliver/deliver.lisp 1.6 (changed):
+	* b1@libraries/b/biochem.lisp 1.4 (changed):
+	* b1@libraries/b/biochem/2-dimensional.lisp 1.2 (changed):
+	* b1@libraries/b/biochem/3-dimensional.lisp 1.2 (changed):
+	* b1@libraries/b/biochem/aggregate.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/basic-ode-modelling.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/complex.lisp 1.7 (changed):
+	* b1@libraries/b/biochem/complex/ode.lisp 1.11 (changed):
+	* b1@libraries/b/biochem/complex/pattern-match.lisp 1.5 (changed):
+	* b1@libraries/b/biochem/complex/reaction-inference.lisp 1.18 (changed):
+	* b1@libraries/b/biochem/complex/reaction-type.lisp 1.26 (changed):
+	* b1@libraries/b/biochem/complex/species-type.lisp 1.55 (changed):
+	* b1@libraries/b/biochem/complex/test.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/dimensionalization.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/dimensionalization/2d.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/dimensionalization/3d.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/dimensionalization/null.lisp 1.3 (changed):
+	* b1@libraries/b/biochem/enzymatic-reaction.lisp 1.7 (changed):
+	* b1@libraries/b/biochem/localization.lisp 1.4 (changed):
+	* b1@libraries/b/biochem/location.lisp 1.14 (changed):
+	* b1@libraries/b/biochem/membrane-apposition.lisp 1.8 (changed):
+	* b1@libraries/b/biochem/multisided-cell.lisp 1.8 (changed):
+	* b1@libraries/b/biochem/multisided-cell/flat-lattice.lisp 1.7 (changed):
+	* b1@libraries/b/biochem/multisided-cell/hex-lattice.lisp 1.2 (changed):
+	* b1@libraries/b/biochem/multistate-reactant.lisp 1.2 (changed):
+	* b1@libraries/b/biochem/non-dimensional.lisp 1.2 (changed):
+	* b1@libraries/b/biochem/ode.lisp 1.21 (changed):
+	* b1@libraries/b/biochem/reaction-inference.lisp 1.9 (changed):
+	* b1@libraries/b/biochem/reaction-type.lisp 1.14 (changed):
+	* b1@libraries/b/biochem/reaction.lisp 1.4 (changed):
+	* b1@libraries/b/biochem/species-type.lisp 1.5 (changed):
+	* b1@libraries/b/biochem/species.lisp 1.5 (changed):
+	* b1@libraries/b/biochem/std-rate-functions.lisp 1.8 (changed):
+	* b1@libraries/b/graph.lisp 1.2 (changed):
+	* b1@libraries/b/gui.lisp 1.2 (changed):
+	* b1@libraries/b/math.lisp 1.3 (changed):
+	* b1@libraries/b/math/defer-expression.lisp 1.3 (changed):
+	* b1@libraries/b/math/dimension.lisp 1.4 (changed):
+	* b1@libraries/b/math/dimensional-methods.lisp 1.4 (changed):
+	* b1@libraries/b/math/dtype.lisp 1.2 (changed):
+	* b1@libraries/b/math/expand.lisp 1.3 (changed):
+	* b1@libraries/b/math/gauss.lisp 1.3 (changed):
+	* b1@libraries/b/math/math-concept.lisp 1.8 (changed):
+	* b1@libraries/b/math/math-expression.lisp 1.2 (changed):
+	* b1@libraries/b/math/math-printer.lisp 1.6 (changed):
+	* b1@libraries/b/math/non-dimensionalize.lisp 1.3 (changed):
+	* b1@libraries/b/math/ode-var.lisp 1.5 (changed):
+	* b1@libraries/b/math/operators.lisp 1.6 (changed):
+	* b1@libraries/b/math/product-expression-printer.lisp 1.2 (changed):
+	* b1@libraries/b/math/product-expression.lisp 1.5 (changed):
+	* b1@libraries/b/math/quantity.lisp 1.5 (changed):
+	* b1@libraries/b/math/range.lisp 1.2 (changed):
+	* b1@libraries/b/math/reader.lisp 1.4 (changed):
+	* b1@libraries/b/math/sum-expression-printer.lisp 1.2 (changed):
+	* b1@libraries/b/math/sum-expression.lisp 1.11 (changed):
+	* b1@libraries/b/math/unit.lisp 1.4 (changed):
+	* b1@libraries/b/math/var.lisp 1.3 (changed):
+	* b1@libraries/b/matlab/ode-translation.lisp 1.10 (changed):
+	* b1@libraries/b/matlab/settings.lisp 1.2 (changed):
+	* b1@libraries/b/numerica/ode-translation.lisp 1.18 (changed):
+	* b1@libraries/b/units/dimensionalization.lisp 1.2 (changed):
+	* b1@libraries/b/units/null.lisp 1.2 (changed):
+	* b1@libraries/b/units/standard-dimensions.lisp 1.2 (changed):
+	* b1@libraries/b/units/standard-units.lisp 1.2 (changed):
+	* b1@libraries/b/units/standard.lisp 1.2 (changed):
+	* b1@libraries/b/units/unit-systems.lisp 1.2 (changed):
+	* b1@libraries/b/util.lisp 1.2 (changed):
+	* b1@libraries/b/util/dictionary.lisp 1.9 (changed):
+	* b1@libraries/examples/nil-monomer.lisp 1.2 (changed):
+	* b1@libraries/examples/receptor-ligand.lisp 1.2 (changed):
+	* b1@littleb.lisp 1.9 (changed):
+	* b1@src/core-types/concept-class.lisp 1.8 (changed):
+	* b1@src/core-types/concept.lisp 1.5 (changed):
+	* b1@src/core-types/property-class.lisp 1.3 (changed):
+	* b1@src/core-types/property.lisp 1.3 (changed):
+	* b1@src/core-types/rule.lisp 1.2 (changed):
+	* b1@src/core/expose.lisp 1.4 (changed):
+	* b1@src/core/field-function.lisp 1.2 (changed):
+	* b1@src/core/field-pattern.lisp 1.3 (changed):
+	* b1@src/core/for-pattern.lisp 1.2 (changed):
+	* b1@src/core/kb.lisp 1.16 (changed):
+	* b1@src/core/lisa-extensions.lisp 1.3 (changed):
+	* b1@src/core/order.lisp 1.2 (changed):
+	* b1@src/core/printer.lisp 1.16 (changed):
+	* b1@src/core/query.lisp 1.5 (changed):
+	* b1@src/core/reify.lisp 1.2 (changed):
+	* b1@src/core/rule-patterns.lisp 1.9 (changed):
+	* b1@src/core/type.lisp 1.2 (changed):
+	* b1@src/global/constants.lisp 1.9 (changed):
+	* b1@src/global/error.lisp 1.6 (changed):
+	* b1@src/global/field.lisp 1.21 (changed):
+	* b1@src/global/fieldinfo.lisp 1.4 (changed):
+	* b1@src/global/global.lisp 1.5 (changed):
+	* b1@src/global/missing.lisp 1.2 (changed):
+	* b1@src/global/name.lisp 1.7 (changed):
+	* b1@src/global/object.lisp 1.10 (changed):
+	* b1@src/global/reader-core.lisp 1.5 (changed):
+	* b1@src/global/trace-filter.lisp 1.2 (changed):
+	* b1@src/global/trace.lisp 1.3 (changed):
+	* b1@src/include/clear.lisp 1.4 (changed):
+	* b1@src/include/compile-include-path.lisp 1.14 (changed):
+	* b1@src/include/edit.lisp 1.2 (changed):
+	* b1@src/include/include-declaration.lisp 1.2 (changed):
+	* b1@src/include/include-documentation.lisp 1.2 (changed):
+	* b1@src/include/include-path.lisp 1.8 (changed):
+	* b1@src/include/include.lisp 1.12 (changed):
+	* b1@src/include/library.lisp 1.4 (changed):
+	* b1@src/include/uninclude.lisp 1.2 (changed):
+	* b1@src/packages/mallavar-utility-pkg.lisp 1.9 (changed):
+	* b1@src/packages/pkgconstants.lisp 1.3 (changed):
+	* b1@src/packages/pkgdecl.lisp 1.24 (changed):
+	* b1@src/packages/portable-pkg.lisp 1.8 (changed):
+	* b1@src/platform/clisp.lisp 1.7 (changed):
+	* b1@src/platform/lispworks.lisp 1.11 (changed):
+	* b1@src/portable/clos.lisp 1.7 (changed):
+	* b1@src/portable/dspec.lisp 1.8 (changed):
+	* b1@src/portable/misc.lisp 1.9 (changed):
+	* b1@src/portable/prompt.lisp 1.2 (changed):
+	* b1@src/portable/windows.lisp 1.3 (changed):
+	* b1@src/reader/bq-reader.lisp 1.5 (changed):
+	* b1@src/reader/char-reader.lisp 1.2 (changed):
+	* b1@src/reader/field-reader.lisp 1.5 (changed):
+	* b1@src/reader/list-reader.lisp 1.3 (changed):
+	* b1@src/reader/math-reader.lisp 1.2 (changed):
+	* b1@src/reader/more-editor-funcs.lisp 1.2 (changed):
+	* b1@src/reader/object-reader.lisp 1.3 (changed):
+	* b1@src/reader/quote-reader.lisp 1.2 (changed):
+	* b1@src/reader/string-reader.lisp 1.2 (changed):
+	* b1@src/reader/token-reader.lisp 1.5 (changed):
+	* b1@src/top-level-forms/assume.lisp 1.2 (changed):
+	* b1@src/top-level-forms/datatable.lisp 1.3 (changed):
+	* b1@src/top-level-forms/def-with-fields.lisp 1.3 (changed):
+	* b1@src/top-level-forms/defcon.lisp 1.5 (changed):
+	* b1@src/top-level-forms/define.lisp 1.3 (changed):
+	* b1@src/top-level-forms/defplaceholder.lisp 1.3 (changed):
+	* b1@src/top-level-forms/defprop.lisp 1.3 (changed):
+	* b1@src/top-level-forms/defrule.lisp 1.8 (changed):
+	* b1@src/top-level-forms/initialize.lisp 1.9 (changed):
+	* b1@src/top-level-forms/system.lisp 1.3 (changed):
+	* b1@src/utility/b-utils.lisp 1.2 (changed):
+	* b1@src/utility/context-info.lisp 1.2 (changed):
+	* b1@src/utility/form-inspection.lisp 1.2 (changed):
+	* b1@src/utility/portable.lisp 1.2 (changed):
+	* b1@src/utility/predicate.lisp 1.2 (changed):
+	* b1@src/utility/prompt.lisp 1.2 (changed):
+	* b1@src/utility/trie.lisp 1.2 (changed):
+	* b1@src/utility/utility.lisp 1.17 (changed):
+		Changed to GPL license
+	* b1@CHANGELOG.txt 1.3 (changed):
+	* b1@RELEASE.txt 1.6 (changed):
+		Changelog and release notes for v1.6.0
+	* b1@deliver/deliver.lisp 1.5 (changed):
+		Deliver.lisp now copies the README CHANGELOG RELEASE and LICENSE files to the root directory
+	* b1@libraries/examples/defcomplex.lisp 1.2 (changed):
+		Fixed defcomplex example
+	* b1@libraries/examples/custom-rates.lisp 1.1 (added):
+		Initial commit of custom-rates example
+	* b1@README.txt 1.3 (changed):
+		Note that CLISP impl is buggy
+		Removed old examples
+	* b1@libraries/deprecated-examples/.cvsignore 1.1 (added):
+	* b1@libraries/deprecated-examples/_init.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/egfr-mapk-mkp.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/egfr-mapk.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example1-alternate.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example1-reversible.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example2-reversible.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example3-manual es complex.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example4-enzymatic-reaction.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/example5-complexes.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/g6pi-d.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/g6pi-er.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/g6pi.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/g6pi2.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/locations/cell.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/egf-basal-k1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/egf-basal.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/egf-egfr.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/egfr-egf-k1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/espx-catalysis.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/espx-deactivation.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mapk-cascade-k1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mapk-cascade.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mkp-basal-k1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mkp-basal-k2.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mkp-basal.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mkp-mapk-cascade-k1.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/reactions/mkp-mapk-cascade.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/species/egfr.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/species/mapk-cascade.lisp 1.1 (added):
+	* b1@libraries/deprecated-examples/species/mkp.lisp 1.1 (added):
+		This is a renaming of what used to be the examples library
 
 2008-08-30
 	* b1@deliver/deliver.lisp 1.3 (changed):
