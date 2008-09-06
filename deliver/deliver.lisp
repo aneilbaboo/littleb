@@ -47,9 +47,6 @@
 (defvar *current-dir* (make-pathname :name nil :type nil :defaults *load-truename*))
 (defun current-dir (&optional (relpath #P""))
   (merge-pathnames relpath *current-dir*))
-(defvar *build-dir* (current-dir "build/"))
-(defvar *delivered-image-name* (current-dir (format nil "build/littleb~@[.~A~]"
-                                                    #+:win32 "exe" #-:win32 nil)))
 
 #-:asdf (load (current-dir "../asdf/asdf+.lisp"))
 (push (probe-file (current-dir #P"../")) asdf:*central-registry*)
@@ -58,6 +55,20 @@
 (asdf:load-system :b1)
 (compile-file (current-dir "console.lisp") :load t)
 (b:init)
+
+(defvar *release-name* (format nil
+                               "~A-littleb-console-v~{~A.~A.~A~}"
+                               #+:win32 "x86-win32"
+                               #+:linux "x86-linux"
+                               #+:macos   "macos"
+                               #-(or :mac :win32 :linux) (error "Please edit deliver.lisp - current platform unknown")
+                               (multiple-value-list (b:littleb-version))))
+(defvar *build-dir*  (current-dir (format nil "~A/" *release-name*)))
+(defvar *delivered-image-name* (make-pathname :name "littleb" :type  "exe" #-:win32 nil
+                                              :defaults *build-dir*))
+                                                 
+
+
 
 #+:compile-library (b:compile-library 'b)
 
@@ -78,7 +89,7 @@
 ;;;             * a user init file which supports multi-directory installation is provided in build/support
 ;;;
 (defun make-build-folder ()
-  (let* ((littleb    (current-dir))
+  (let* ((littleb    (current-dir "../"))
          (littleb*   (merge-pathnames "*.*" littleb))
          (build      *build-dir*)
          (build-libs (merge-pathnames "libraries/" build))
@@ -101,12 +112,11 @@
                           #+:unix (namestring to)))
                (ensure-directories-exist dest)
                #+:win32 (format t "~&xcopy ~A ~A ~@[/S~] /Q /Y /D /I~%" src dest subdirs)
-               #+:win32 (system:call-system `("xcopy" ,src ,dest
-                                                      ,@(if subdirs '("/S")) "/Q" "/Y" "/D" "/I")
-                                            :kill-process-on-abort t)
-               #+(and :unix (not :mac)) (system:call-system-showing-output `("/bin/cp" "-r" "-p" "--copy-contents" ,src ,dest)) ; cygwin complains it can't find program cp.
-               #+:mac (system:call-system-showing-output `("/bin/cp" "-R" "-p" ,src ,dest)) 
-;               #+:unix (system:call-system-showing-output `("sh" ,copy-script ,src ,dest)) ; this hack doesn't work either; can't find sh
+               #+:win32 (assert (zerop (system:call-system `("xcopy" ,src ,dest
+                                                                     ,@(if subdirs '("/S")) "/Q" "/Y" "/D" "/I")
+                                                           :kill-process-on-abort t)))
+               #+(and :unix (not :mac)) (assert (zerop (system:call-system-showing-output `("/bin/cp" "-r" "-p" "--copy-contents" ,src ,dest)))) ; cygwin complains it can't find program cp.
+               #+:mac (assert (zerop (system:call-system-showing-output `("/bin/cp" "-R" "-p" ,src ,dest))))
                )))
     
     
@@ -171,7 +181,25 @@
 (defun packages-beginning-with (str)
   (remove-if-not (package-begins-with str) (list-all-packages)))
 
-;;; Deliver the application
+;; write a batch file that will deliver the app to littleb.org
+;; we can't do this inside this script (which is probably not a great idea anyway)
+;; because the :exit-on-delivery keyword to deliver has not been implemented, so
+;; nothing can be done after deliver
+(with-open-file (file (current-dir #+:win32 "upload.bat" 
+                                   #+:unix "upload.sh")
+                      :direction :output
+                      :if-does-not-exist :create 
+                      :if-exists :overwrite )
+  #+:win32 (format file
+                   "zip -qrv ~A.zip ~:*~A/~%~
+                    pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
+                   *release-name*)
+  #+:unix (format file 
+                  "tar -cf - ~A/ | gzip -c -9 > ~:*~A.tgz~%~
+                   pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
+          *release-name*))
+                                   
+;;;; ;; Deliver the application
 (apply #'deliver 'b-console:run-b-top-level *delivered-image-name* 
          4
          :compact t
@@ -217,15 +245,11 @@
          :never-shake-packages '(#:b #:setf #:cl #:mallavar-utility #:lisa #:lisa-user #:cl-user
                                      #:compiler #:slot-symbol #:swank)
 
-                     
+         ;; :exit-after-delivery nil - not implemented, though it's in the documentation!
          (append
           #+:lispworks4 '(:exit-after-delivery t ; nil - set to nil for debugging purposes
                           :keep-ratio-numbers t
                           :keep-lexer t)
           #+:win32 `(:image-type :exe 
                      :console t)))
-
-
-
-
 
