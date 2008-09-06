@@ -93,7 +93,8 @@
                        :subdirs t)))
            (copy (src &key (dest src) (from "") (to "") subdirs) ; default from littleb folder
              (let* ((from (merge-pathnames from #+:win32 littleb* #+:unix littleb))
-                    (to   (merge-pathnames to build))
+                    (to   #+:mac (merge-pathnames src (merge-pathnames to build))
+                          #-:mac (merge-pathnames to build))
                     (src #+:win32 (namestring (merge-pathnames src from))
                          #+:unix (namestring (merge-pathnames src from)))
                     (dest #+:win32 (namestring (make-pathname :name nil :type nil :defaults (merge-pathnames dest to)))
@@ -103,8 +104,8 @@
                #+:win32 (system:call-system `("xcopy" ,src ,dest
                                                       ,@(if subdirs '("/S")) "/Q" "/Y" "/D" "/I")
                                             :kill-process-on-abort t)
-               #+:unix (system:call-system-showing-output `("/bin/cp" "-r" "-p" "--copy-contents" ,src ,dest)) ; complains it can't find program cp.
-
+               #+(and :unix (not :mac)) (system:call-system-showing-output `("/bin/cp" "-r" "-p" "--copy-contents" ,src ,dest)) ; cygwin complains it can't find program cp.
+               #+:mac (system:call-system-showing-output `("/bin/cp" "-R" "-p" ,src ,dest)) 
 ;               #+:unix (system:call-system-showing-output `("sh" ,copy-script ,src ,dest)) ; this hack doesn't work either; can't find sh
                )))
     
@@ -122,7 +123,9 @@
     #+(or :copy-all :copy-libraries) (copy-lib "segment-polarity/")
     #+(or :copy-all :copy-libraries) (copy-lib "scaffold/")
     #+(or :copy-all :copy-support) (copy "support/" :subdirs t)
-    #+(or :copy-all :copy-lisa) (copy "lisa/" :subdirs t :from #+:win32 root* #+:unix root)
+    #+(or :copy-all :copy-lisa) (copy "lisa/" 
+                                      :subdirs t
+                                      :from #+:win32 root* #+:unix root)
     (copy "init.lisp" :from (b:get-b-path :root "support/init.lisp"))
     (copy "README.txt" :from (b:get-b-path :root))
     (copy "RELEASE.txt" :from (b:get-b-path :root))
