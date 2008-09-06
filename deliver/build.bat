@@ -1,0 +1,1 @@
+lispworks -build deliver.lisp

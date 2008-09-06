@@ -64,7 +64,7 @@
                                #-(or :mac :win32 :linux) (error "Please edit deliver.lisp - current platform unknown")
                                (multiple-value-list (b:littleb-version))))
 (defvar *build-dir*  (current-dir (format nil "~A/" *release-name*)))
-(defvar *delivered-image-name* (make-pathname :name "littleb" :type  "exe" #-:win32 nil
+(defvar *delivered-image-name* (make-pathname :name "littleb" :type  #+:win32 "exe" #-:win32 nil
                                               :defaults *build-dir*))
                                                  
 
@@ -195,10 +195,11 @@
                     pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
                    *release-name*)
   #+:unix (format file 
-                  "tar -cf - ~A/ | gzip -c -9 > ~:*~A.tgz~%~
-                   pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
+                  "archiving and compressing ~A~%~
+                   tar -cf - ~:*~A/ | gzip -c -9 > ~:*~A.tgz~%~
+                   scp ~:*~A.tgz am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
           *release-name*))
-                                   
+#+:unix (system:call-system-showing-output (list "/bin/chmod" "+x" (format nil "~A.tgz" *release-name*)))
 ;;;; ;; Deliver the application
 (apply #'deliver 'b-console:run-b-top-level *delivered-image-name* 
          4

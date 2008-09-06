@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Revision: 1.6 $
+# $Revision: 1.7 $
 set -e
 trap "kill 0" 2
 
@@ -91,8 +91,8 @@ function delete ()
 # SETUP VARIABLES:
 # 
 littlebRoot=:pserver:anonymous@littleb.cvs.sourceforge.net:/cvsroot/littleb
-lisaRoot=:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa
-lisaTag=RELEASE_3_2
+#lisaRoot=:pserver:anonymous@lisa.cvs.sourceforge.net:/cvsroot/lisa
+#lisaTag=RELEASE_3_2
 littlebTag=HEAD
 exportFlag=false
 updateFlag=false
@@ -133,9 +133,9 @@ then 	outputName=littleb-src${tagName}
 fi
 
 msg "Options:   exportFlag=${exportFlag}, updateFlag=${updateFlag}"
-msg "           littlebTag=$littlebTag,lisaTag=$lisaTag"
-msg "           littlebRoot=$littlebRoot"
-msg "           lisaRoot=$lisaRoot"
+msg "           littlebTag=$littlebTag,RTag=$lisaTag"
+#msg "           littlebRoot=$littlebRoot"
+#msg "           lisaRoot=$lisaRoot"
 msg "           lisp=$lisp"
 msg This script will make $outputName.tar.gz and $outputName.zip
 
@@ -148,7 +148,7 @@ checkOut b1 $littlebRoot $littlebTag
 
 run cd b1
 
-checkOut lisa $lisaRoot $lisaTag
+checkOut lisa $littlebRoot $littlebTag
 
 checkOut graph-tools  $littlebRoot $littlebTag
 
