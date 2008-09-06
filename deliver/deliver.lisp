@@ -60,7 +60,7 @@
                                "~A-littleb-console-v~{~A.~A.~A~}"
                                #+:win32 "x86-win32"
                                #+:linux "x86-linux"
-                               #+:macos   "macos"
+                               #+:macos "macos"
                                #-(or :mac :win32 :linux) (error "Please edit deliver.lisp - current platform unknown")
                                (multiple-value-list (b:littleb-version))))
 (defvar *build-dir*  (current-dir (format nil "~A/" *release-name*)))
