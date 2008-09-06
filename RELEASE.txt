@@ -88,9 +88,6 @@ Features
   ie., [[a 1 **][a 1 **]] will not match [[a 1][a 1][a 1]]
 * Clisp printing works ok now
 
-<< Other >>
-* Little b is now licensed under the GPL
-
 1.5.6 (2007-12-23)
 ==================
 Bugs discovered by German Enciso and Carlos Lopez in the graph-based reaction
