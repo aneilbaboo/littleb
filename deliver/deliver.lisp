@@ -60,7 +60,7 @@
                                "~A-littleb-console-v~{~A.~A.~A~}"
                                #+:win32 "x86-win32"
                                #+:linux "x86-linux"
-                               #+:macos "macos"
+                               #+:macosx "macosx"
                                #-(or :mac :win32 :linux) (error "Please edit deliver.lisp - current platform unknown")
                                (multiple-value-list (b:littleb-version))))
 (defvar *build-dir*  (current-dir (format nil "~A/" *release-name*)))
@@ -194,8 +194,12 @@
                    "zip -qrv ~A.zip ~:*~A/~%~
                     pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
                    *release-name*)
-  #+:unix (format file 
-                  "archiving and compressing ~A~%~
+  #+:mac (format file
+                 "zip -qrv ~A.zip ~:*~A/~%~
+                  scp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
+                 *release-name*)
+  #+:linux (format file 
+                   "echo archiving and compressing ~A~%~
                    tar -cf - ~:*~A/ | gzip -c -9 > ~:*~A.tgz~%~
                    scp ~:*~A.tgz am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
           *release-name*))
