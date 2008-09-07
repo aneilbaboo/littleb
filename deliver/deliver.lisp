@@ -189,7 +189,7 @@
                                    #+:unix "upload.sh")
                       :direction :output
                       :if-does-not-exist :create 
-                      :if-exists :overwrite )
+                      :if-exists :supersede )
   #+:win32 (format file
                    "zip -qrv ~A.zip ~:*~A/~%~
                     pscp ~:*~A.zip am116@orchestra.med.harvard.edu:/www/www.littleb.org/docroot/downloads/~%"
