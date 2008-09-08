@@ -11,7 +11,11 @@
 
 (defun run-b-top-level ()
   (setf b-system:*b-root-directory* (make-pathname :name nil :type nil :version nil
-                                                   :defaults (probe-file (first system:*line-arguments-list*)))
+                                                   :defaults (probe-file
+                                                              #-:win32 (first system:*line-arguments-list*)
+                                                              #+:win32
+                                                              (merge-pathnames (first system:*line-arguments-list*)
+                                                                               ".exe")))
         b:*library-search-paths* (list (merge-pathnames "libraries/" b-system:*b-root-directory*)))
   (princ *version*)
   (in-package :b-user)
