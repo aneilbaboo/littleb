@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: species-type.lisp,v 1.56 2008/09/06 00:23:08 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.57 2008/09/11 21:50:08 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -752,8 +752,9 @@
      x bindings
      "Expecting a field form referencing a monomer of the form MONOMER.REF ~
             in [~S~{ ~^~S~}]" x bindings))
-  (let ((field (fld-form-field x)))
-    (unless (keywordp field)
+  (let ((field (fld-form-field x))
+        (mon   (fld-form-object x)))
+    (unless (or (null mon) (keywordp field))
       (pattern-error
        x bindings "Invalid monomer reference ~A in x"
        field))))

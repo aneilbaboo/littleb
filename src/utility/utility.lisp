@@ -27,7 +27,7 @@
 ;;; Description: general utilities for use with common lisp
 ;;;
 
-;;; $Id: utility.lisp,v 1.18 2008/09/06 00:23:09 amallavarapu Exp $
+;;; $Id: utility.lisp,v 1.19 2008/09/11 21:50:08 amallavarapu Exp $
 
 (in-package mallavar-utility)
 
@@ -1253,3 +1253,5 @@ to the function returned by testform if INVERT is nil.  Otherwise, KEYFORM is th
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'quit code)))
 
+(defun eval-string (str &rest args)
+  (eval (read-from-string (apply #'format nil str args))))

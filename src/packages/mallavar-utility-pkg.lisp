@@ -26,7 +26,7 @@
 ;;; File: mallavar-utility-pkg.lisp
 ;;; Description: 
 
-;;; $Id: mallavar-utility-pkg.lisp,v 1.10 2008/09/06 00:23:09 amallavarapu Exp $
+;;; $Id: mallavar-utility-pkg.lisp,v 1.11 2008/09/11 21:50:08 amallavarapu Exp $
 
 ;;;
 
@@ -67,4 +67,6 @@
    allow #:allow-type-p #:allow-type-type #:allow-expr-p #:allow-expr-type #:allow-expr-form
    #:with-binding-environment #:def-binding-environment
    ;; environment code:
-   #:quit #:gc))
+   #:quit #:gc
+   ;; misc
+   #:eval-string))
