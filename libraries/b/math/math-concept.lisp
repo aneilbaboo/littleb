@@ -35,7 +35,7 @@
 ;;;              arithmetic-value and any combinations.
 ;;;              
 
-;;; $Id: math-concept.lisp,v 1.9 2008/09/06 00:23:08 amallavarapu Exp $
+;;; $Id: math-concept.lisp,v 1.10 2008/09/11 20:28:03 amallavarapu Exp $
 ;;; $Log $
 
 (in-package b/math)
@@ -57,6 +57,9 @@
 ;;;
 ;;; LET method
 ;;;  
+(defield number.let (&rest bindings)
+  (declare (ignore bindings))
+  object)
 (defun math-let-substituter (bindings)
   (lambda (var)
     (getf bindings var var)))
