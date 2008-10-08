@@ -80,18 +80,71 @@
             (write-numerica-code nm stream)))
         (setf *numerica-model* nm)))))
 
+;;;;
+;;;;   NUMERICA-MODEL
+;;;;
+;;;;    structure which stores information about how NUMERICA code is to be generated
+;;;;
 
-;;;; (defun refresh-parameters (&optional (model *numerica-model*))
-;;;;   "Rewrites the parameters/initial conditions of a model (default is *numerica-model*) to the model's initfile."  
-;;;;   (let* ((name (numerica-model-init-script-name model))
-;;;;          (path (numerica-model-path model))
-;;;;          (init-path (numerica-file-path name path)))
-;;;;     (with-open-file (file init-path :direction :output)
-;;;;       (write-init-script file model))
-;;;;     (format t "New parameters file (~A.~A) written to ~A."
-;;;;             (pathname-name init-path)
-;;;;             (pathname-type init-path)
-;;;;             path)))
+;;
+;; the numerica-model structure stores information about how NUMERICA code is to be generated
+;;
+(defstruct (numerica-model (:constructor _make-numerica-model 
+                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
+  _name ; string indicating the name of the model
+  path ; the path in which files for this model are stored
+  ode-vars ; an ordered list of n ode-vars/derived-vars which map to y(1)...y(n) in the numerica ODE system
+  ode-rates ; the .rates of the ode-vars
+  base-units ; units (of base dimensions only) which all quantities are converted to
+  gauss-value ; either :mean or :random - controls how gaussians are sampled G.mean or G.random-value
+  kvars ; ordered list of vars which represent parameters (as opposed to ode-vars)
+  display-vars ; a list of ode-vars/derived-vars which should be displayed in numerica
+  ode-comments-p ; print comments for ode-models
+  sim-options ; string list for options in the model 
+  sim-steps ; number of steps for the simulation
+  klen-pos ; position in file where length of parameter array is defined
+  part-pos ; position in file where length of part array is defined
+ )
+
+(defmethod print-object ((nm numerica-model) stream)
+  (print-unreadable-object (nm stream :type t :identity t)
+    (format stream "~A (~A vars)" (numerica-model-name nm)
+            (length (numerica-model-ode-vars nm)))))
+
+(defun make-numerica-model (model-name 
+			    &key 
+			    (ode-comments-p t)
+			    (sim-options nil)
+			    (sim-steps nil)
+			    (path nil)
+			    (ode-vars (query [ode-var ?])) 
+			    (base-units nil) 
+			    (gauss-value :mean) 
+			    (display-vars nil))
+  (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
+         (kvars (make-hash-table))) ; (order-vars (compute-kvars rates))))
+    (setf (gethash :last-index kvars) 0)
+    (_make-numerica-model model-name path ode-vars rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
+
+(defun numerica-model-name (nm)
+  (etypecase nm
+    (string nm)
+    (numerica-model (numerica-model-_name nm))))
+
+(defun numerica-model-init-script-name (nm)
+  (mkstr (numerica-model-name nm) "_init"))
+(defun numerica-model-kvars-name (nm)
+  (mkstr (numerica-model-name nm) "_k"))
+(defun numerica-model-descriptions-var-name (nm)
+  (mkstr (numerica-model-name nm) "_descriptions"))
+(defun numerica-model-simulation-name (nm)
+  (mkstr (numerica-model-name nm) "_simulation"))
+(defun numerica-model-model-name (nm)
+  (mkstr (numerica-model-name nm) "_model"))
+(defun numerica-model-var-indicies-name (nm)
+  (mkstr (numerica-model-name nm) "_vars"))
+(defun numerica-model-kvar-count (nm)
+  (1- (hash-table-count (numerica-model-kvars nm))))
 
 (defun make-safe-file-name (o)
   (substitute-if-not #\_ #'alphanumericp
@@ -153,12 +206,16 @@
           (setf parts (nconc parts (if (> last-term-pos cur-start-pos)
                                        (list (subseq str cur-start-pos last-term-pos)))))
           (return parts))))
-          
+
+(defun scribble (file obj pos)
+  (let ((end (file-position file)))
+    (file-position file pos)
+    (prin1 obj file)
+    (file-position file end)))
+
 (defun write-model-block (nm file)
   (let* ((ode-vars  (numerica-model-ode-vars nm))
          (allvars   (query var))
-         (klen-pos  nil) ; file position of length of k array
-         (part-pos  nil) ; file position of length of part array 
          (npart     0))
 
     (labels ((rate-str-without-outer-parens (rate)
@@ -181,13 +238,7 @@
                          do (format file "~%~4Tpart(~S) = ~A;" p rate-str)
                          finally (format file "~%~4T$c(~A) = ~:[0~;~{part(~A)~^+~}~];" (1+ i) parts parts)))
                   (t (format file "~%~T$c(~A) = ~A;" (1+ i) 
-                             (rate-str-without-outer-parens rate)))))
-                  
-             (scribble (obj pos)
-               (let ((end (file-position file)))
-                 (file-position file pos)
-                 (prin1 obj file)
-                 (file-position file end))))
+                             (rate-str-without-outer-parens rate))))))
 
     (format t "~&; Writing model block")
     (format file "MODEL ~A~%~
@@ -196,7 +247,7 @@
             (numerica-model-model-name nm))
 
     ;; store the location of the k array length so we can set it later...
-    (setf klen-pos (file-position file))
+    (setf (numerica-model-klen-pos nm) (file-position file))
 
     (format file "~A) OF REAL~%~
                   ~2TVARIABLE~%~
@@ -205,7 +256,7 @@
             (map 'string (constantly #\space) (format nil "~A" (length allvars)))
             (length ode-vars))
 
-    (setf part-pos (file-position file))
+    (setf (numerica-model-part-pos nm) (file-position file))
     (format file "~A) of Concentration~%~
                   ~2TEQUATION"
             (map 'string (constantly #\space) (format nil "~A" (length allvars))))
@@ -217,15 +268,12 @@
                 (princ #\.)
                 ;; write comment
                 (if (numerica-model-ode-comments-p nm)
-                    (b-format file "~%~4T# ~A = ~A " v rate)))
+                    (b-format file "~%~4T # ~A = ~A " v rate)))
           do
                 ;; write functions
                 (write-functions i rate))
 
-    ;; now, we've determine the actual # kvars ...
-    ;; go back and scribble at klen-pos
-    (scribble (numerica-model-kvar-count nm) klen-pos)
-    (scribble npart part-pos)
+    (scribble file npart (numerica-model-part-pos nm))
     (format file "~%END~%~%"))))
 
 
@@ -250,9 +298,6 @@
                     ~4TL0 := 1e-9 ;~%"
             (numerica-model-model-name nm))
 
-    ;; write the parameters:
-    (write-kvars nm file)
-
     (format t "~&; Writing initial conditions")
     ;; write the initial conditions:
     (format file "~2TINITIAL~%~
@@ -267,6 +312,9 @@
                   base-units
                   (b-format file "~%~6Tc(~A) = ~A;#" i (print-math v.t0 nil)))
                  (b-format file " [~A] ~A~@[ in ~A~]" i v (unless (eq null-unit the-unit) the-unit)))))
+
+    ;; write the parameters:
+    (write-kvars nm file)
 
     (format file "~%~4TEND~%~
                   ~2TSCHEDULE~%~
@@ -301,7 +349,11 @@
             (loop for (i k) in dependent-vars
                   do (with-dimensionless-math (numerica-model-base-units nm)
                        (format file "~%~6Tk(~A) := ~S ;" i k.value)))))
-    (format file "~%~2TEND~%")))
+    (format file "~%~2TEND~%")
+    ;; now, we've determine the actual # kvars ...
+    ;; go back and scribble at klen-pos
+    (scribble file (numerica-model-kvar-count nm) (numerica-model-klen-pos nm))
+   ))
   
 
 (defun escape-numerica-formatting-chars (str)
@@ -355,69 +407,7 @@
   "returns the name of the ...."
   (format nil "~S_k" (carefully-get-filename stream)))
 
-;;;;
-;;;;   NUMERICA-MODEL
-;;;;
-;;;;    structure which stores information about how NUMERICA code is to be generated
-;;;;
 
-;;
-;; the numerica-model structure stores information about how NUMERICA code is to be generated
-;;
-(defstruct (numerica-model (:constructor _make-numerica-model 
-                          (_name path ode-vars ode-rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
-  _name ; string indicating the name of the model
-  path ; the path in which files for this model are stored
-  ode-vars ; an ordered list of n ode-vars/derived-vars which map to y(1)...y(n) in the numerica ODE system
-  ode-rates ; the .rates of the ode-vars
-  base-units ; units (of base dimensions only) which all quantities are converted to
-  gauss-value ; either :mean or :random - controls how gaussians are sampled G.mean or G.random-value
-  kvars ; ordered list of vars which represent parameters (as opposed to ode-vars)
-  display-vars ; a list of ode-vars/derived-vars which should be displayed in numerica
-  ode-comments-p ; print comments for ode-models
-  sim-options ; string list for options in the model 
-  sim-steps) ; number of steps for the simulation
- 
-
-(defmethod print-object ((nm numerica-model) stream)
-  (print-unreadable-object (nm stream :type t :identity t)
-    (format stream "~A (~A vars)" (numerica-model-name nm)
-            (length (numerica-model-ode-vars nm)))))
-
-(defun make-numerica-model (model-name 
-			    &key 
-			    (ode-comments-p t)
-			    (sim-options nil)
-			    (sim-steps nil)
-			    (path nil)
-			    (ode-vars (query [ode-var ?])) 
-			    (base-units nil) 
-			    (gauss-value :mean) 
-			    (display-vars nil))
-  (let* ((rates (progn (format t "~&; Computing rates...~%") (mapcar ?.rate ode-vars)))
-         (kvars (make-hash-table))) ; (order-vars (compute-kvars rates))))
-    (setf (gethash :last-index kvars) 0)
-    (_make-numerica-model model-name path ode-vars rates base-units gauss-value kvars display-vars ode-comments-p sim-options sim-steps)))
-
-(defun numerica-model-name (nm)
-  (etypecase nm
-    (string nm)
-    (numerica-model (numerica-model-_name nm))))
-
-(defun numerica-model-init-script-name (nm)
-  (mkstr (numerica-model-name nm) "_init"))
-(defun numerica-model-kvars-name (nm)
-  (mkstr (numerica-model-name nm) "_k"))
-(defun numerica-model-descriptions-var-name (nm)
-  (mkstr (numerica-model-name nm) "_descriptions"))
-(defun numerica-model-simulation-name (nm)
-  (mkstr (numerica-model-name nm) "_simulation"))
-(defun numerica-model-model-name (nm)
-  (mkstr (numerica-model-name nm) "_model"))
-(defun numerica-model-var-indicies-name (nm)
-  (mkstr (numerica-model-name nm) "_vars"))
-(defun numerica-model-kvar-count (nm)
-  (1- (hash-table-count (numerica-model-kvars nm))))
 ;;;
 ;;; functions for computing default base units
 ;;;
@@ -620,3 +610,16 @@ ODE-VARs, the system must decide which form to prefer.  By default normal-vars a
 ;;;;       (let ((low-t0     (lowest-non-zero (numerica-model-ode-vars ci) ?.t0))
 ;;;;             (low-kvar   (lowest-non-zero (numerica-model-kvars ci) ?.value)))
 ;;;;         {low-t0 low-kvar}))))
+
+
+;;;; (defun refresh-parameters (&optional (model *numerica-model*))
+;;;;   "Rewrites the parameters/initial conditions of a model (default is *numerica-model*) to the model's initfile."  
+;;;;   (let* ((name (numerica-model-init-script-name model))
+;;;;          (path (numerica-model-path model))
+;;;;          (init-path (numerica-file-path name path)))
+;;;;     (with-open-file (file init-path :direction :output)
+;;;;       (write-init-script file model))
+;;;;     (format t "New parameters file (~A.~A) written to ~A."
+;;;;             (pathname-name init-path)
+;;;;             (pathname-type init-path)
+;;;;             path)))
