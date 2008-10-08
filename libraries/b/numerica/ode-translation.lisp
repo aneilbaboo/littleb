@@ -281,7 +281,7 @@
   (remove nil (mapcar (lambda (i) (ode-var-index i nm)) (numerica-model-display-vars nm))))
 
 (defun write-simulation-block (nm file)
-  (let ((vars (numerica-model-ode-vars nm)))
+  (let ((initblock (with-output-to-string (str) (write-initconds-block nm str))))
     (format t "~&; Writing simulation block")
     (format file "SIMULATION ~A~%~
                   ~2TOPTIONS~%"
@@ -298,6 +298,18 @@
                     ~4TL0 := 1e-9 ;~%"
             (numerica-model-model-name nm))
 
+    ;; write the parameters:
+    (write-kvars nm file)
+
+    (princ initblock file)
+
+    (format file "~2TSCHEDULE~%~
+                  ~4TCONTINUE FOR ~A~%~
+                  END~%" (numerica-model-sim-steps nm))))
+
+(defun write-initconds-block (nm file)
+  (let ((vars (numerica-model-ode-vars nm)))
+        
     (format t "~&; Writing initial conditions")
     ;; write the initial conditions:
     (format file "~2TINITIAL~%~
@@ -309,18 +321,11 @@
                (let* ((base-units (numerica-model-base-units nm))
                       (the-unit v.dimension.(calculate-unit base-units)))
                  (with-dimensionless-math 
-                  base-units
-                  (b-format file "~%~6Tc(~A) = ~A;#" i (print-math v.t0 nil)))
+                     base-units
+                   (b-format file "~%~6Tc(~A) = ~A;#" i (print-math v.t0 nil)))
                  (b-format file " [~A] ~A~@[ in ~A~]" i v (unless (eq null-unit the-unit) the-unit)))))
 
-    ;; write the parameters:
-    (write-kvars nm file)
-
-    (format file "~%~4TEND~%~
-                  ~2TSCHEDULE~%~
-                  ~4TCONTINUE FOR ~A~%~
-                  END~%" (numerica-model-sim-steps nm))))
-
+    (format file "~%~4TEND~%")))
 
 (defun write-kvars (nm file)
   (let* ((kvars-table (numerica-model-kvars nm))
