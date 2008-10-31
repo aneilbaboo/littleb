@@ -23,7 +23,7 @@
 ;;;; THE SOFTWARE.
 
 
-;;; $Id: species-type.lisp,v 1.57 2008/09/11 21:50:08 amallavarapu Exp $
+;;; $Id: species-type.lisp,v 1.58 2008/10/31 05:27:54 amallavarapu Exp $
 ;;; $Name:  $
 
 ;;; File: complex-species-type.lisp
@@ -211,11 +211,16 @@
                            :documentation documentation
                            :sublocation sublocation)))))
 
+(defvar *cached-canonical-graphs* (make-hash-table :test #'equalp))
 (defun ensure-canonical-complex-graph (x &optional force-pattern)
-  (gtools:canonical-graph
-   (etypecase x
-     (list (make-complex-graph x force-pattern))
-     (complex-graph x))))
+  (let* ((graph (etypecase x
+                 (list (make-complex-graph x force-pattern))
+                 (complex-graph x)))
+        (found (gethash graph *cached-canonical-graphs*)))
+    (if found (princ #\.))
+    (or found
+        (setf (gethash graph *cached-canonical-graphs*)
+              (gtools:canonical-graph graph)))))
 
 
 ;;;
@@ -1399,7 +1404,8 @@ Returns the vertexes representing sites in the correct order."
                                      ,@body))))
      ',name)))
 (defun user-defined-complex-function (name)
-  (gethash name *complex-expansions*))
+  (gethash (if (fld-form-p name) (fld-form-object name) name)
+           *complex-expansions*))
 (defun process-complex-macro-output (name complex-form)
   (assert (and (object-form-p complex-form) (object-form-p (object-form-object complex-form)))
       ()
@@ -1466,11 +1472,14 @@ Returns the vertexes representing sites in the correct order."
            (mapcar #'second ,bindings)
        ,@body))))
        
+(defun maybe-complex-form-expandable-p (form)
+  (and (consp form)
+       (not (fld-form-p form))))
 
 (defun user-complex-expand-1 (form)
   (assert (consp form))
   (cond
-   ((consp form)
+   ((maybe-complex-form-expandable-p form)
     (let ((cplxfn (user-defined-complex-function (first form))))
       (cond
        (cplxfn  (values (funcall cplxfn (rest form))
@@ -1487,8 +1496,8 @@ Returns the vertexes representing sites in the correct order."
      
      ;; if this is an object form which contains object-forms e.g., [[...][...]]
      ;; expand it
-     ((and (consp new-form)
-           (consp (first new-form)))
+     ((and (maybe-complex-form-expandable-p new-form)
+           (maybe-complex-form-expandable-p (first new-form)))
       (values
        (apply #'append
               (mapcar (lambda (subform) 
