@@ -1,13 +1,13 @@
 #!/bin/bash
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 set -e
 trap "kill 0" 2
 
 function usage()
 {
 	echo "USAGE: make-release [-euh] [-o name -t btag \\"
-  echo "                            --littleb btag --littleb broot \\"
-  echo "                            --lisatag ltag --lisa lroot \\"
+#  echo "                            --littleb btag --littleb broot \\"
+#  echo "                            --lisatag ltag --lisa lroot \\"
 	echo "                            -l lisp]"
 	echo " -o name       output file base name (default=littleb-src-TAG)"
   echo " -e            export files (no CVS info)"
@@ -15,8 +15,8 @@ function usage()
  	echo "                 if current files were exported, no update action occurs"
 	echo " -t tag        get files associated with the CVS tag (default=$littlebTag)"
   echo " --btag tag    (same as -t)"
-  echo " --littleb     cvsroot to littleb repository"
-	echo " --lisatag tag uses lisa referenced by this tag (default=$lisaTag)"  
+#  echo " --littleb     cvsroot to littleb repository"
+#	echo " --lisatag tag uses lisa referenced by this tag (default=$lisaTag)"  
 	echo " --lisa        cvsroot to lisa repository"
 	echo " -l lisp       Lisp interpreter which will run compile-all.lisp "    
 	echo " -q            quiet (hides program output)"

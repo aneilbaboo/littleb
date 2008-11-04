@@ -63,8 +63,8 @@ cyto.(contains [sigtrans])
 
 ;; set initial conditions:
 {[receptor].(in m).conc.t0 := .5}
-{[sigtrans].(in m).conc.t0 := .5}
-{[ligand].(in m).conc.t0 := 10}
+{[sigtrans].(in cyto).conc.t0 := .5}
+{[ligand].(in ecm).conc.t0 := 10}
 
 ;; create a matlab model
 (create-ode-model "rls" :vars (query species.conc).alpha-order) ; variables will be alphabetically ordered
