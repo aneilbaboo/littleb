@@ -5,7 +5,8 @@ with kinetic data and rate equations.  The language dynamically infers new molec
 implied by the reactions and provides facilities for generating mathematical models
 in MatLab.
 
-Checkout the [wiki](https://github.com/aneilbaboo/littleb/wiki)
+Checkout the https://github.com/aneilbaboo/littleb/wiki for an overview of how to
+write little b code.
 
 Getting up and running with the little b source code
 
