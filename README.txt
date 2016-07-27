@@ -1,3 +1,12 @@
+Little b is a modeling language built to help systems biologists construct 
+shareable ODE mathematical models representing systems of biochemical reactions.  
+Users write descriptions of molecules and reactions, and annotate the reactions 
+with kinetic data and rate equations.  The language dynamically infers new molecules
+implied by the reactions and provides facilities for generating mathematical models
+in MatLab.
+
+Checkout the [wiki](https://github.com/aneilbaboo/littleb/wiki)
+
 Getting up and running with the little b source code
 
 This file explains how to get little b running in a Lisp 
